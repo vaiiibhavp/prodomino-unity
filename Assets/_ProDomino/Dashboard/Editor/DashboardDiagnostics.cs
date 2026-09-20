@@ -184,6 +184,28 @@ namespace ProDomino.Dashboard.Editor
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
+        public static void LogAuthOverrides()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Shared/Prefabs/MiddleScreen_Scalable.prefab");
+            try
+            {
+                var auth = root.transform.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "AuthUI");
+                if (auth == null) { Debug.Log("DIAG: AuthUI not found. DIAG_DONE"); return; }
+                foreach (var comp in auth.GetComponentsInChildren<Component>(true))
+                {
+                    if (comp == null || comp is MonoBehaviour) continue;
+                    var so = new SerializedObject(comp);
+                    var it = so.GetIterator();
+                    var props = new System.Collections.Generic.List<string>();
+                    while (it.Next(true)) if (it.prefabOverride && !it.propertyPath.StartsWith("m_Children")) props.Add(it.propertyPath);
+                    if (props.Count > 0)
+                        Debug.Log($"DIAG: overrides on {comp.GetType().Name} @ {Path(comp.transform)}: {string.Join(", ", props.Take(8))}");
+                }
+                Debug.Log("DIAG_DONE");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
         private static string RelPath(Transform t, Transform root)
         {
             var p = t.name;
