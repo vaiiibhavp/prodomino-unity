@@ -1,0 +1,300 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0af23a4fabb24ecc85ccd8bcf8ca63c, type: 3}
+  m_Name: LearningToolsDatabase
+  m_EditorClassIdentifier: 
+  items:
+  - id: french
+    spriteImg: {fileID: 21300000, guid: 7e7bac5fdfbcd384eba29814a00a2ee5, type: 3}
+    linkVideos:
+    - titleText: Learn Basic Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Two Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Kitty Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Puppy Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    descriptionText: A strategic mode centered around a starting double that branches
+      in four directions. Players build a dynamic layout while trying to empty their
+      hand and avoid scoring points. Each round shifts the advantage, and only the
+      most consistent player will endure to the end.
+    rulesText: '- A 28-tile double-six set is used.
+
+
+      - Each player draws 7
+      tiles.
+
+
+      - The remaining tiles are set aside to form a boneyard.
+
+
+      -
+      If a player draws 5 or more double tiles, the tiles must be reshuffled.
+
+
+      -
+      The first round is started by the player with the highest double tile, and
+      they must begin the round by playing that tile.
+
+
+      - From the second round
+      onward, the player who won the previous round starts by playing any double
+      tile in their hand. If they have no doubles, the turn passes to the next player
+      clockwise.
+
+
+      - If there was no winner in the previous round, the new
+      round starts again with the player who holds the highest double tile.
+
+
+      -
+      The first domino is a spinner, and players must play a tile on all four sides
+      of it before any further move can be made.
+
+
+      - Each of the four arms
+      can only be extended after first playing a double on that arm. Once a tile
+      has been placed on all four ends of the starting tile, players may continue
+      extending each arm by matching tiles. Any new number at the end of an arm can
+      only be extended if its corresponding double has already been played on one
+      of the four arms.
+
+
+      - If a player cannot play, they must draw from the
+      boneyard until they get a playable tile or until the boneyard is empty.
+
+
+      -
+      The first player to play all of their tiles wins the round.
+
+
+      - If the
+      game becomes blocked, the winner is the player with the lowest pip count in
+      their hand.
+
+
+      - If two players tie in a blocked game, there is no winner
+      for that round. Each player receives penalty points equal to the total pips
+      remaining in their hand.
+
+
+      - If a player wins a round by playing a double
+      as their final tile, the penalty points of all other players are doubled for
+      that round.
+
+
+      - The game becomes an elimination game once a player reaches
+      100 points. That player is eliminated, and the game continues until only one
+      player remains. If two players reach 100 points in the same turn, the winner
+      is the one with the lower total score.
+
+
+      - As players are eliminated,
+      their tiles are added to the discard pile for the next round.'
+  - id: block
+    spriteImg: {fileID: 21300000, guid: 2fd9ac708a520104abbfdedc4bfbd5de, type: 3}
+    linkVideos:
+    - titleText: Learn Basic Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Two Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Kitty Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Puppy Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    descriptionText: A classic domino mode focused on precision and control. With
+      no drawing and no extra branches, players aim to outmaneuver opponents and
+      run out of tiles first. Keeping a low score across rounds is key to dominating
+      this tactical duel.
+    rulesText: '- Uses a 28-tile double-six set.
+
+
+      - Each player draws 7 Tiles.
+
+
+      -
+      Remaining tiles are set aside and are not used in the round.
+
+
+      - The
+      starting player is selected a Random.
+
+
+      - The winner of each round plays
+      first in the next round.
+
+
+      - A round can be started with any tile, subsequent
+      tiles can be played at the two ends of the train.
+
+
+      - If a player can
+      not play, then he/she simply passes the turn to the next player.
+
+
+      -
+      The round ends if a player has played all of his/her tiles. Rounds can also
+      end if the game is blocked which means no tile can be played by any player.
+
+
+      -
+      The winner of the round is the player who played all his/her tiles, or the
+      player with lowest score.
+
+
+      - Player scores the total of all other players''
+      tiles pip count minus pip count of his/her own tiles (if the game was blocked).
+
+
+      -
+      If two players get the same score then there is no winner for the round and
+      no player is awarded any point.
+
+
+      - The game is played for multiple rounds
+      until a player manages to score: 50 points for 2 player wins and 100 points
+      for 4 players wins.
+
+
+      - There is no spinner in the game so a double can
+      only be played at two ends.'
+  - id: draw
+    spriteImg: {fileID: 21300000, guid: 72640d2dcfd86824884605401c42a6ed, type: 3}
+    linkVideos:
+    - titleText: Learn Basic Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Two Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Kitty Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Puppy Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    descriptionText: A dynamic mode where drawing tiles becomes part of the strategy.
+      Players manage their hand carefully while using the boneyard to stay in the
+      game. Victory goes to the player who empties their hand or holds the lowest
+      score across multiple rounds.
+    rulesText: "- Uses a 28-tile double-six set.\n\n- Each player gets a certain
+      number of tiles at the start of each round:\n\t\t(4 players) Each player draws
+      5 Tiles.\n\t\t(2 Players) Each player draws 7 Tiles.\n\n- Remaining tiles are
+      set aside forming a boneyard.\n\n- The starting player is selected a Random.\n\n-
+      The winner of each round plays first in the next round.\n\n- A round can be
+      started with any tile, subsequent tiles can be played at the two ends of the
+      train.\n\n- If a player can not play, then he/she must draw from the boneyard
+      until either he/she gets a playable tile or the boneyard has only two tiles
+      left. The last two tiles from the boneyard can not be drawn.\n\n- If a player
+      draws a tile which can be immediately played, then it must be played.\n\n-
+      If a player can not play a tile and can not draw from the boneyard either,
+      he/she simply passes the turn to the next player.\n\n- The round ends if a
+      player has played all of his/her tiles. Rounds can also end if the game is
+      blocked which means no tile can be played by any player.\n\n- The winner of
+      the round is the player who played all his/her tiles, or the player with lowest
+      score.\n\n- Player scores the total of all other players' tiles pip count minus
+      pip count of his/her own tiles (if the game was blocked).\n\n- If two players
+      get the same score then there is no winner for the round and no player is awarded
+      any point.\n\n- The game is played for multiple rounds until a player manages
+      to score: 50 points for 2 player wins and 100 points for 4 players wins.\n\n-
+      There is no spinner in the game so a double can only be played at two ends."
+  - id: five
+    spriteImg: {fileID: 21300000, guid: ef4df6f34fce4364089fe0d3eec8108d, type: 3}
+    linkVideos:
+    - titleText: Learn Basic Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Two Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Kitty Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    - titleText: Learn Puppy Strategy
+      subTitleText: watch video
+      link: https://www.youtube.com/live/hTcBL_bg29A?si=XGWGmgFPzZX802xz
+    descriptionText: A strategic scoring mode where every move can earn points by
+      making the open ends total a multiple of five. The starting double opens four
+      paths, encouraging creative plays. Managing the layout and maximizing scoring
+      opportunities is key to claiming victory.
+    rulesText: "- Uses a 28-tile double-six set.\n\n- Each player draws 7 Tiles.\n\n-
+      Remaining tiles are set aside forming a boneyard.\n\n- The first turn or lead
+      is decided by a draw of lot (Each player draws one tile and the highest tile
+      starts the round). \n\n- In subsequent rounds, the player winning the previous
+      round starts first. If there was no winner for the previous round then the
+      lead is again decided by draw of lot.\n\n- Rounds can be started with any tile
+      and then subsequent tiles can be played at the open ends of the layout.\n\n-
+      If a player can not play, then he/she must draw from the boneyard until either
+      he/she gets a playable tile or the boneyard has no tile left.\n\n- If a player
+      draws a tile which can be immediately played, then it must be played.\n\n-
+      If a player can not play a tile and can not draw from the boneyard either,
+      then he/she simply passes the turn to the next player.\n\n- In All Fives only
+      the first double is a spinner which means tiles can be placed on all four edges
+      of the spinner double.\n\n- The round ends if a player has played all of his/her
+      tiles. Round can also end if the game is blocked which means no tile can be
+      played by any of the players.\n\n- After a player plays a tile, all open ends
+      of the layout are totalled and if the total is a multiple of five (5, 10 etc.),
+      then the player immediately scores that total.\n\n- Doubles at the end of an
+      arm in the layout are worth its pips count. Once two tiles are placed on a
+      double, its pip count is not considered in the total (even when the spinner
+      has one or two edges available to place tiles).\n\n- The open ends of the arms
+      on all four edges of the spinner double are counted in the score.\n\n- The
+      first player playing all his/her tiles wins the round. If the game is blocked
+      then the player with the lowest pips count in his/her hand wins.\n\n- After
+      the round ends, pips on all remaining tiles of all players are counted and
+      rounded up or down to the nearest multiple of five and then divided by five
+      which is scored by the winner of that round.\n\n- The game is played for multiple
+      rounds and the player with the highest score above 100 wins.\n\n- Though players
+      score during the game play, the game can only end after the end of a round.
+      It is possible that the first player to reach the score of 100 is not the winner
+      if the round is won by another player who after adding the bonus points has
+      the highest overall score."
+  - id: concentrate
+    spriteImg: {fileID: 21300000, guid: adfaa6081f909224f8b4911ff7a93da4, type: 3}
+    linkVideos: []
+    descriptionText: A memory-focused mode where players flip hidden tiles to find
+      pairs that total twelve. Success rewards extra turns, challenging players to
+      recall positions, chain accurate matches, and clear the board with the fewest
+      attempts.
+    rulesText: '- Uses a 28-tile double-six set or a 56 tile one.
+
+
+      - This
+      game is basically a memory test. The aim is to turn over all tiles in pairs
+      so that the total pips sum 12.
+
+
+      - If the turned over tiles do not add
+      up to 12, then they are turned back down. Player can select two tiles again
+      to repeat the process.
+
+
+      - Tiles are removed in pairs and only if its
+      total equals 12 pips.
+
+
+      - Players who successfully remove a pair, take
+      an extra turn and repeat this process, this happens again and again until the
+      player fails to remove a pair which pips equal to 12.
+
+
+      - Try to turn
+      over all tiles in the least number of attempts.'

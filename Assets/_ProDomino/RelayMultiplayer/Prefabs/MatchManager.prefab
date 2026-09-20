@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4765769368656795032
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9199512563993247147}
+  - component: {fileID: 5348731157351304044}
+  - component: {fileID: 4480870382720872340}
+  - component: {fileID: 5194049310869826641}
+  - component: {fileID: 9175025692439491824}
+  m_Layer: 0
+  m_Name: MatchManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9199512563993247147
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765769368656795032}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5348731157351304044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765769368656795032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 3143764044
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &4480870382720872340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765769368656795032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5109ca62e3c54fdbad2698e95569edd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  matchStatePrefab: {fileID: 1294000051941859442, guid: 37d4e18ee31632a45b4d31aa87a5ca29, type: 3}
+  relayManager: {fileID: 5194049310869826641}
+  joinCodeManager: {fileID: 9175025692439491824}
+  lobbyChatManager: {fileID: 0}
+  networkManagerPrefab: {fileID: 3160856063890638673, guid: f7251ef2ca2dcf24dbfe9c75a682b680, type: 3}
+  menuControllerGameMode: {fileID: 0}
+  navigationPanelController: {fileID: 0}
+  turnDuration: 20
+  waitTimeForNextRound: 20
+  waitTimeForRematch: 20
+  waitConfirmationForNextRound: 0
+  waitConfirmationForRematch: 0
+  useBotMatchmaking: 1
+  timeToStopMatchmaking: 60
+  newtworkProcessAttempt: 5
+  OnCliendConnected:
+    m_PersistentCalls:
+      m_Calls: []
+  OnGameStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnCurrentPlayablePlayerChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnJoinSession:
+    m_PersistentCalls:
+      m_Calls: []
+  OnLeftSession:
+    m_PersistentCalls:
+      m_Calls: []
+  OnReconnectSession:
+    m_PersistentCalls:
+      m_Calls: []
+  OnSessionRemovedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnSetMatchmakingPreviousSettingsEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStartMatchmakingEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnCancelMatchmakingEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnMatchmakingNotFoundEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  disconnectedClientIds: 
+--- !u!114 &5194049310869826641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765769368656795032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c66d34463d6a14527be48ada11b3ba39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &9175025692439491824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4765769368656795032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70d01ac99e6174cafb7b3451f6d0bacf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseUrl: https://pro-domino-backend.vercel.app

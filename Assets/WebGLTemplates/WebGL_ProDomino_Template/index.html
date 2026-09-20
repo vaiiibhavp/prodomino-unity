@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>{{{ PRODUCT_NAME }}}</title>
+
+    <link rel="shortcut icon" href="TemplateData/playprodomino_favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+#if SHOW_DIAGNOSTICS
+    <link rel="stylesheet" href="<<<TemplateData/diagnostics.css>>>">
+    <script src="<<<TemplateData/diagnostics.js>>>"></script>
+#endif
+  </head>
+  
+  <body>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        window.googletag = window.googletag || {cmd: []};
+        window.interstitialId = "/YOUR_AD_MANAGER_INTERSTITIAL_ID"
+        googletag.cmd.push(() => {
+            googletag.enableServices();
+            googletag.apiReady = true;
+            console.log("[Ads] Google Ad Manager ready.");
+        });
+    </script>
+
+    <!-- Custom loading screen -->
+    <div id="custom-loading-container">
+      <div id="loading-content">
+        <img id="game-logo" src="TemplateData/Prodomino_Small_Logo.png" alt="ProDomino Logo">
+        <div id="domino-loader"></div>
+        <div id="domino-progress-bar-empty">
+          <div id="domino-progress-bar-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <div id="unity-footer">
+        <div id="unity-logo-title-footer"></div>
+
+        
+        #if SHOW_DIAGNOSTICS
+        <img id="diagnostics-icon" src="TemplateData/webmemd-icon.png">
+        #endif
+        <div id="unity-build-title">{{{ PRODUCT_NAME }}}</div>
+      </div>
+      
+      <!-- Replaced SVG fullscreen icon with PNG button -->
+      <div id="unity-fullscreen-button" title="Fullscreen" style="cursor: pointer; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+        <img src="TemplateData/fullscreen-button.png" alt="Fullscreen" style="width: 24px; height: 24px;" />
+      </div>
+    </div>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyA9WjUEn5IxbnxuDqbArYmh9tfEWW9qsAU",
+        authDomain: "playprodomino.firebaseapp.com",
+        databaseURL: "https://playprodomino-default-rtdb.firebaseio.com",
+        projectId: "playprodomino",
+        storageBucket: "playprodomino.firebasestorage.app",
+        messagingSenderId: "794812349025",
+        appId: "1:794812349025:web:3b3dd58dbcf7f41c0a0820"
+      };
+
+      const app = firebase.initializeApp(firebaseConfig);
+      window.apiKey = firebaseConfig.apiKey;
+      window.firebaseApp = app;
+      window.firebaseAuth = firebase.auth();
+      window.firebaseDatabase = firebase.database();
+      window.firebaseFirestore = firebase.firestore();
+
+      // Creating the provider within the firebase.auth context ensures proper initialization
+      window.createGoogleProvider = function() {
+          var provider = new firebase.auth.GoogleAuthProvider();
+          provider.addScope("email"); // Requesting email explicitly
+          return provider;
+      };
+      
+      // Only enable messaging on HTTPS or localhost
+      if (location.protocol === "https:" || location.hostname === "localhost") {
+        (async () => {
+          try {
+            // Ask notification permission
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+              console.warn("Notification permission not granted:", permission);
+              return;
+            }
+
+            console.log("Notification permission granted");
+
+            // Try to register service worker for background notifications
+            let registration;
+            try {
+              registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+              console.log("Service Worker registered:", registration);
+            } catch (swErr) {
+              console.warn("Background FCM disabled (no SW):", swErr);
+            }
+
+            // Init messaging
+            const messaging = firebase.messaging();
+
+            try {
+              const token = await messaging.getToken({
+                vapidKey: "BMysmg3UpAluhugW78FXtc9n22ZTYkWh2bx6MzEQdU_huZD334dYkK5nsQIg9JmJB_6Mdbo_Bc7c_Zea443_UBw",
+                serviceWorkerRegistration: registration
+              });
+              console.log("Token FCM:", token);
+
+              // Foreground messages
+              messaging.onMessage((payload) => {
+                console.log("Notification received in foreground:", payload);
+                if (typeof unityInstance !== 'undefined') {
+                  unityInstance.SendMessage("GameObjectFCM", "OnFirebaseMessage", JSON.stringify(payload));
+                }
+              });
+            } catch (fcmErr) {
+              console.warn("FCM disabled: could not get token", fcmErr);
+            }
+          } catch (err) {
+            console.warn("Firebase Messaging not available:", err);
+          }
+        })();
+      } else {
+        console.warn("Skipping Firebase Messaging (requires HTTPS or localhost).");
+      }
+    </script>
+
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+
+      function resizeCanvasToFitAspect() {
+        var aspect = 16 / 9; // target aspect ratio
+        var windowWidth = window.innerWidth;
+        var windowHeight = window.innerHeight;
+
+        // Compute the maximum size that fits inside the viewport
+        var newWidth = windowWidth;
+        var newHeight = windowWidth / aspect;
+
+        if (newHeight > windowHeight) {
+            newHeight = windowHeight;
+            newWidth = newHeight * aspect;
+        }
+
+        // Apply size to the canvas
+        canvas.style.width = newWidth + "px";
+        canvas.style.height = newHeight + "px";
+
+        // Center the canvas inside the unity-container manually
+        canvas.style.position = "absolute";
+        canvas.style.left = ((windowWidth - newWidth) / 2) + "px";
+        canvas.style.top = ((windowHeight - newHeight) / 2) + "px";
+      }
+
+      window.addEventListener('resize', resizeCanvasToFitAspect);
+      window.addEventListener('load', resizeCanvasToFitAspect);
+
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+        frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+        workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+        codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}} ,
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}} ,
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}} ,
+        showBanner: unityShowBanner,
+        autoSyncPersistentDataPath: true
+      };
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
+#if SHOW_DIAGNOSTICS
+        let diagnostics_icon = document.getElementById("diagnostics-icon");
+        diagnostics_icon.style.position = "fixed";
+        diagnostics_icon.style.bottom = "10px";
+        diagnostics_icon.style.right = "0px";
+        canvas.after(diagnostics_icon);
+#endif
+      }
+
+#if BACKGROUND_FILENAME
+      canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
+#endif
+
+      document.querySelector("#unity-loading-bar").style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+          document.querySelector("#domino-progress-bar-full").style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          window.unityInstance = unityInstance;
+          document.querySelector("#unity-loading-bar").style.display = "none";
+
+          const loadingContainer = document.querySelector("#custom-loading-container");
+          loadingContainer.style.transition = "opacity 1s ease";
+          loadingContainer.style.opacity = "0";
+          setTimeout(() => {
+            loadingContainer.style.display = "none";
+          }, 1000);
+
+#if SHOW_DIAGNOSTICS
+          document.getElementById("diagnostics-icon").onclick = () => {
+            unityDiagnostics.openDiagnosticsDiv(unityInstance.GetMetricsInfo);
+          };
+#endif
+          document.querySelector("#unity-fullscreen-button").onclick = () => {
+            unityInstance.SetFullscreen(1);
+          };
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>

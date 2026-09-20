@@ -1,0 +1,12 @@
+<linker>
+  <!-- Linker configuration for Unity IL2CPP.
+       Ensures that FirestoreTimestampConverter and related types in HelperSharedLibrary.dll
+       are preserved during code stripping. -->
+
+  <assembly fullname="HelperSharedLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="HelperSharedLibrary.FirestoreTimestampConverter" preserve="all" />
+    <type fullname="HelperSharedLibrary.FirestoreClubDataResponse" preserve="all" />
+    <type fullname="HelperSharedLibrary.FirestorePlayerClubData" preserve="all" />
+    <type fullname="HelperSharedLibrary.SecurityData" preserve="all" />
+  </assembly>
+</linker>
