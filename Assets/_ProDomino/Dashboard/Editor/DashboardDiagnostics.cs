@@ -245,5 +245,200 @@ namespace ProDomino.Dashboard.Editor
             foreach (var t in root.GetComponentsInChildren<Transform>(true).Where(t => t.name.StartsWith("LeaderboardUI_")))
                 Debug.Log($"DIAG: [{label}] {t.name} activeSelf={t.gameObject.activeSelf} parent={t.parent?.name}");
         }
+
+        // Fires a UI raycast at the centre of the button OptionsUI opens the auth screen with,
+        // in the logged-out state, and reports everything the click would hit, topmost first.
+        public static void SimulateLoginClick()
+        {
+            var scene = EditorSceneManager.OpenScene("Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity", OpenSceneMode.Single);
+
+            UnityEngine.UI.Button login = null;
+            foreach (var go in scene.GetRootGameObjects())
+            foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (mb == null || mb.GetType().Name != "OptionsUI") continue;
+                var so = new SerializedObject(mb);
+                login = so.FindProperty("openAuthInterfaceButton")?.objectReferenceValue as UnityEngine.UI.Button;
+
+                // Logged-out runtime state, the way OptionsUI.Configure leaves it.
+                Set(so, "notLoginButtonInterface", true);
+                Set(so, "loginButtonInterface", false);
+            }
+            if (login == null) { Debug.Log("DIAG: openAuthInterfaceButton is not assigned. DIAG_DONE"); return; }
+
+            Debug.Log($"DIAG: target {Path(login.transform)} activeSelf={login.gameObject.activeSelf} " +
+                      $"activeInHierarchy={login.gameObject.activeInHierarchy} interactable={login.interactable} " +
+                      $"targetGraphic={(login.targetGraphic ? login.targetGraphic.name : "NONE")} " +
+                      $"components={string.Join(",", login.GetComponents<Component>().Where(c => c).Select(c => c.GetType().Name))}");
+
+            foreach (var comp in login.GetComponents<Component>())
+            {
+                if (comp == null || comp is Transform or CanvasRenderer) continue;
+                var cso = new SerializedObject(comp);
+                var cit = cso.GetIterator();
+                while (cit.NextVisible(true))
+                {
+                    if (cit.propertyType is SerializedPropertyType.Boolean)
+                        Debug.Log($"DIAG: {comp.GetType().Name}.{cit.propertyPath} = {cit.boolValue}");
+                    else if (cit.propertyType is SerializedPropertyType.ObjectReference && cit.propertyPath.Contains("Graphic"))
+                        Debug.Log($"DIAG: {comp.GetType().Name}.{cit.propertyPath} = {(cit.objectReferenceValue ? cit.objectReferenceValue.name : "NULL")}");
+                }
+            }
+
+            Canvas.ForceUpdateCanvases();
+            var rt = (RectTransform)login.transform;
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            var world = (corners[0] + corners[2]) * 0.5f;
+
+            var canvas = login.GetComponentInParent<Canvas>().rootCanvas;
+            var cam = canvas.worldCamera;
+            var screen = RectTransformUtility.WorldToScreenPoint(cam, world);
+            Debug.Log($"DIAG: canvas={canvas.name} mode={canvas.renderMode} camera={(cam ? cam.name : "none")} screenPoint={screen}");
+
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            var temp = es ? null : new GameObject("TempEventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+            if (!es) es = temp.GetComponent<UnityEngine.EventSystems.EventSystem>();
+            try
+            {
+                var data = new UnityEngine.EventSystems.PointerEventData(es) { position = screen };
+                var results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+                foreach (var gr in UnityEngine.Object.FindObjectsByType<UnityEngine.UI.GraphicRaycaster>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                    gr.Raycast(data, results);
+
+                if (results.Count == 0) Debug.Log("DIAG: HIT nothing (the raycast returned no results)");
+                foreach (var r in results)
+                {
+                    var handler = UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IPointerClickHandler>(r.gameObject);
+                    Debug.Log($"DIAG: HIT depth={r.depth} sorting={r.sortingOrder} {Path(r.gameObject.transform)} " +
+                              $"-> clickHandler={(handler ? Path(handler.transform) : "none")}");
+                }
+            }
+            finally { if (temp) UnityEngine.Object.DestroyImmediate(temp); }
+            Debug.Log("DIAG_DONE");
+        }
+
+        private static void Set(SerializedObject so, string field, bool active)
+        {
+            if (so.FindProperty(field)?.objectReferenceValue is not CanvasGroup cg) return;
+            cg.alpha = active ? 1f : 0f;
+            cg.interactable = active;
+            cg.blocksRaycasts = active;
+        }
+
+        // Any UI object collapsed by a zero scale: it stays "open" in code but draws nothing.
+        public static void LogZeroScales()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab");
+            try { LogZeroScales("canvas", root.transform); }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+
+            var scene = EditorSceneManager.OpenScene("Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity", OpenSceneMode.Single);
+            foreach (var go in scene.GetRootGameObjects()) LogZeroScales("scene", go.transform);
+            Debug.Log("DIAG_DONE");
+        }
+
+        private static void LogZeroScales(string label, Transform root)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            {
+                var s = t.localScale;
+                if (s.x > 0.0001f && s.y > 0.0001f) continue;
+                Debug.Log($"DIAG: [{label}] zero scale {s:0.###} on {Path(t)} active={t.gameObject.activeSelf}");
+            }
+        }
+
+        // What OptionsUI is wired to, in the canvas prefab and in the scene instance.
+        public static void LogOptionsUiLinks()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab");
+            try { LogOptionsUi("prefab", root.transform); }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+
+            var scene = EditorSceneManager.OpenScene("Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity", OpenSceneMode.Single);
+            foreach (var go in scene.GetRootGameObjects()) LogOptionsUi("scene", go.transform);
+            Debug.Log("DIAG_DONE");
+        }
+
+        private static void LogOptionsUi(string label, Transform root)
+        {
+            foreach (var mb in root.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (mb == null || mb.GetType().Name != "OptionsUI") continue;
+                var so = new SerializedObject(mb);
+                var it = so.GetIterator();
+                while (it.NextVisible(true))
+                {
+                    if (it.propertyType != SerializedPropertyType.ObjectReference) continue;
+                    var v = it.objectReferenceValue;
+                    Debug.Log($"DIAG: [{label}] OptionsUI.{it.propertyPath} -> " +
+                              (v == null ? "NULL" : $"{v.GetType().Name} on '{(v is Component c ? Path(c.transform) : v.name)}'"));
+                }
+            }
+        }
+
+        // Why a header widget does not take clicks: lists the profile chip's own state, then every
+        // raycast target that covers the "Log In" button, in draw order (last = on top).
+        public static void LogLoginButtonBlockers()
+        {
+            var scene = EditorSceneManager.OpenScene("Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity", OpenSceneMode.Single);
+            var canvas = scene.GetRootGameObjects()
+                .SelectMany(g => g.GetComponentsInChildren<Canvas>(true))
+                .FirstOrDefault(c => c.name == "ProDomino_MainCanvas" || c.transform.Find("Background"));
+            if (canvas == null) { Debug.Log("DIAG: no canvas. DIAG_DONE"); return; }
+
+            var profile = canvas.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Options_Profile");
+            if (profile == null) { Debug.Log("DIAG: no Options_Profile. DIAG_DONE"); return; }
+
+            foreach (var t in profile.GetComponentsInChildren<Transform>(true))
+            {
+                var rt = t as RectTransform;
+                var g = t.GetComponent<UnityEngine.UI.Graphic>();
+                var b = t.GetComponent<UnityEngine.UI.Button>();
+                var cg = t.GetComponent<CanvasGroup>();
+                Debug.Log($"DIAG: {Path(t).Replace("ProDomino_MainCanvas/", "")} active={t.gameObject.activeSelf} " +
+                          $"rect={(rt ? rt.rect.size.ToString("0") : "-")} " +
+                          $"graphic={(g ? $"{g.GetType().Name} raycast={g.raycastTarget} enabled={g.enabled}" : "-")} " +
+                          $"button={(b ? $"enabled={b.enabled} interactable={b.interactable} calls={b.onClick.GetPersistentEventCount()}" : "-")} " +
+                          $"cg={(cg ? $"alpha={cg.alpha} blocks={cg.blocksRaycasts} inter={cg.interactable}" : "-")} " +
+                          $"extra={string.Join(",", t.GetComponents<MonoBehaviour>().Where(m => m).Select(m => m.GetType().Name))}");
+            }
+
+            // Everything that would be hit at the centre of the "Log In" button.
+            var notLogged = profile.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "NotLogged_Interface");
+            var login = notLogged ? notLogged.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.GetComponent<UnityEngine.UI.Button>()) : null;
+            var target = (RectTransform)(login ? login : profile);
+            var corners = new Vector3[4];
+            target.GetWorldCorners(corners);
+            var point = (corners[0] + corners[2]) * 0.5f;
+            Debug.Log($"DIAG: probing at the centre of '{Path(target).Replace("ProDomino_MainCanvas/", "")}'");
+
+            foreach (var g in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+            {
+                if (!g.raycastTarget || !g.enabled) continue;
+                var rt = (RectTransform)g.transform;
+                var local = rt.InverseTransformPoint(point);
+                if (!rt.rect.Contains(local)) continue;
+                Debug.Log($"DIAG: COVERS order={DrawOrder(g.transform, canvas.transform)} {Path(g.transform).Replace("ProDomino_MainCanvas/", "")} " +
+                          $"activeInHierarchy={g.gameObject.activeInHierarchy} type={g.GetType().Name} blockedByGroup={BlockingGroup(g.transform, canvas.transform)}");
+            }
+            Debug.Log("DIAG_DONE");
+        }
+
+        // Sibling-index path, so entries sort in draw order (the last one drawn wins a click).
+        private static string DrawOrder(Transform t, Transform root)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            for (var x = t; x != null && x != root; x = x.parent) parts.Insert(0, x.GetSiblingIndex().ToString("000"));
+            return string.Join(".", parts);
+        }
+
+        private static string BlockingGroup(Transform t, Transform root)
+        {
+            for (var x = t; x != null && x != root.parent; x = x.parent)
+                if (x.TryGetComponent<CanvasGroup>(out var cg) && (!cg.blocksRaycasts || cg.alpha <= 0.01f))
+                    return $"{x.name}(alpha={cg.alpha},blocks={cg.blocksRaycasts})";
+            return "-";
+        }
     }
 }

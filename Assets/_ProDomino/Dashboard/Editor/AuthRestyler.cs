@@ -133,6 +133,7 @@ namespace ProDomino.Dashboard.Editor
                 if (auth != null)
                 {
                     int n = RevertLayoutOverrides(auth);
+                    PlaceAuthRoot(auth, "ProDomino_MainCanvas");
                     PrefabUtility.SaveAsPrefabAsset(canvas, canvasPath);
                     Debug.Log($"AUTH: reverted {n} auth layout overrides in ProDomino_MainCanvas.");
                 }
@@ -147,10 +148,65 @@ namespace ProDomino.Dashboard.Editor
             if (sceneAuth != null)
             {
                 int n = RevertLayoutOverrides(sceneAuth);
+                PlaceAuthRoot(sceneAuth, "MainSceneDomDemo");
                 UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
                 UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
                 Debug.Log($"AUTH: reverted {n} auth layout overrides in MainSceneDomDemo.");
             }
+        }
+
+        // The pop-up root has to fill the screen area and keep unit scale, or the cards centre in
+        // nothing and collapse to a point. Unity never reverts an instance root's own placement, so
+        // every copy that carries one (the nested prefab, the canvas, the scene) is set explicitly.
+        private static void PlaceAuthRoot(Transform auth, string where)
+        {
+            var rt = (RectTransform)auth;
+            Debug.Log($"AUTH: [{where}] AuthUI root before: scale={rt.localScale:0.###} size={rt.rect.size:0} " +
+                      $"anchors={rt.anchorMin:0.##}-{rt.anchorMax:0.##} pos={rt.anchoredPosition:0}");
+            Stretch(rt);
+            rt.localScale = Vector3.one;
+            rt.localRotation = Quaternion.identity;
+            Debug.Log($"AUTH: [{where}] AuthUI root after:  scale={rt.localScale:0.###} size={rt.rect.size:0}");
+        }
+
+        // The game screen with the login pop-up open, rendered from the scene's own canvas instance,
+        // so the pop-up can be checked in its real place instead of on its own.
+        [MenuItem("ProDomino/Dashboard/Render Scene With Login Open")]
+        public static void RenderSceneWithAuthOpen()
+        {
+            const string scenePath = "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
+            var outDir = Environment.GetEnvironmentVariable("PD_RENDER_DIR");
+            if (string.IsNullOrEmpty(outDir)) outDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pd_renders");
+            System.IO.Directory.CreateDirectory(outDir);
+
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
+            var inst = HeaderDashboardRestyler.FindCanvasInstance(scene);
+            if (inst == null) { Debug.LogWarning("AUTH: canvas instance not found in the scene."); return; }
+
+            SidebarRestyler.RenderCanvas(System.IO.Path.Combine(outDir, "scene_login_open.png"), 1920, 1080, true, root =>
+            {
+                var auth = FindDeep(root.transform, "AuthUI");
+                if (auth == null) { Debug.LogWarning("AUTH: AuthUI not found under the canvas."); return; }
+
+                // For the shot the pop-up is moved to the end of the main canvas, which is where its
+                // own sorting canvas puts it at runtime.
+                auth.SetParent(root.transform, false);
+                Stretch((RectTransform)auth);
+                auth.SetAsLastSibling();
+                ShowGroup(auth, 1f);
+                ShowGroup(FindDeep(auth, "SignIn_Container"), 1f);
+                ShowGroup(FindDeep(auth, "SignUp_Container"), 0f);
+                ShowGroup(FindDeep(auth, "Recovery_Container"), 0f);
+                Debug.Log($"AUTH: render tweak applied, AuthUI scale={auth.localScale:0.##} size={((RectTransform)auth).rect.size:0}");
+            }, inst);
+        }
+
+        private static void ShowGroup(Transform t, float alpha)
+        {
+            if (t == null || !t.TryGetComponent<CanvasGroup>(out var cg)) return;
+            cg.alpha = alpha;
+            cg.blocksRaycasts = alpha > 0f;
+            cg.interactable = alpha > 0f;
         }
 
         [MenuItem("ProDomino/Dashboard/Render Login + Register To PNG")]
