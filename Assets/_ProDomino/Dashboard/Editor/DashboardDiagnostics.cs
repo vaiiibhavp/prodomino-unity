@@ -184,6 +184,26 @@ namespace ProDomino.Dashboard.Editor
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
+        public static void LogRecoveryScreen()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Authentication/Prefabs/AuthUI.prefab");
+            try
+            {
+                var rec = root.transform.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Recovery_Container");
+                if (rec == null) { Debug.Log("DIAG: no Recovery_Container. DIAG_DONE"); return; }
+                foreach (var t in rec.GetComponentsInChildren<Transform>(true))
+                {
+                    var rt = t as RectTransform;
+                    var g = t.GetComponent<UnityEngine.UI.Graphic>();
+                    Debug.Log($"DIAG: {Path(t).Replace("AuthUI/Auth_Container/Recovery_Container/", "")} active={t.gameObject.activeSelf} " +
+                              $"rect={(rt ? rt.rect.size.ToString("0") : "-")} pos={(rt ? rt.anchoredPosition.ToString("0") : "-")} " +
+                              $"graphic={(g ? g.GetType().Name + (g.enabled ? "" : "(off)") : "-")}");
+                }
+                Debug.Log("DIAG_DONE");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
         public static void LogAuthOverrides()
         {
             var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Shared/Prefabs/MiddleScreen_Scalable.prefab");

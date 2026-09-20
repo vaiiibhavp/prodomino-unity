@@ -36,7 +36,7 @@ namespace ProDomino.Dashboard.Editor
         private const float SignInH = 860f, SignUpH = 1024f, RecoveryH = 704f;
         private const float Pad = 80f, ContentW = 720f;
 
-        private static Sprite panelBg, fieldBg, socialBg, checkboxBg, closeBg, outlineBtn;
+        private static Sprite panelBg, fieldBg, socialBg, checkboxBg, closeBg, outlineBtn, badgeSprite, primaryBtn, lockSprite;
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold;
 
         [MenuItem("ProDomino/Dashboard/Restyle Login + Register + Render")]
@@ -55,6 +55,10 @@ namespace ProDomino.Dashboard.Editor
             checkboxBg = MakePanelSprite("Auth_CheckboxBg", 24, 24, 4, new Color(0.204f, 0.204f, 0.239f, 0.3f), new Color(0.204f, 0.204f, 0.239f, 0.3f), FieldBorder, 1);
             closeBg = MakePanelSprite("Auth_CloseBg", 24, 24, 8, Hex("#34343D"), Hex("#34343D"), Hex("#3E3E3E"), 1);
             outlineBtn = MakePanelSprite("Auth_OutlineBtn", 32, 32, 10, new Color(0, 0, 0, 0), new Color(0, 0, 0, 0), Accent, 2);
+            badgeSprite = MakePanelSprite("Auth_Badge", 80, 80, 32, Color.white, Color.white, new Color(0, 0, 0, 0), 0);
+            // Design: left-to-right #FFA501 -> #FDC653 with a 2 px lighter rim.
+            primaryBtn = MakePanelSprite("Auth_PrimaryBtn", 190, 56, 10, Hex("#FFA501"), Hex("#FDC653"), Hex("#FFD98A"), 2, vertical: false);
+            lockSprite = MakeLockSprite("Auth_Lock");
 
             RestyleAuthPrefab();
             RevertStaleAuthOverrides();
@@ -368,38 +372,131 @@ namespace ProDomino.Dashboard.Editor
 
         private static void BuildRecovery(Transform screen)
         {
+            // Laid out like the Figma "forgot password" card. Only the widgets this flow uses are
+            // placed: the older verification-code block is already inactive and stays untouched.
             var card = Card(screen, RecoveryH);
-            Header(card, "Forgot Password?", "Please enter your email address to receive a verification code.");
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            // Left over from the old layout (separators, code-entry block).
-            foreach (var t in screen.GetComponentsInChildren<Transform>(true))
-                if (t.name.StartsWith("Dividing_Line") || t.name == "Or_Container")
-                    t.gameObject.SetActive(false);
+            var badge = GetOrCreate(card, "Recovery_Badge", () => MakeImage(card, "Recovery_Badge", badgeSprite, Color.white, Image.Type.Sliced).transform);
+            TL((RectTransform)badge, 385f, 100f, 110f, 110f);
+            var badgeImg = GetOrAdd<Image>(badge);
+            badgeImg.sprite = badgeSprite; badgeImg.type = Image.Type.Sliced;
+            badgeImg.color = new Color(0.996f, 0.580f, 0.580f, 0.2f);   // #FE9494 at 20%
+            badgeImg.pixelsPerUnitMultiplier = 1f;
+            badgeImg.raycastTarget = false;
 
-            var field = screen.GetComponentsInChildren<TMP_InputField>(true).FirstOrDefault();
-            if (field) Field(card, field.transform, "Email", "Enter Email ID", 330f);
+            var lockIcon = GetOrCreate(badge, "Icon", () => MakeImage(badge, "Icon", lockSprite, Color.white, Image.Type.Simple).transform);
+            var lrt = (RectTransform)lockIcon;
+            lrt.anchorMin = lrt.anchorMax = lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = Vector2.zero;
+            lrt.sizeDelta = new Vector2(50f, 50f);
+            var lockImg = GetOrAdd<Image>(lockIcon);
+            lockImg.sprite = lockSprite; lockImg.type = Image.Type.Simple;
+            lockImg.color = Color.white; lockImg.preserveAspect = true; lockImg.raycastTarget = false;
 
-            var buttons = screen.GetComponentsInChildren<Button>(true)
-                .Where(b => b && b.transform != FindDeep(screen, "SignIn_Close_Button")).ToArray();
-            if (buttons.Length > 0) PrimaryButton(card, buttons[0].transform, "Send Reset Link", 450f);
-            if (buttons.Length > 1)
+            Header(card, "Forgot Password?", "Please enter your email address to receive a verification code.",
+                showLogo: false, titleY: 222f, subtitleY: 270f, subtitleW: 490f);
+
+            Field(card, FindDeep(screen, "Recovery_Email_InputField (TMP)"), "Email", "Enter Email ID", 330f);
+            PrimaryButton(card, FindDeep(screen, "Recovery_Button"), "Send Reset Link", 450f);
+
+            // "Back to Login": the outlined secondary button from the design. Looked up through its
+            // container, because the inactive confirm step holds a button of the same name.
+            var backContainer = FindDeep(screen, "Recovery_BackContainer");
+            var back = FindDeep(screen, "Recovery_BackToLogin_Button")            // already moved
+                       ?? (backContainer ? backContainer.Find("Recovery_Back_Button") : null);
+            if (back)
             {
-                var back = buttons[1].transform;
+                back.name = "Recovery_BackToLogin_Button";   // the confirm step has a same-named one
                 Reparent(back, card);
                 TL((RectTransform)back, Pad, 548f, ContentW, 57f);
-                var img = GetOrAdd<Image>(back);
-                img.sprite = outlineBtn; img.type = Image.Type.Sliced; img.color = Color.white; img.pixelsPerUnitMultiplier = 1f;
-                NeutralTint(back, img);
-                foreach (var childImg in back.GetComponentsInChildren<Image>(true))
-                    if (childImg.transform != back) childImg.enabled = false;   // old inner background
-                var label = back.GetComponentInChildren<TextMeshProUGUI>(true);
-                if (label)
+                var backImg = GetOrAdd<Image>(back);
+                backImg.sprite = outlineBtn; backImg.type = Image.Type.Sliced;
+                backImg.color = Color.white; backImg.pixelsPerUnitMultiplier = 1f;
+                NeutralTint(back, backImg);
+                var backLabel = back.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (backLabel)
                 {
-                    Stretch((RectTransform)label.transform);
-                    Text(label, "Back to Login", fMedium, 24f, Accent, TextAlignmentOptions.Center);
+                    Stretch((RectTransform)backLabel.transform);
+                    Text(backLabel, "Back to Login", fMedium, 24f, Accent, TextAlignmentOptions.Center);
                 }
             }
+
+            // Replaced by the subtitle above.
+            var oldDescription = FindDeep(screen, "Recovery_Description_1_Text");
+            if (oldDescription) oldDescription.gameObject.SetActive(false);
+        }
+
+        // Measures the built screens and compares them with the Figma rects (card-local, top-left
+        // origin). Logs PASS/FAIL per element so differences can't go unnoticed.
+        [MenuItem("ProDomino/Dashboard/Verify Login + Register Against Figma")]
+        public static void VerifyAgainstDesign()
+        {
+            var expected = new (string screen, string name, float x, float y, float w, float h)[]
+            {
+                // Login (Figma 57:359, card 880x860)
+                ("SignIn_Container", "Auth_Logo",                          280, 100, 320,  40),
+                ("SignIn_Container", "SignIn_Header_Text",                  80, 180, 720,  44),
+                ("SignIn_Container", "SignIn_Description_Text",            266, 232, 348,  44),
+                ("SignIn_Container", "SignIn_Username_InputField (TMP)",    80, 340, 720,  48),
+                ("SignIn_Container", "SignIn_Password_InputField (TMP)",    80, 440, 720,  48),
+                ("SignIn_Container", "SignIn_RememberMe_Toggle",            80, 508, 260,  24),
+                ("SignIn_Container", "SignIn_Button",                       80, 572, 720,  56),
+                ("SignIn_Container", "SignIn_Google_Button",                80, 660, 350,  48),
+                ("SignIn_Container", "SignIn_Facebook_Button",             450, 660, 350,  48),
+                ("SignIn_Container", "SignUp_Mail_Button",                  80, 740, 720,  24),
+                ("SignIn_Container", "SignIn_Close_Button",                810,  20,  50,  50),
+                // Create Account (Figma 57:358, card 880x1024)
+                ("SignUp_Container", "Auth_Logo",                          280, 100, 320,  40),
+                ("SignUp_Container", "SignUp_Header_Text",                  80, 180, 720,  44),
+                ("SignUp_Container", "SignUp_Description_Text",            266, 232, 348,  44),
+                ("SignUp_Container", "SignUp_Username_InputField (TMP)",    80, 340, 720,  48),
+                ("SignUp_Container", "SignUp_Email_InputField (TMP)",       80, 440, 720,  48),
+                ("SignUp_Container", "SignUp_Password_InputField (TMP)",    80, 540, 720,  48),
+                ("SignUp_Container", "SignUp_RepeatPassword_InputField (TMP)", 80, 640, 720, 48),
+                ("SignUp_Container", "SignUp_TermAndConditions_Toggle",     80, 708, 720,  24),
+                ("SignUp_Container", "SignUp_DataTreatment_Toggle",         80, 752, 720,  24),
+                ("SignUp_Container", "SignUp_Button",                       80, 816, 720,  56),
+                ("SignUp_Container", "SignUp_BackContainer",                80, 904, 720,  24),
+                // Forgot Password (Figma 57:360, card 880x704)
+                ("Recovery_Container", "Recovery_Badge",                   385, 100, 110, 110),
+                ("Recovery_Container", "Recovery_Header_Text",              80, 222, 720,  44),
+                ("Recovery_Container", "Recovery_Description_Text",        195, 270, 490,  44),
+                ("Recovery_Container", "Recovery_Email_InputField (TMP)",   80, 362, 720,  48),
+                ("Recovery_Container", "Recovery_Button",                   80, 450, 720,  57),
+                ("Recovery_Container", "Recovery_BackToLogin_Button",       80, 548, 720,  57),
+                ("Recovery_Container", "SignIn_Close_Button",              810,  20,  50,  50),
+            };
+
+            var root = PrefabUtility.LoadPrefabContents(AuthPath);
+            try
+            {
+                int pass = 0, fail = 0;
+                foreach (var e in expected)
+                {
+                    var card = FindDeep(root.transform, e.screen);
+                    var t = card ? FindDeep(card, e.name) as RectTransform : null;
+                    if (t == null) { Debug.Log($"VERIFY: MISSING {e.screen}/{e.name}"); fail++; continue; }
+
+                    var cardRt = (RectTransform)card;
+                    var wc = new Vector3[4];
+                    t.GetWorldCorners(wc);
+                    var topLeft = cardRt.InverseTransformPoint(wc[1]);
+                    var bottomRight = cardRt.InverseTransformPoint(wc[3]);
+                    float x = topLeft.x + cardRt.rect.width / 2f;
+                    float y = cardRt.rect.height / 2f - topLeft.y;
+                    float w = bottomRight.x - topLeft.x;
+                    float h = topLeft.y - bottomRight.y;
+
+                    bool ok = Mathf.Abs(x - e.x) <= 1f && Mathf.Abs(y - e.y) <= 1f
+                              && Mathf.Abs(w - e.w) <= 1f && Mathf.Abs(h - e.h) <= 1f;
+                    if (ok) pass++; else fail++;
+                    Debug.Log($"VERIFY: {(ok ? "PASS" : "FAIL")} {e.screen}/{e.name} " +
+                              $"got=({x:0},{y:0},{w:0},{h:0}) want=({e.x:0},{e.y:0},{e.w:0},{e.h:0})");
+                }
+                Debug.Log($"VERIFY_DONE pass={pass} fail={fail}");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         private static Image signInBg(Transform auth, string screenName)
@@ -430,7 +527,7 @@ namespace ProDomino.Dashboard.Editor
             return screen;
         }
 
-        private static void Header(Transform card, string title, string subtitle)
+        private static void Header(Transform card, string title, string subtitle, bool showLogo = true, float titleY = 180f, float subtitleY = 232f, float subtitleW = 348f)
         {
             var logo = GetOrCreate(card, "Auth_Logo", () => MakeImage(card, "Auth_Logo", null, Color.white, Image.Type.Simple).transform);
             var logoImg = GetOrAdd<Image>(logo);
@@ -445,26 +542,26 @@ namespace ProDomino.Dashboard.Editor
             lrt.sizeDelta = new Vector2(320f, 40f);
             logoImg.preserveAspect = true;
             logoImg.raycastTarget = false;
+            logo.gameObject.SetActive(showLogo);
 
-            var titleT = FindDeep(card, "Title_Container") is Transform tc && tc.childCount > 0
-                ? tc.GetChild(0)
-                : null;
+            var titleT = card.GetComponentsInChildren<TextMeshProUGUI>(true)
+                             .FirstOrDefault(t => t && t.name.EndsWith("_Header_Text"))?.transform
+                         ?? (FindDeep(card, "Title_Container") is Transform tc && tc.childCount > 0 ? tc.GetChild(0) : null);
             if (titleT)
             {
                 Reparent(titleT, card);
-                TLCentered((RectTransform)titleT, 180f, ContentW, 44f);
+                TLCentered((RectTransform)titleT, titleY, ContentW, 44f);
                 Text(titleT.GetComponent<TextMeshProUGUI>(), title, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
             }
 
             var sub = card.GetComponentsInChildren<TextMeshProUGUI>(true)
                 .FirstOrDefault(t => t && t.name.EndsWith("_Description_Text"));
-            if (sub)
-            {
-                Reparent(sub.transform, card);
-                TLCentered((RectTransform)sub.transform, 232f, 560f, 44f);
-                Text(sub, subtitle, fRegular, 16f, Muted, TextAlignmentOptions.Top);
-                sub.textWrappingMode = TextWrappingModes.Normal;
-            }
+            if (!sub)
+                sub = MakeText(card, $"{card.name.Replace("_Container", "")}_Description_Text", subtitle, fRegular, 16f, Muted);
+            Reparent(sub.transform, card);
+            TLCentered((RectTransform)sub.transform, subtitleY, subtitleW, 44f);
+            Text(sub, subtitle, fRegular, 16f, Muted, TextAlignmentOptions.Top);
+            sub.textWrappingMode = TextWrappingModes.Normal;
         }
 
         private static void Close(Transform card, Transform button)
@@ -593,8 +690,11 @@ namespace ProDomino.Dashboard.Editor
             Reparent(button, card);
             TL((RectTransform)button, Pad, y, ContentW, 56f);
             var img = GetOrAdd<Image>(button);
-            img.sprite = roundedOrange; img.type = Image.Type.Sliced; img.color = Color.white; img.pixelsPerUnitMultiplier = 1f;
+            img.sprite = primaryBtn; img.type = Image.Type.Sliced; img.color = Color.white; img.pixelsPerUnitMultiplier = 1f;
             NeutralTint(button, img);
+            var shadow = GetOrAdd<Shadow>(button);      // design drop shadow under the button
+            shadow.effectColor = new Color(0.63f, 0.35f, 0f, 1f);
+            shadow.effectDistance = new Vector2(0f, -2f);
             var text = button.GetComponentInChildren<TextMeshProUGUI>(true);
             if (text)
             {
@@ -752,15 +852,17 @@ namespace ProDomino.Dashboard.Editor
             t.TryGetComponent<T>(out var c) ? c : t.gameObject.AddComponent<T>();
 
         // Rounded sprite with an optional vertical gradient and a border drawn inside the edge.
-        private static Sprite MakePanelSprite(string name, int w, int h, int radius, Color top, Color bottom, Color border, float borderWidth)
+        private static Sprite MakePanelSprite(string name, int w, int h, int radius, Color top, Color bottom, Color border, float borderWidth, bool vertical = true)
         {
             var path = $"{GeneratedDir}/{name}.png";
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
-                // texture y is bottom-up; the design gradient runs top -> bottom
-                float t = h > 1 ? 1f - (float)y / (h - 1) : 0f;
+                // texture y is bottom-up; a vertical design gradient runs top -> bottom
+                float t = vertical
+                    ? (h > 1 ? 1f - (float)y / (h - 1) : 0f)
+                    : (w > 1 ? (float)x / (w - 1) : 0f);
                 var fill = Color.Lerp(top, bottom, t);
 
                 // Distance from the shape's edge, positive inside (rounded-rect SDF).
@@ -789,6 +891,55 @@ namespace ProDomino.Dashboard.Editor
             imp.spritePixelsPerUnit = 100;
             int b = radius + 2;
             imp.spriteBorder = new Vector4(b, b, b, b);
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        // The padlock from the design: shackle arc over a rounded body, red vertical gradient.
+        // Drawn here because the Figma export of that icon is not available offline.
+        private static Sprite MakeLockSprite(string name, int size = 200)
+        {
+            var path = $"{GeneratedDir}/{name}.png";
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            float scale = size / 50f;                    // the icon is 50 x 50 design units
+            Color top = Hex("#FF0000"), bottom = Hex("#FF6E6E");
+            const float ringCx = 25f, ringCy = 13.5f, ringOuter = 13.5f, ringInner = 8.5f;
+            const float bodyX = 3f, bodyY = 16f, bodyW = 44f, bodyH = 34f, bodyR = 6f;
+
+            for (int py = 0; py < size; py++)
+            for (int px = 0; px < size; px++)
+            {
+                float x = (px + 0.5f) / scale;
+                float y = 50f - (py + 0.5f) / scale;     // texture is bottom-up, the design top-down
+
+                // Shackle: the part of the ring above the body (its legs tuck in behind it).
+                float ring = -99f;
+                if (y <= bodyY + 2f)
+                {
+                    float d = Vector2.Distance(new Vector2(x, y), new Vector2(ringCx, ringCy));
+                    ring = Mathf.Min(ringOuter - d, d - ringInner);
+                }
+
+                // Body: rounded rectangle, positive inside.
+                float body = bodyR - Distance(x - bodyX, y - bodyY, (int)bodyW, (int)bodyH, bodyR);
+
+                float sd = Mathf.Max(ring, body);
+                var c = Color.Lerp(top, bottom, Mathf.Clamp01(y / 50f));
+                c.a = Mathf.Clamp01(sd * scale + 0.5f);
+                tex.SetPixel(px, py, c);
+            }
+            tex.Apply();
+            WritePng(path, tex);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.textureType = TextureImporterType.Sprite;
+            imp.spriteImportMode = SpriteImportMode.Single;
+            imp.mipmapEnabled = false;
+            imp.alphaIsTransparency = true;
+            imp.filterMode = FilterMode.Bilinear;
+            imp.wrapMode = TextureWrapMode.Clamp;
+            imp.textureCompression = TextureImporterCompression.Uncompressed;
+            imp.spritePixelsPerUnit = 100;
+            imp.spriteBorder = Vector4.zero;
             imp.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
