@@ -326,6 +326,46 @@ namespace ProDomino.Dashboard.Editor
             cg.blocksRaycasts = active;
         }
 
+        // Every screen the canvas holds, with the scripts that own it: the inventory the UI
+        // redesign plan is built from.
+        public static void LogScreenInventory()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab");
+            try
+            {
+                foreach (var t in root.transform.GetComponentsInChildren<Transform>(true))
+                {
+                    var parent = t.parent ? t.parent.name : "-";
+                    bool isPanel = parent is "InnerScreen" or "Static_PopUps" or "MiddleScreen_Scalable";
+                    bool isRoot = t.parent == root.transform;
+                    if (!isPanel && !isRoot) continue;
+
+                    var source = PrefabUtility.IsPartOfPrefabInstance(t.gameObject)
+                        ? PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject)
+                        : "(in canvas)";
+                    var rect = t as RectTransform;
+                    Debug.Log($"INV-SRC: {t.name} rect={(rect ? rect.rect.size.ToString("0") : "-")} source={source}");
+
+                    var scripts = t.GetComponents<MonoBehaviour>().Where(m => m).Select(m => m.GetType().Name).ToArray();
+                    var nav = t.GetComponents<MonoBehaviour>().Where(m => m)
+                        .SelectMany(m => m.GetType().GetInterfaces())
+                        .Any(i => i.Name == "INavigationPanel");
+                    Debug.Log($"INV: [{parent}] {t.name} active={t.gameObject.activeSelf} children={t.childCount} " +
+                              $"navPanel={nav} scripts={(scripts.Length == 0 ? "-" : string.Join(",", scripts))}");
+                }
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+
+            var scene = EditorSceneManager.OpenScene("Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity", OpenSceneMode.Single);
+            foreach (var go in scene.GetRootGameObjects())
+            {
+                var canvases = go.GetComponentsInChildren<UnityEngine.Canvas>(true).Length;
+                Debug.Log($"INV: [scene-root] {go.name} active={go.activeSelf} canvases={canvases} " +
+                          $"scripts={string.Join(",", go.GetComponents<MonoBehaviour>().Where(m => m).Select(m => m.GetType().Name))}");
+            }
+            Debug.Log("DIAG_DONE");
+        }
+
         // Any UI object collapsed by a zero scale: it stays "open" in code but draws nothing.
         public static void LogZeroScales()
         {
