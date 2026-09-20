@@ -223,10 +223,29 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
+        // The same screens in window sizes the design does not fit into, and with every validation
+        // message showing, which is where the old fixed layout broke.
+        [MenuItem("ProDomino/Dashboard/Render Auth At Small Sizes")]
+        public static void RenderAuthResponsive()
+        {
+            var outDir = Environment.GetEnvironmentVariable("PD_RENDER_DIR");
+            if (string.IsNullOrEmpty(outDir)) outDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pd_renders");
+            System.IO.Directory.CreateDirectory(outDir);
+
+            RenderStandalone("SignUp_Container", System.IO.Path.Combine(outDir, "auth_signup_messages.png"), 1920, 1080, true);
+            foreach (var size in new[] { (1280, 720), (940, 600), (600, 900) })
+            {
+                RenderStandalone("SignUp_Container",
+                    System.IO.Path.Combine(outDir, $"auth_signup_{size.Item1}x{size.Item2}.png"), size.Item1, size.Item2);
+                RenderStandalone("SignIn_Container",
+                    System.IO.Path.Combine(outDir, $"auth_signin_{size.Item1}x{size.Item2}.png"), size.Item1, size.Item2);
+            }
+        }
+
         // The pop-up sits on its own nested Canvas, which an off-screen render of the whole game
         // canvas does not draw. Rendering the prefab on its own (its Canvas becomes the root one)
         // shows exactly what the screen looks like.
-        private static void RenderStandalone(string screenName, string outPath)
+        private static void RenderStandalone(string screenName, string outPath, int width = 1920, int height = 1080, bool withMessages = false)
         {
             UnityEditor.SceneManagement.EditorSceneManager.NewScene(
                 UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
@@ -237,7 +256,7 @@ namespace ProDomino.Dashboard.Editor
             cam.orthographic = true;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 100f;
-            var rt = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
+            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
             rt.Create();
             cam.targetTexture = rt;
 
@@ -269,16 +288,34 @@ namespace ProDomino.Dashboard.Editor
                 if (s.targetGraphic && s.targetGraphic.canvasRenderer) s.targetGraphic.canvasRenderer.SetColor(Color.white);
             }
 
-            for (int i = 0; i < 3; i++)
+            // The validation messages, shown as the app would fill them in, to check that they push
+            // the rest of the form down instead of covering it.
+            if (withMessages)
+                foreach (var mb in inst.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    if (!mb || mb.GetType().Name != "HideWhenEmpty") continue;
+                    if (new SerializedObject(mb).FindProperty("target")?.objectReferenceValue is not TextMeshProUGUI text) continue;
+                    text.text = mb.name.Contains("_Password_")
+                        ? "* Password must contain at least 1 lowercase letter\n* Password must contain at least 1 uppercase letter\n* Password must contain at least 1 number\n* Password must contain at least 1 symbol"
+                        : "This field is too short";
+                    text.gameObject.SetActive(true);
+                }
+
+            for (int i = 0; i < 4; i++)
             {
+                foreach (var g in inst.GetComponentsInChildren<LayoutGroup>(true))
+                    LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)g.transform);
+                foreach (var fitter in inst.GetComponentsInChildren<MonoBehaviour>(true))
+                    if (fitter && fitter.GetType().Name == "FitInArea")
+                        fitter.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
                 Canvas.ForceUpdateCanvases();
                 cam.Render();
             }
 
             var prev = RenderTexture.active;
             RenderTexture.active = rt;
-            var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
+            var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             tex.Apply();
             RenderTexture.active = prev;
             System.IO.File.WriteAllBytes(outPath, tex.EncodeToPNG());
@@ -350,13 +387,11 @@ namespace ProDomino.Dashboard.Editor
                 // so it has to fill the screen area before anything can be centred in it.
                 Stretch((RectTransform)root.transform);
 
+                // The container fills the screen area and each card centres inside it, so a card can
+                // scale itself down when the window is smaller than the design size.
                 var container = Need(root.transform, "Auth_Container");
-                // The popup is a fixed 880-wide card centred on screen.
-                var crt = (RectTransform)container;
-                crt.anchorMin = crt.anchorMax = new Vector2(0.5f, 0.5f);
-                crt.pivot = new Vector2(0.5f, 0.5f);
-                crt.anchoredPosition = Vector2.zero;
-                crt.sizeDelta = new Vector2(PanelW, SignUpH);
+                KillLayout(container);
+                Stretch((RectTransform)container);
 
                 var dim = root.transform.Find("Panel")?.GetComponent<Image>();
                 if (dim) dim.color = new Color(0f, 0f, 0f, 0.72f);
@@ -375,66 +410,91 @@ namespace ProDomino.Dashboard.Editor
 
         private static void BuildSignIn(Transform screen)
         {
-            var card = Card(screen, SignInH);
-            Header(card, "Welcome Back!", "Login to continue playing ProDomino with friends & random opponents.");
+            var card = Card(screen);
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            Field(card, FindDeep(screen, "SignIn_Username_InputField (TMP)"), "Email", "Enter Email ID", 308f);
-            Field(card, FindDeep(screen, "SignIn_Password_InputField (TMP)"), "Password", "Enter Password", 408f);
-            Feedback(card, FindDeep(screen, "SignIn_Feedback"), 492f);
+            // The design's frame tree, so a validation message pushes what follows down instead of
+            // being written over it, and the card grows with its content.
+            var content = Column(card, "Auth_Content", 36f);
+            var header = Column(content, "Auth_Header", 40f);
+            Logo(header, true);
+            var titles = Column(header, "Auth_Titles", 8f);
+            Title(card, titles, "Welcome Back!");
+            Subtitle(card, titles, "Login to continue playing ProDomino with friends & random opponents.", 348f, 40f);
 
-            var remember = FindDeep(screen, "SignIn_RememberMe_Toggle");
-            CheckRow(card, remember, "Remember Me", 508f, 260f, Color.white);
+            var form = Column(content, "Auth_Form", 40f);
+            var fields = Column(form, "Auth_Fields", 20f);
+            Field(fields, FindDeep(screen, "SignIn_Username_InputField (TMP)"), "Email", "Enter Email ID",
+                FindDeep(screen, "SignIn_Feedback"));
+            Field(fields, FindDeep(screen, "SignIn_Password_InputField (TMP)"), "Password", "Enter Password", null);
+
+            var options = Row(fields, "Auth_Options", 24f);
+            CheckRow(options, FindDeep(screen, "SignIn_RememberMe_Toggle"), "Remember Me", 0f, 260f, Color.white);
             var forgot = FindDeep(screen, "SignIn_ForgotPassword_Button");
             if (forgot)
             {
-                Reparent(forgot, card);
-                TL((RectTransform)forgot, Pad + ContentW - 240f, 508f, 240f, 24f);
+                Place(options, forgot, ContentW - 240f, 240f, 24f);
                 Transparent(forgot);
                 var t = forgot.GetComponentInChildren<TextMeshProUGUI>(true);
                 Text(t, "Forgot Password?", fMedium, 16f, Accent, TextAlignmentOptions.MidlineRight);
             }
 
-            PrimaryButton(card, FindDeep(screen, "SignIn_Button"), "Log In", 572f);
-            Social(card, FindDeep(screen, "SignIn_Google_Button"), "Login with Google", Pad, 660f);
-            Social(card, FindDeep(screen, "SignIn_Facebook_Button"), "Login with Facebook", Pad + 370f, 660f);
-            LinkRow(card, FindDeep(screen, "SignUp_Mail_Button"), "Don't have an account? ", "Create an Account", 740f);
+            var actions = Column(form, "Auth_Actions", 32f);
+            PrimaryButton(actions, FindDeep(screen, "SignIn_Button"), "Log In");
+            var socials = Row(actions, "Auth_Socials", 48f);
+            Social(socials, FindDeep(screen, "SignIn_Google_Button"), "Login with Google", 0f);
+            Social(socials, FindDeep(screen, "SignIn_Facebook_Button"), "Login with Facebook", 370f);
+            LinkRow(actions, FindDeep(screen, "SignUp_Mail_Button"), "Don't have an account? ", "Create an Account");
 
             // Not part of the new design.
             Hide(screen, "Or_Container", "SignIn_Description_2_Text", "SignIn_Apple_Button");
+            TidyCard(card);
         }
 
         private static void BuildSignUp(Transform screen)
         {
-            var card = Card(screen, SignUpH);
-            Header(card, "Create your Account", "Start playing ProDomino with friends & random opponents.");
+            var card = Card(screen);
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            Field(card, FindDeep(screen, "SignUp_Username_InputField (TMP)"), "Username", "Enter Username", 308f);
-            Feedback(card, FindDeep(screen, "SignUp_Username_Feedback"), 392f);
-            Field(card, FindDeep(screen, "SignUp_Email_InputField (TMP)"), "Email", "Enter Email ID", 408f);
-            Feedback(card, FindDeep(screen, "SignUp_Email_Feedback"), 492f);
-            Field(card, FindDeep(screen, "SignUp_Password_InputField (TMP)"), "Password", "Enter Password", 508f);
-            Feedback(card, FindDeep(screen, "SignIn_Feedback"), 592f);
-            Field(card, FindDeep(screen, "SignUp_RepeatPassword_InputField (TMP)"), "Confirm Password", "Enter Password", 608f);
-            Feedback(card, FindDeep(screen, "SignUp_RepeatPassword_Feedback"), 692f);
+            var content = Column(card, "Auth_Content", 36f);
+            var header = Column(content, "Auth_Header", 40f);
+            Logo(header, true);
+            var titles = Column(header, "Auth_Titles", 8f);
+            Title(card, titles, "Create your Account");
+            Subtitle(card, titles, "Start playing ProDomino with friends & random opponents.", 348f, 40f);
 
-            CheckRow(card, FindDeep(screen, "SignUp_TermAndConditions_Toggle"), null, 708f, ContentW, Muted);
-            CheckRow(card, FindDeep(screen, "SignUp_DataTreatment_Toggle"), null, 752f, ContentW, Muted);
+            var form = Column(content, "Auth_Form", 40f);
+            var fields = Column(form, "Auth_Fields", 20f);
+            Field(fields, FindDeep(screen, "SignUp_Username_InputField (TMP)"), "Username", "Enter Username",
+                FindDeep(screen, "SignUp_Username_Feedback"));
+            Field(fields, FindDeep(screen, "SignUp_Email_InputField (TMP)"), "Email", "Enter Email ID",
+                FindDeep(screen, "SignUp_Email_Feedback"));
+            Field(fields, FindDeep(screen, "SignUp_Password_InputField (TMP)"), "Password", "Enter Password",
+                FindDeep(screen, "SignUp_Password_Feedback"));
+            Field(fields, FindDeep(screen, "SignUp_RepeatPassword_InputField (TMP)"), "Confirm Password", "Enter Password",
+                FindDeep(screen, "SignUp_RepeatPassword_Feedback"));
 
-            PrimaryButton(card, FindDeep(screen, "SignUp_Button"), "Create an Account", 816f);
-            LinkRow(card, FindDeep(screen, "SignUp_BackContainer"), "Already have an account? ", "Login", 904f);
+            CheckRow(fields, FindDeep(screen, "SignUp_TermAndConditions_Toggle"), null, 0f, ContentW, Muted);
+            CheckRow(fields, FindDeep(screen, "SignUp_DataTreatment_Toggle"), null, 0f, ContentW, Muted);
+
+            var actions = Column(form, "Auth_Actions", 32f);
+            PrimaryButton(actions, FindDeep(screen, "SignUp_Button"), "Create an Account");
+            LinkRow(actions, FindDeep(screen, "SignUp_BackContainer"), "Already have an account? ", "Login");
+            TidyCard(card);
         }
 
         private static void BuildRecovery(Transform screen)
         {
             // Laid out like the Figma "forgot password" card. Only the widgets this flow uses are
             // placed: the older verification-code block is already inactive and stays untouched.
-            var card = Card(screen, RecoveryH);
+            var card = Card(screen);
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            var badge = GetOrCreate(card, "Recovery_Badge", () => MakeImage(card, "Recovery_Badge", badgeSprite, Color.white, Image.Type.Sliced).transform);
-            TL((RectTransform)badge, 385f, 100f, 110f, 110f);
+            var content = Column(card, "Auth_Content", 40f);
+            var header = Column(content, "Auth_Header", 12f);
+
+            var badge = GetOrCreate(header, "Recovery_Badge", () => MakeImage(header, "Recovery_Badge", badgeSprite, Color.white, Image.Type.Sliced).transform);
+            Place(header, badge, 0f, 110f, 110f);
             var badgeImg = GetOrAdd<Image>(badge);
             badgeImg.sprite = badgeSprite; badgeImg.type = Image.Type.Sliced;
             badgeImg.color = new Color(0.996f, 0.580f, 0.580f, 0.2f);   // #FE9494 at 20%
@@ -450,11 +510,13 @@ namespace ProDomino.Dashboard.Editor
             lockImg.sprite = lockSprite; lockImg.type = Image.Type.Simple;
             lockImg.color = Color.white; lockImg.preserveAspect = true; lockImg.raycastTarget = false;
 
-            Header(card, "Forgot Password?", "Please enter your email address to receive a verification code.",
-                showLogo: false, titleY: 222f, subtitleY: 270f, subtitleW: 490f);
+            var titles = Column(header, "Auth_Titles", 4f);
+            Title(card, titles, "Forgot Password?");
+            Subtitle(card, titles, "Please enter your email address to receive a verification code.", 490f, 20f);
 
-            Field(card, FindDeep(screen, "Recovery_Email_InputField (TMP)"), "Email", "Enter Email ID", 330f);
-            PrimaryButton(card, FindDeep(screen, "Recovery_Button"), "Send Reset Link", 450f);
+            var form = Column(content, "Auth_Form", 40f);
+            Field(form, FindDeep(screen, "Recovery_Email_InputField (TMP)"), "Email", "Enter Email ID", null);
+            PrimaryButton(form, FindDeep(screen, "Recovery_Button"), "Send Reset Link", 57f);
 
             // "Back to Login": the outlined secondary button from the design. Looked up through its
             // container, because the inactive confirm step holds a button of the same name.
@@ -464,8 +526,7 @@ namespace ProDomino.Dashboard.Editor
             if (back)
             {
                 back.name = "Recovery_BackToLogin_Button";   // the confirm step has a same-named one
-                Reparent(back, card);
-                TL((RectTransform)back, Pad, 548f, ContentW, 57f);
+                Place(form, back, 0f, ContentW, 57f);
                 var backImg = GetOrAdd<Image>(back);
                 backImg.sprite = outlineBtn; backImg.type = Image.Type.Sliced;
                 backImg.color = Color.white; backImg.pixelsPerUnitMultiplier = 1f;
@@ -481,6 +542,7 @@ namespace ProDomino.Dashboard.Editor
             // Replaced by the subtitle above.
             var oldDescription = FindDeep(screen, "Recovery_Description_1_Text");
             if (oldDescription) oldDescription.gameObject.SetActive(false);
+            TidyCard(card);
         }
 
         // Measures the built screens and compares them with the Figma rects (card-local, top-left
@@ -493,7 +555,7 @@ namespace ProDomino.Dashboard.Editor
                 // Login (Figma 57:359, card 880x860)
                 ("SignIn_Container", "Auth_Logo",                          280, 100, 320,  40),
                 ("SignIn_Container", "SignIn_Header_Text",                  80, 180, 720,  44),
-                ("SignIn_Container", "SignIn_Description_Text",            266, 232, 348,  44),
+                ("SignIn_Container", "SignIn_Description_Text",            266, 232, 348,  40),
                 ("SignIn_Container", "SignIn_Username_InputField (TMP)",    80, 340, 720,  48),
                 ("SignIn_Container", "SignIn_Password_InputField (TMP)",    80, 440, 720,  48),
                 ("SignIn_Container", "SignIn_RememberMe_Toggle",            80, 508, 260,  24),
@@ -505,7 +567,7 @@ namespace ProDomino.Dashboard.Editor
                 // Create Account (Figma 57:358, card 880x1024)
                 ("SignUp_Container", "Auth_Logo",                          280, 100, 320,  40),
                 ("SignUp_Container", "SignUp_Header_Text",                  80, 180, 720,  44),
-                ("SignUp_Container", "SignUp_Description_Text",            266, 232, 348,  44),
+                ("SignUp_Container", "SignUp_Description_Text",            266, 232, 348,  40),
                 ("SignUp_Container", "SignUp_Username_InputField (TMP)",    80, 340, 720,  48),
                 ("SignUp_Container", "SignUp_Email_InputField (TMP)",       80, 440, 720,  48),
                 ("SignUp_Container", "SignUp_Password_InputField (TMP)",    80, 540, 720,  48),
@@ -517,7 +579,7 @@ namespace ProDomino.Dashboard.Editor
                 // Forgot Password (Figma 57:360, card 880x704)
                 ("Recovery_Container", "Recovery_Badge",                   385, 100, 110, 110),
                 ("Recovery_Container", "Recovery_Header_Text",              80, 222, 720,  44),
-                ("Recovery_Container", "Recovery_Description_Text",        195, 270, 490,  44),
+                ("Recovery_Container", "Recovery_Description_Text",        195, 270, 490,  20),
                 ("Recovery_Container", "Recovery_Email_InputField (TMP)",   80, 362, 720,  48),
                 ("Recovery_Container", "Recovery_Button",                   80, 450, 720,  57),
                 ("Recovery_Container", "Recovery_BackToLogin_Button",       80, 548, 720,  57),
@@ -527,6 +589,12 @@ namespace ProDomino.Dashboard.Editor
             var root = PrefabUtility.LoadPrefabContents(AuthPath);
             try
             {
+                // The cards are laid out by layout groups now, so the sizes have to be computed
+                // before anything can be measured.
+                for (int pass2 = 0; pass2 < 3; pass2++)
+                    foreach (var g in root.GetComponentsInChildren<LayoutGroup>(true))
+                        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)g.transform);
+
                 int pass = 0, fail = 0;
                 foreach (var e in expected)
                 {
@@ -563,15 +631,31 @@ namespace ProDomino.Dashboard.Editor
 
         // ------------------------------------------------------------------ pieces
 
-        // Screen card: fixed size, gradient background, no layout groups driving children.
-        private static Transform Card(Transform screen, float height)
+        // Screen card: fixed width, height from its content, and scaled down when the screen is too
+        // small for it. The old layout groups are switched off first so only this one drives things.
+        private static Transform Card(Transform screen)
         {
             KillLayout(screen);
             var rt = (RectTransform)screen;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(PanelW, height);
+            rt.sizeDelta = new Vector2(PanelW, rt.sizeDelta.y);
+
+            var vlg = GetOrAdd<VerticalLayoutGroup>(screen);
+            vlg.enabled = true;
+            vlg.padding = new RectOffset((int)Pad, (int)Pad, 100, 100);   // the design's card padding
+            vlg.spacing = 0f;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = false; vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = false; vlg.childForceExpandHeight = false;
+
+            var csf = GetOrAdd<ContentSizeFitter>(screen);
+            csf.enabled = true;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            AddShared(screen, "ProDomino.Shared.FitInArea");   // shrinks instead of being clipped
 
             var bg = screen.GetComponentsInChildren<Image>(true).FirstOrDefault(i => i.transform.parent == screen && i.name.EndsWith("_Background"));
             if (bg)
@@ -579,44 +663,124 @@ namespace ProDomino.Dashboard.Editor
                 Stretch((RectTransform)bg.transform);
                 bg.sprite = panelBg; bg.type = Image.Type.Sliced; bg.color = Color.white; bg.pixelsPerUnitMultiplier = 1f;
                 bg.transform.SetAsFirstSibling();
+                GetOrAdd<LayoutElement>(bg.transform).ignoreLayout = true;
             }
             return screen;
         }
 
-        private static void Header(Transform card, string title, string subtitle, bool showLogo = true, float titleY = 180f, float subtitleY = 232f, float subtitleW = 348f)
+        // A stacked group with the design's gap. Sizes itself from its children, so a longer
+        // message inside one row makes the group (and the card) taller.
+        private static Transform Column(Transform parent, string name, float spacing)
         {
-            var logo = GetOrCreate(card, "Auth_Logo", () => MakeImage(card, "Auth_Logo", null, Color.white, Image.Type.Simple).transform);
-            var logoImg = GetOrAdd<Image>(logo);
-            logoImg.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);
-            logoImg.color = Color.white;
-            logoImg.type = Image.Type.Simple;
-            if (!logoImg.sprite) Debug.LogWarning($"AUTH: logo sprite not found at {LogoPath}");
-            var lrt = (RectTransform)logo;
-            lrt.anchorMin = lrt.anchorMax = new Vector2(0.5f, 1f);
-            lrt.pivot = new Vector2(0.5f, 1f);
-            lrt.anchoredPosition = new Vector2(0f, -100f);
-            lrt.sizeDelta = new Vector2(320f, 40f);
-            logoImg.preserveAspect = true;
-            logoImg.raycastTarget = false;
-            logo.gameObject.SetActive(showLogo);
+            var t = GetOrCreate(parent, name, () => new GameObject(name, typeof(RectTransform)).transform);
+            Reparent(t, parent);
+            var rt = (RectTransform)t;
+            rt.sizeDelta = new Vector2(ContentW, rt.sizeDelta.y);
 
+            var vlg = GetOrAdd<VerticalLayoutGroup>(t);
+            vlg.enabled = true;
+            vlg.padding = new RectOffset(0, 0, 0, 0);
+            vlg.spacing = spacing;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = false; vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = false; vlg.childForceExpandHeight = false;
+
+            var csf = GetOrAdd<ContentSizeFitter>(t);
+            csf.enabled = true;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            return t;
+        }
+
+        // A fixed-height band inside a column, holding elements side by side at set offsets.
+        private static Transform Row(Transform parent, string name, float height)
+        {
+            var t = GetOrCreate(parent, name, () => new GameObject(name, typeof(RectTransform)).transform);
+            Reparent(t, parent);
+            foreach (var layout in t.GetComponents<LayoutGroup>()) layout.enabled = false;
+            var csf = t.GetComponent<ContentSizeFitter>();
+            if (csf) csf.enabled = false;
+            Slot(t, ContentW, height);
+            return t;
+        }
+
+        // Stacked in a column, or placed at a fixed offset inside a row.
+        private static void Place(Transform parent, Transform t, float x, float w, float h)
+        {
+            if (!t) return;
+            Reparent(t, parent);
+            if (parent.TryGetComponent<VerticalLayoutGroup>(out var vlg) && vlg.enabled) Slot(t, w, h);
+            else TL((RectTransform)t, x, 0f, w, h);
+        }
+
+        // One row of a column: the layout positions it, this only fixes its size.
+        private static void Slot(Transform t, float w, float h)
+        {
+            var rt = (RectTransform)t;
+            rt.sizeDelta = new Vector2(w, h);
+            if (t.TryGetComponent<LayoutElement>(out var le))
+            {
+                le.ignoreLayout = false;
+                le.preferredWidth = w; le.preferredHeight = h;
+                le.minWidth = -1f; le.minHeight = -1f;
+                le.flexibleWidth = -1f; le.flexibleHeight = -1f;
+            }
+        }
+
+        // Runtime helpers live in another assembly, so they are attached by name (as the header
+        // restyler does for its click forwarder).
+        private static Component AddShared(Transform t, string fullName)
+        {
+            var type = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType(fullName)).FirstOrDefault(x => x != null);
+            if (type == null) { Debug.LogWarning($"AUTH: {fullName} not found (compile error?)."); return null; }
+            return t.TryGetComponent(type, out var existing) ? existing : t.gameObject.AddComponent(type);
+        }
+
+        // The builders move what they need out of the old containers, which are left empty. They
+        // keep their own placement and are only taken out of the new layout, so nothing that was
+        // not moved (a close button, say) can disappear.
+        private static void TidyCard(Transform card)
+        {
+            foreach (Transform child in card)
+            {
+                if (child.name == "Auth_Content") continue;
+                GetOrAdd<LayoutElement>(child).ignoreLayout = true;
+            }
+        }
+
+        private static void Logo(Transform parent, bool show)
+        {
+            var logo = GetOrCreate(parent, "Auth_Logo", () => MakeImage(parent, "Auth_Logo", null, Color.white, Image.Type.Simple).transform);
+            Place(parent, logo, 0f, 320f, 40f);
+            var img = GetOrAdd<Image>(logo);
+            img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);
+            img.color = Color.white;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            if (!img.sprite) Debug.LogWarning($"AUTH: logo sprite not found at {LogoPath}");
+            logo.gameObject.SetActive(show);
+        }
+
+        private static void Title(Transform card, Transform parent, string text)
+        {
             var titleT = card.GetComponentsInChildren<TextMeshProUGUI>(true)
                              .FirstOrDefault(t => t && t.name.EndsWith("_Header_Text"))?.transform
                          ?? (FindDeep(card, "Title_Container") is Transform tc && tc.childCount > 0 ? tc.GetChild(0) : null);
-            if (titleT)
-            {
-                Reparent(titleT, card);
-                TLCentered((RectTransform)titleT, titleY, ContentW, 44f);
-                Text(titleT.GetComponent<TextMeshProUGUI>(), title, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
-            }
+            if (!titleT) return;
+            Place(parent, titleT, 0f, ContentW, 44f);
+            Text(titleT.GetComponent<TextMeshProUGUI>(), text, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
+        }
 
+        private static void Subtitle(Transform card, Transform parent, string text, float width, float height)
+        {
             var sub = card.GetComponentsInChildren<TextMeshProUGUI>(true)
                 .FirstOrDefault(t => t && t.name.EndsWith("_Description_Text"));
             if (!sub)
-                sub = MakeText(card, $"{card.name.Replace("_Container", "")}_Description_Text", subtitle, fRegular, 16f, Muted);
-            Reparent(sub.transform, card);
-            TLCentered((RectTransform)sub.transform, subtitleY, subtitleW, 44f);
-            Text(sub, subtitle, fRegular, 16f, Muted, TextAlignmentOptions.Top);
+                sub = MakeText(parent, $"{card.name.Replace("_Container", "")}_Description_Text", text, fRegular, 16f, Muted);
+            Place(parent, sub.transform, 0f, width, height);
+            Text(sub, text, fRegular, 16f, Muted, TextAlignmentOptions.Top);
             sub.textWrappingMode = TextWrappingModes.Normal;
         }
 
@@ -624,6 +788,7 @@ namespace ProDomino.Dashboard.Editor
         {
             if (!button) return;
             Reparent(button, card);
+            GetOrAdd<LayoutElement>(button).ignoreLayout = true;   // pinned to the corner, not stacked
             var rt = (RectTransform)button;
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
@@ -647,18 +812,22 @@ namespace ProDomino.Dashboard.Editor
         }
 
         // Label above a 48 px input field, both spanning the content column.
-        private static void Field(Transform card, Transform field, string label, string placeholder, float y)
+        // Label, input and (when the app fills it in) a validation message, stacked as one group so
+        // a message makes the group taller rather than covering the field below it.
+        private static void Field(Transform parent, Transform field, string label, string placeholder, Transform feedback)
         {
             if (!field) return;
-            Reparent(field, card);
-            TL((RectTransform)field, Pad, y + 32f, ContentW, 48f);
+            var group = Column(parent, $"{field.name}_Group", 12f);
 
+            var labelT = GetOrCreate(group, $"{field.name}_Label", () => MakeText(group, $"{field.name}_Label", label, fMedium, 16f, LabelColor).transform);
+            Place(group, labelT, 0f, ContentW, 20f);
+            Text(labelT.GetComponent<TextMeshProUGUI>(), label, fMedium, 16f, LabelColor, TextAlignmentOptions.MidlineLeft);
+
+            Place(group, field, 0f, ContentW, 48f);
             var bg = field.GetComponent<Image>();
             if (bg) { bg.sprite = fieldBg; bg.type = Image.Type.Sliced; bg.color = Color.white; bg.pixelsPerUnitMultiplier = 1f; }
 
-            var labelT = GetOrCreate(card, $"{field.name}_Label", () => MakeText(card, $"{field.name}_Label", label, fMedium, 16f, LabelColor).transform);
-            TL((RectTransform)labelT, Pad, y, ContentW, 20f);
-            Text(labelT.GetComponent<TextMeshProUGUI>(), label, fMedium, 16f, LabelColor, TextAlignmentOptions.MidlineLeft);
+            if (feedback) Feedback(group, feedback);
 
             var area = field.Find("Text Area");
             if (area)
@@ -685,22 +854,47 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
-        private static void Feedback(Transform card, Transform feedback, float y)
+        // Validation message under a field: as tall as its text, and out of the layout while empty.
+        // The message text can sit on a child of the object the app references, so the text object
+        // itself is what joins the layout.
+        private static void Feedback(Transform group, Transform feedback)
         {
             if (!feedback) return;
-            Reparent(feedback, card);
-            TL((RectTransform)feedback, Pad, y, ContentW, 16f);
+            var t = feedback.GetComponent<TextMeshProUGUI>() ?? feedback.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (!t) { feedback.gameObject.SetActive(false); return; }
+
+            var line = t.transform;
+            Reparent(line, group);
+            ((RectTransform)line).sizeDelta = new Vector2(ContentW, 16f);
+
             // Cleared here: validation fills these in at runtime, the prefab held placeholder text.
-            var t = feedback.GetComponent<TextMeshProUGUI>();
-            if (t) Text(t, string.Empty, fRegular, 13f, Danger, TextAlignmentOptions.MidlineLeft);
+            Text(t, string.Empty, fRegular, 14f, Danger, TextAlignmentOptions.TopLeft);
+            t.textWrappingMode = TextWrappingModes.Normal;
+            t.overflowMode = TextOverflowModes.Overflow;
+
+            var csf = GetOrAdd<ContentSizeFitter>(line);
+            csf.enabled = true;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // No gap while there is nothing to say.
+            var hider = AddShared(group, "ProDomino.Shared.HideWhenEmpty");
+            if (hider)
+            {
+                var so = new SerializedObject(hider);
+                so.FindProperty("target").objectReferenceValue = t;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            if (feedback != line) feedback.gameObject.SetActive(false);   // the emptied container
+            line.gameObject.SetActive(false);
         }
 
         // 24x24 check box plus its label.
-        private static void CheckRow(Transform card, Transform toggle, string label, float y, float width, Color labelColor)
+        private static void CheckRow(Transform parent, Transform toggle, string label, float x, float width, Color labelColor)
         {
             if (!toggle) return;
-            Reparent(toggle, card);
-            TL((RectTransform)toggle, Pad, y, width, 24f);
+            Place(parent, toggle, x, width, 24f);
 
             var box = toggle.Find("Background");
             if (box)
@@ -740,11 +934,10 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
-        private static void PrimaryButton(Transform card, Transform button, string label, float y)
+        private static void PrimaryButton(Transform parent, Transform button, string label, float height = 56f)
         {
             if (!button) return;
-            Reparent(button, card);
-            TL((RectTransform)button, Pad, y, ContentW, 56f);
+            Place(parent, button, 0f, ContentW, height);
             var img = GetOrAdd<Image>(button);
             img.sprite = primaryBtn; img.type = Image.Type.Sliced; img.color = Color.white; img.pixelsPerUnitMultiplier = 1f;
             NeutralTint(button, img);
@@ -760,11 +953,10 @@ namespace ProDomino.Dashboard.Editor
         }
 
         // Google / Facebook button: icon + label centred as a group.
-        private static void Social(Transform card, Transform button, string label, float x, float y)
+        private static void Social(Transform row, Transform button, string label, float x)
         {
             if (!button) return;
-            Reparent(button, card);
-            TL((RectTransform)button, x, y, 350f, 48f);
+            Place(row, button, x, 350f, 48f);
             var img = GetOrAdd<Image>(button);
             img.sprite = socialBg; img.type = Image.Type.Sliced; img.color = Color.white; img.pixelsPerUnitMultiplier = 1f;
             NeutralTint(button, img);
@@ -801,11 +993,10 @@ namespace ProDomino.Dashboard.Editor
         }
 
         // Footer line: "Don't have an account? Create an Account" (the CTA part is highlighted).
-        private static void LinkRow(Transform card, Transform button, string prefix, string cta, float y)
+        private static void LinkRow(Transform parent, Transform button, string prefix, string cta)
         {
             if (!button) return;
-            Reparent(button, card);
-            TL((RectTransform)button, Pad, y, ContentW, 24f);
+            Place(parent, button, 0f, ContentW, 24f);
             Transparent(button);
             foreach (var child in button.GetComponentsInChildren<Image>(true))
                 if (child.transform != button) child.enabled = false;
