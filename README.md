@@ -109,6 +109,78 @@ checked without entering Play mode.
 
 ---
 
+## WebGL build
+
+The project targets **Web (WebGL)**. The relevant settings are already saved in
+`ProjectSettings` — don't change them per build unless you mean to:
+
+| Setting | Value |
+|---|---|
+| Template | `WebGL_ProDomino_Template` (in `Assets/WebGLTemplates/`) |
+| Compression | Brotli, with decompression fallback **enabled** |
+| Memory | 32 MB initial, 2048 MB max, geometric growth |
+| Exceptions | Full, without stacktrace |
+| Data caching | Enabled (build files cached in the browser) |
+| Linker target | WebAssembly, threads off |
+| Scripting defines (WebGL) | `DOTWEEN;PAYPAL_IAP` |
+
+### Build from the Editor
+
+1. **File → Build Settings** → platform **Web** → *Switch Platform* (first time only; it takes a while).
+2. Check the scene list — `Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity`
+   must be enabled and is the scene the game boots into.
+3. **Build** (or *Build And Run*) and pick an output folder, e.g. `Builds/WebGL/`.
+4. `Assets/Editor/WebGLPostBuild.cs` runs automatically after the build and copies
+   `firebase-messaging-sw.js` next to `index.html`. Push notifications don't work without it,
+   so check the console for the "copied" log line.
+
+The output folder contains `index.html`, `Build/` (the `.br` compressed engine and data files)
+`TemplateData/` and `firebase-messaging-sw.js`. Builds are **not** committed (`.gitignore`
+excludes `Build/` and `Builds/`).
+
+> There is no headless/CI build script in the repo yet, so builds are made from the Editor.
+
+### Testing the build locally
+
+Open the build through a local web server, not `file://`, or the browser blocks the engine
+files and the service worker:
+
+```bash
+cd Builds/WebGL && python -m http.server 8080   # then open http://localhost:8080
+```
+
+---
+
+## Deploy
+
+### Web build hosting
+
+Not configured in this repository — the build folder is uploaded to whichever web host you use.
+Whatever the host, it must serve the Brotli files correctly:
+
+- Serve `Build/*.br` with `Content-Encoding: br` and the matching `Content-Type`
+  (`application/wasm` for `.wasm.br`, `application/javascript` for `.js.br`).
+- Without those headers the player still loads, because decompression fallback is enabled, but
+  it is noticeably slower to start.
+- Serve `firebase-messaging-sw.js` from the site root, over HTTPS, so push notifications work.
+
+### Firebase (project `playprodomino`)
+
+`FirebaseFunctions/` holds the Firebase config (`.firebaserc`, `firebase.json`) for the cloud
+functions codebase. The functions source itself is not in this repository.
+
+```bash
+cd FirebaseFunctions && firebase deploy --only functions
+```
+
+### Unity Cloud Code
+
+`Backend/` contains the C# Cloud Code modules (account deletion, e-mail verification, password
+recovery, protected data) and their shared libraries. They are published to Unity Cloud Code
+with the **Deployment** package (`com.unity.services.deployment`) from the Unity Editor.
+
+---
+
 ## Known gaps
 
 - Dashboard statistics (games played / players online) and the monthly challenge progress are
