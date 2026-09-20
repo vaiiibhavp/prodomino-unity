@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
+using static ProDomino.Dashboard.Editor.PdUiKit;
 
 namespace ProDomino.Dashboard.Editor
 {
@@ -19,19 +20,19 @@ namespace ProDomino.Dashboard.Editor
         private const string NavButtonPath = "Assets/_ProDomino/NavigationSystem/Prefabs/NavegationPanel_Button.prefab";
         private const string CanvasPath = "Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab";
         private const string PartyEntryPath = "Assets/_ProDomino/FriendSystem/Prefabs/Party_User_DirectAccess.prefab";
-        private const string GeneratedDir = "Assets/_ProDomino/Dashboard/Generated";
-        private const string IconDir = "Assets/_ProDomino/_UI/Icons/Icons_Dashboard";
-        private const string FontDir = "Assets/_ProDomino/_UI/Fonts/Dashboard";
 
-        private static readonly Color PageBg = Hex("#01010C");
-        private static readonly Color PanelBg = Hex("#010818");
+
+
+
+        private static readonly Color PageBg = PdUiKit.PageBg;
+        private static readonly Color PanelBg = PdUiKit.PanelBg;
         private static readonly Color GroupBg = Hex("#01010C");
-        private static readonly Color TextInactive = Hex("#B0B0B4");
-        private static readonly Color TextActive = Hex("#01010C");
-        private static readonly Color DividerColor = new Color(1f, 1f, 1f, 0.12f);
+        private static readonly Color TextInactive = TextMuted;
+        private static readonly Color TextActive = OnAccent;
+        private static readonly Color DividerColor = Divider;
 
-        private const float RowHeight = 44f;
-        private const float IconSize = 20f;
+
+
         private const float IconLeft = 20f;
         private const float TextLeft = 50f;
         private const long RulesKeyId = 38;
@@ -115,88 +116,6 @@ namespace ProDomino.Dashboard.Editor
             Require(roundedOrange, "Rounded_Orange_R10");
             Require(roundedBlue, "Rounded_Blue_R10");
             Require(glowOrange, "Glow_Orange");
-        }
-
-        internal static TMP_FontAsset LoadFont(string name)
-        {
-            var f = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FontDir}/{name} SDF.asset");
-            Require(f, name);
-            return f;
-        }
-
-        // Horizontal gradient with rounded corners, imported as a 9-sliced sprite. The gradient
-        // stretches with the centre slice, so the full sprite width is used for the ramp.
-        internal static Sprite MakeRoundedSprite(string name, int w, int h, int radius, Color left, Color right)
-        {
-            var path = $"{GeneratedDir}/{name}.png";
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                float t = w > 1 ? (float)x / (w - 1) : 0f;
-                var c = Color.Lerp(left, right, t);
-                c.a = CornerAlpha(x + 0.5f, y + 0.5f, w, h, radius);
-                tex.SetPixel(x, y, c);
-            }
-            tex.Apply();
-            WritePng(path, tex);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spriteImportMode = SpriteImportMode.Single;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.spritePixelsPerUnit = 100;
-            int b = radius + 1;
-            imp.spriteBorder = new Vector4(b, b, b, b);
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        }
-
-        internal static float CornerAlpha(float px, float py, int w, int h, float r)
-        {
-            float cx = Mathf.Clamp(px, r, w - r);
-            float cy = Mathf.Clamp(py, r, h - r);
-            float d = Vector2.Distance(new Vector2(px, py), new Vector2(cx, cy));
-            return Mathf.Clamp01(r - d + 0.5f);
-        }
-
-        private static Sprite MakeGlowSprite(string name, int w, int h, Color color)
-        {
-            var path = $"{GeneratedDir}/{name}.png";
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                float nx = (x + 0.5f) / w * 2f - 1f;
-                float ny = (y + 0.5f) / h * 2f - 1f;
-                float a = Mathf.Clamp01(1f - Mathf.Sqrt(nx * nx + ny * ny));
-                var c = color; c.a = a * a;
-                tex.SetPixel(x, y, c);
-            }
-            tex.Apply();
-            WritePng(path, tex);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spriteImportMode = SpriteImportMode.Single;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        }
-
-        internal static void WritePng(string assetPath, Texture2D tex)
-        {
-            if (!AssetDatabase.IsValidFolder(GeneratedDir))
-                AssetDatabase.CreateFolder("Assets/_ProDomino/Dashboard", "Generated");
-            File.WriteAllBytes(Application.dataPath + assetPath.Substring("Assets".Length), tex.EncodeToPNG());
-            UnityEngine.Object.DestroyImmediate(tex);
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
         }
 
         // ------------------------------------------------------------------ nav button prefab
@@ -758,75 +677,5 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
-        // ------------------------------------------------------------------ helpers
-
-        internal static GameObject MakeImage(Transform parent, string name, Sprite sprite, Color color, Image.Type type)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            go.layer = parent.gameObject.layer;
-            var img = go.AddComponent<Image>();
-            img.sprite = sprite; img.color = color; img.type = type; img.raycastTarget = false;
-            img.pixelsPerUnitMultiplier = 1f;
-            return go;
-        }
-
-        internal static TextMeshProUGUI MakeText(Transform parent, string name, string text, TMP_FontAsset font, float size, Color color)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            go.layer = parent.gameObject.layer;
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = text;
-            tmp.font = font; tmp.fontSharedMaterial = font.material;
-            tmp.fontSize = size; tmp.color = color;
-            tmp.alignment = TextAlignmentOptions.MidlineLeft;
-            tmp.textWrappingMode = TextWrappingModes.NoWrap;
-            tmp.raycastTarget = false;
-            return tmp;
-        }
-
-        internal static void PlaceTopLeft(RectTransform rt, float x, float y, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(x, y);
-            rt.sizeDelta = new Vector2(w, h);
-        }
-
-        internal static void Stretch(RectTransform rt)
-        {
-            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
-        }
-
-        internal static Transform Need(Transform parent, string name)
-        {
-            var t = parent.Find(name);
-            if (t == null) throw new Exception($"SIDEBAR: required child '{name}' not found under '{parent.name}'.");
-            return t;
-        }
-
-        internal static Transform FindDeep(Transform root, string name)
-        {
-            if (root.name == name) return root;
-            for (int i = 0; i < root.childCount; i++)
-            {
-                var r = FindDeep(root.GetChild(i), name);
-                if (r != null) return r;
-            }
-            return null;
-        }
-
-        internal static void Require(UnityEngine.Object o, string what)
-        {
-            if (o == null) throw new Exception($"SIDEBAR: could not load {what}.");
-        }
-
-        internal static Color Hex(string hex)
-        {
-            ColorUtility.TryParseHtmlString(hex, out var c);
-            return c;
-        }
     }
 }

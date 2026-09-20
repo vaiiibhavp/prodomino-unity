@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static ProDomino.Dashboard.Editor.SidebarRestyler;
+using static ProDomino.Dashboard.Editor.PdUiKit;
 
 namespace ProDomino.Dashboard.Editor
 {
@@ -15,21 +16,21 @@ namespace ProDomino.Dashboard.Editor
     internal static class AuthRestyler
     {
         private const string AuthPath = "Assets/_ProDomino/Authentication/Prefabs/AuthUI.prefab";
-        private const string GeneratedDir = "Assets/_ProDomino/Dashboard/Generated";
+
         private const string LogoPath = "Assets/_ProDomino/_UI/Client_Resources/Prodomino_Small_Logo.png";
         private const string ClosePath = "Assets/_ProDomino/_UI/Icons/Icons_Base_64/X_icon.png";
         private const string CheckPath = "Assets/_ProDomino/_UI/Icons/Icons_Base_64/Check_Icon.png";
 
         // Design colours
-        private static readonly Color PanelTop = Hex("#27272C"), PanelBottom = Hex("#01010C");
-        private static readonly Color PanelBorder = Hex("#37373D");
-        private static readonly Color FieldFill = Hex("#212129"), FieldBorder = Hex("#2E2E38");
-        private static readonly Color LabelColor = Hex("#E6E6E7");
-        private static readonly Color Muted = Hex("#B0B0B4");
-        private static readonly Color Placeholder = Hex("#55555C");
-        private static readonly Color Accent = Hex("#FDC553");
-        private static readonly Color OnPrimary = Hex("#01010C");
-        private static readonly Color Danger = Hex("#FF6B6B");
+        private static readonly Color PanelTop = CardTop, PanelBottom = CardBottom;
+        private static readonly Color PanelBorder = CardBorder;
+
+        private static readonly Color LabelColor = TextLabel;
+        private static readonly Color Muted = TextMuted;
+        private static readonly Color Placeholder = TextPlaceholder;
+
+        private static readonly Color OnPrimary = OnAccent;
+
 
         // Panel sizes from the design
         private const float PanelW = 880f;
@@ -415,20 +416,20 @@ namespace ProDomino.Dashboard.Editor
 
             // The design's frame tree, so a validation message pushes what follows down instead of
             // being written over it, and the card grows with its content.
-            var content = Column(card, "Auth_Content", 36f);
-            var header = Column(content, "Auth_Header", 40f);
+            var content = Column(card, "Auth_Content", 36f, ContentW);
+            var header = Column(content, "Auth_Header", 40f, ContentW);
             Logo(header, true);
-            var titles = Column(header, "Auth_Titles", 8f);
+            var titles = Column(header, "Auth_Titles", 8f, ContentW);
             Title(card, titles, "Welcome Back!");
             Subtitle(card, titles, "Login to continue playing ProDomino with friends & random opponents.", 348f, 40f);
 
-            var form = Column(content, "Auth_Form", 40f);
-            var fields = Column(form, "Auth_Fields", 20f);
+            var form = Column(content, "Auth_Form", 40f, ContentW);
+            var fields = Column(form, "Auth_Fields", 20f, ContentW);
             Field(fields, FindDeep(screen, "SignIn_Username_InputField (TMP)"), "Email", "Enter Email ID",
                 FindDeep(screen, "SignIn_Feedback"));
             Field(fields, FindDeep(screen, "SignIn_Password_InputField (TMP)"), "Password", "Enter Password", null);
 
-            var options = Row(fields, "Auth_Options", 24f);
+            var options = Band(fields, "Auth_Options", ContentW, 24f);
             CheckRow(options, FindDeep(screen, "SignIn_RememberMe_Toggle"), "Remember Me", 0f, 260f, Color.white);
             var forgot = FindDeep(screen, "SignIn_ForgotPassword_Button");
             if (forgot)
@@ -439,9 +440,9 @@ namespace ProDomino.Dashboard.Editor
                 Text(t, "Forgot Password?", fMedium, 16f, Accent, TextAlignmentOptions.MidlineRight);
             }
 
-            var actions = Column(form, "Auth_Actions", 32f);
+            var actions = Column(form, "Auth_Actions", 32f, ContentW);
             PrimaryButton(actions, FindDeep(screen, "SignIn_Button"), "Log In");
-            var socials = Row(actions, "Auth_Socials", 48f);
+            var socials = Band(actions, "Auth_Socials", ContentW, 48f);
             Social(socials, FindDeep(screen, "SignIn_Google_Button"), "Login with Google", 0f);
             Social(socials, FindDeep(screen, "SignIn_Facebook_Button"), "Login with Facebook", 370f);
             LinkRow(actions, FindDeep(screen, "SignUp_Mail_Button"), "Don't have an account? ", "Create an Account");
@@ -456,15 +457,15 @@ namespace ProDomino.Dashboard.Editor
             var card = Card(screen);
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            var content = Column(card, "Auth_Content", 36f);
-            var header = Column(content, "Auth_Header", 40f);
+            var content = Column(card, "Auth_Content", 36f, ContentW);
+            var header = Column(content, "Auth_Header", 40f, ContentW);
             Logo(header, true);
-            var titles = Column(header, "Auth_Titles", 8f);
+            var titles = Column(header, "Auth_Titles", 8f, ContentW);
             Title(card, titles, "Create your Account");
             Subtitle(card, titles, "Start playing ProDomino with friends & random opponents.", 348f, 40f);
 
-            var form = Column(content, "Auth_Form", 40f);
-            var fields = Column(form, "Auth_Fields", 20f);
+            var form = Column(content, "Auth_Form", 40f, ContentW);
+            var fields = Column(form, "Auth_Fields", 20f, ContentW);
             Field(fields, FindDeep(screen, "SignUp_Username_InputField (TMP)"), "Username", "Enter Username",
                 FindDeep(screen, "SignUp_Username_Feedback"));
             Field(fields, FindDeep(screen, "SignUp_Email_InputField (TMP)"), "Email", "Enter Email ID",
@@ -477,7 +478,7 @@ namespace ProDomino.Dashboard.Editor
             CheckRow(fields, FindDeep(screen, "SignUp_TermAndConditions_Toggle"), null, 0f, ContentW, Muted);
             CheckRow(fields, FindDeep(screen, "SignUp_DataTreatment_Toggle"), null, 0f, ContentW, Muted);
 
-            var actions = Column(form, "Auth_Actions", 32f);
+            var actions = Column(form, "Auth_Actions", 32f, ContentW);
             PrimaryButton(actions, FindDeep(screen, "SignUp_Button"), "Create an Account");
             LinkRow(actions, FindDeep(screen, "SignUp_BackContainer"), "Already have an account? ", "Login");
             TidyCard(card);
@@ -490,8 +491,8 @@ namespace ProDomino.Dashboard.Editor
             var card = Card(screen);
             Close(card, FindDeep(screen, "SignIn_Close_Button"));
 
-            var content = Column(card, "Auth_Content", 40f);
-            var header = Column(content, "Auth_Header", 12f);
+            var content = Column(card, "Auth_Content", 40f, ContentW);
+            var header = Column(content, "Auth_Header", 12f, ContentW);
 
             var badge = GetOrCreate(header, "Recovery_Badge", () => MakeImage(header, "Recovery_Badge", badgeSprite, Color.white, Image.Type.Sliced).transform);
             Place(header, badge, 0f, 110f, 110f);
@@ -510,11 +511,11 @@ namespace ProDomino.Dashboard.Editor
             lockImg.sprite = lockSprite; lockImg.type = Image.Type.Simple;
             lockImg.color = Color.white; lockImg.preserveAspect = true; lockImg.raycastTarget = false;
 
-            var titles = Column(header, "Auth_Titles", 4f);
+            var titles = Column(header, "Auth_Titles", 4f, ContentW);
             Title(card, titles, "Forgot Password?");
             Subtitle(card, titles, "Please enter your email address to receive a verification code.", 490f, 20f);
 
-            var form = Column(content, "Auth_Form", 40f);
+            var form = Column(content, "Auth_Form", 40f, ContentW);
             Field(form, FindDeep(screen, "Recovery_Email_InputField (TMP)"), "Email", "Enter Email ID", null);
             PrimaryButton(form, FindDeep(screen, "Recovery_Button"), "Send Reset Link", 57f);
 
@@ -655,7 +656,7 @@ namespace ProDomino.Dashboard.Editor
             csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            AddShared(screen, "ProDomino.Shared.FitInArea");   // shrinks instead of being clipped
+            AddByName(screen, "ProDomino.Shared.FitInArea");   // shrinks instead of being clipped
 
             var bg = screen.GetComponentsInChildren<Image>(true).FirstOrDefault(i => i.transform.parent == screen && i.name.EndsWith("_Background"));
             if (bg)
@@ -668,78 +669,6 @@ namespace ProDomino.Dashboard.Editor
             return screen;
         }
 
-        // A stacked group with the design's gap. Sizes itself from its children, so a longer
-        // message inside one row makes the group (and the card) taller.
-        private static Transform Column(Transform parent, string name, float spacing)
-        {
-            var t = GetOrCreate(parent, name, () => new GameObject(name, typeof(RectTransform)).transform);
-            Reparent(t, parent);
-            var rt = (RectTransform)t;
-            rt.sizeDelta = new Vector2(ContentW, rt.sizeDelta.y);
-
-            var vlg = GetOrAdd<VerticalLayoutGroup>(t);
-            vlg.enabled = true;
-            vlg.padding = new RectOffset(0, 0, 0, 0);
-            vlg.spacing = spacing;
-            vlg.childAlignment = TextAnchor.UpperCenter;
-            vlg.childControlWidth = false; vlg.childControlHeight = false;
-            vlg.childForceExpandWidth = false; vlg.childForceExpandHeight = false;
-
-            var csf = GetOrAdd<ContentSizeFitter>(t);
-            csf.enabled = true;
-            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            return t;
-        }
-
-        // A fixed-height band inside a column, holding elements side by side at set offsets.
-        private static Transform Row(Transform parent, string name, float height)
-        {
-            var t = GetOrCreate(parent, name, () => new GameObject(name, typeof(RectTransform)).transform);
-            Reparent(t, parent);
-            foreach (var layout in t.GetComponents<LayoutGroup>()) layout.enabled = false;
-            var csf = t.GetComponent<ContentSizeFitter>();
-            if (csf) csf.enabled = false;
-            Slot(t, ContentW, height);
-            return t;
-        }
-
-        // Stacked in a column, or placed at a fixed offset inside a row.
-        private static void Place(Transform parent, Transform t, float x, float w, float h)
-        {
-            if (!t) return;
-            Reparent(t, parent);
-            if (parent.TryGetComponent<VerticalLayoutGroup>(out var vlg) && vlg.enabled) Slot(t, w, h);
-            else TL((RectTransform)t, x, 0f, w, h);
-        }
-
-        // One row of a column: the layout positions it, this only fixes its size.
-        private static void Slot(Transform t, float w, float h)
-        {
-            var rt = (RectTransform)t;
-            rt.sizeDelta = new Vector2(w, h);
-            if (t.TryGetComponent<LayoutElement>(out var le))
-            {
-                le.ignoreLayout = false;
-                le.preferredWidth = w; le.preferredHeight = h;
-                le.minWidth = -1f; le.minHeight = -1f;
-                le.flexibleWidth = -1f; le.flexibleHeight = -1f;
-            }
-        }
-
-        // Runtime helpers live in another assembly, so they are attached by name (as the header
-        // restyler does for its click forwarder).
-        private static Component AddShared(Transform t, string fullName)
-        {
-            var type = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetType(fullName)).FirstOrDefault(x => x != null);
-            if (type == null) { Debug.LogWarning($"AUTH: {fullName} not found (compile error?)."); return null; }
-            return t.TryGetComponent(type, out var existing) ? existing : t.gameObject.AddComponent(type);
-        }
-
-        // The builders move what they need out of the old containers, which are left empty. They
-        // keep their own placement and are only taken out of the new layout, so nothing that was
-        // not moved (a close button, say) can disappear.
         private static void TidyCard(Transform card)
         {
             foreach (Transform child in card)
@@ -817,7 +746,7 @@ namespace ProDomino.Dashboard.Editor
         private static void Field(Transform parent, Transform field, string label, string placeholder, Transform feedback)
         {
             if (!field) return;
-            var group = Column(parent, $"{field.name}_Group", 12f);
+            var group = Column(parent, $"{field.name}_Group", 12f, ContentW);
 
             var labelT = GetOrCreate(group, $"{field.name}_Label", () => MakeText(group, $"{field.name}_Label", label, fMedium, 16f, LabelColor).transform);
             Place(group, labelT, 0f, ContentW, 20f);
@@ -878,7 +807,7 @@ namespace ProDomino.Dashboard.Editor
             csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // No gap while there is nothing to say.
-            var hider = AddShared(group, "ProDomino.Shared.HideWhenEmpty");
+            var hider = AddByName(group, "ProDomino.Shared.HideWhenEmpty");
             if (hider)
             {
                 var so = new SerializedObject(hider);
@@ -1012,136 +941,6 @@ namespace ProDomino.Dashboard.Editor
 
         // ------------------------------------------------------------------ helpers
 
-        // The old buttons tint their graphic with dark "normal" colours, which would hide the new
-        // sprites; keep white as the base and only darken on hover/press.
-        private static void NeutralTint(Transform button, Graphic target)
-        {
-            if (!button.TryGetComponent<Selectable>(out var selectable)) return;
-            selectable.targetGraphic = target;
-            selectable.transition = Selectable.Transition.ColorTint;
-            var c = selectable.colors;
-            c.normalColor = Color.white;
-            c.highlightedColor = new Color(0.92f, 0.92f, 0.95f, 1f);
-            c.pressedColor = new Color(0.8f, 0.8f, 0.85f, 1f);
-            c.selectedColor = Color.white;
-            c.disabledColor = new Color(1f, 1f, 1f, 0.45f);
-            c.fadeDuration = 0.08f;
-            selectable.colors = c;
-        }
-
-        private static void KillLayout(Transform root)
-        {
-            foreach (var c in root.GetComponentsInChildren<Component>(true))
-            {
-                if (c == null) continue;
-                if (c is VerticalLayoutGroup or HorizontalLayoutGroup or ContentSizeFitter or AspectRatioFitter)
-                    ((Behaviour)c).enabled = false;
-            }
-        }
-
-        private static void Reparent(Transform t, Transform parent)
-        {
-            if (t.parent != parent) t.SetParent(parent, false);
-            t.localScale = Vector3.one;
-        }
-
-        private static void TL(RectTransform rt, float x, float y, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(x, -y);
-            rt.sizeDelta = new Vector2(w, h);
-        }
-
-        private static void TLCentered(RectTransform rt, float y, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -y);
-            rt.sizeDelta = new Vector2(w, h);
-        }
-
-        private static void Text(TextMeshProUGUI t, string value, TMP_FontAsset font, float size, Color color, TextAlignmentOptions align)
-        {
-            if (!t) return;
-            if (value != null) t.text = value;
-            t.font = font; t.fontSharedMaterial = font.material;
-            t.fontSize = size; t.enableAutoSizing = false;
-            t.fontStyle = FontStyles.Normal;
-            t.color = color;
-            t.alignment = align;
-            t.margin = Vector4.zero;
-            t.lineSpacing = 0f;
-        }
-
-        private static void Transparent(Transform t)
-        {
-            var img = GetOrAdd<Image>(t);
-            img.sprite = null; img.color = new Color(1f, 1f, 1f, 0f); img.raycastTarget = true;
-        }
-
-        private static void Hide(Transform screen, params string[] names)
-        {
-            foreach (var n in names)
-            {
-                var t = FindDeep(screen, n);
-                if (t) t.gameObject.SetActive(false);
-            }
-        }
-
-        private static Transform GetOrCreate(Transform parent, string name, Func<Transform> create)
-        {
-            var existing = parent.Find(name);
-            return existing ? existing : create();
-        }
-
-        private static T GetOrAdd<T>(Transform t) where T : Component =>
-            t.TryGetComponent<T>(out var c) ? c : t.gameObject.AddComponent<T>();
-
-        // Rounded sprite with an optional vertical gradient and a border drawn inside the edge.
-        private static Sprite MakePanelSprite(string name, int w, int h, int radius, Color top, Color bottom, Color border, float borderWidth, bool vertical = true)
-        {
-            var path = $"{GeneratedDir}/{name}.png";
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                // texture y is bottom-up; a vertical design gradient runs top -> bottom
-                float t = vertical
-                    ? (h > 1 ? 1f - (float)y / (h - 1) : 0f)
-                    : (w > 1 ? (float)x / (w - 1) : 0f);
-                var fill = Color.Lerp(top, bottom, t);
-
-                // Distance from the shape's edge, positive inside (rounded-rect SDF).
-                float sd = radius - Distance(x + 0.5f, y + 0.5f, w, h, radius);
-                float inside = Mathf.Clamp01(sd + 0.5f);
-                var c = fill;
-                if (borderWidth > 0f && border.a > 0f)
-                {
-                    float borderMask = Mathf.Clamp01(borderWidth + 0.5f - sd) * border.a;
-                    c = Color.Lerp(fill, border, borderMask);
-                    c.a = Mathf.Max(fill.a, borderMask);
-                }
-                c.a *= inside;
-                tex.SetPixel(x, y, c);
-            }
-            tex.Apply();
-            WritePng(path, tex);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spriteImportMode = SpriteImportMode.Single;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.spritePixelsPerUnit = 100;
-            int b = radius + 2;
-            imp.spriteBorder = new Vector4(b, b, b, b);
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        }
-
         // The padlock from the design: shackle arc over a rounded body, red vertical gradient.
         // Drawn here because the Figma export of that icon is not available offline.
         private static Sprite MakeLockSprite(string name, int size = 200)
@@ -1168,7 +967,7 @@ namespace ProDomino.Dashboard.Editor
                 }
 
                 // Body: rounded rectangle, positive inside.
-                float body = bodyR - Distance(x - bodyX, y - bodyY, (int)bodyW, (int)bodyH, bodyR);
+                float body = bodyR - CornerDistance(x - bodyX, y - bodyY, (int)bodyW, (int)bodyH, bodyR);
 
                 float sd = Mathf.Max(ring, body);
                 var c = Color.Lerp(top, bottom, Mathf.Clamp01(y / 50f));
@@ -1191,12 +990,5 @@ namespace ProDomino.Dashboard.Editor
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        // Distance from the rounded-rect corner centre (0 in the straight parts).
-        private static float Distance(float px, float py, int w, int h, float r)
-        {
-            float cx = Mathf.Clamp(px, r, w - r);
-            float cy = Mathf.Clamp(py, r, h - r);
-            return Vector2.Distance(new Vector2(px, py), new Vector2(cx, cy));
-        }
     }
 }

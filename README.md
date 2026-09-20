@@ -190,11 +190,13 @@ Everything the client can show, where it lives, and its redesign status.
 
 ### Order of work
 
-**Phase 0 — shared UI kit (do once, before #7).** The sidebar, header and auth screens each
-generate their own sprites and type styles. Pull them into one editor module (colour tokens, radii,
-fonts, `MakePanelSprite`, button/field/chip builders) so later screens stay consistent and a token
-change is a one-line edit. No visual change expected; re-render all three finished screens to prove
-it.
+**Phase 0 — shared UI kit — done.** `Dashboard/Editor/PdUiKit.cs` now holds the design tokens
+(colours, radii, row/field/button heights), the fonts, the generated-sprite factory and the
+hierarchy / layout / skin helpers; the sidebar, header and auth restylers take everything from it
+(`using static PdUiKit`) and keep only what is specific to their screen. A colour or radius change
+is now a one-line edit that lands on every screen. Verified as visually neutral: the auth renders
+came out byte-identical, the canvas renders differ in no sampled pixel, the Figma check still
+reports 29/29, and the play-mode probe still opens the login pop-up.
 
 **Phase 1 — Leaderboard (#7).** Second sidebar entry, linked from the header rank chip and the
 dashboard. It introduces the list components (tabs, filter dropdown, table rows, your-rank row)
@@ -238,12 +240,51 @@ design and new gameplay code.
 6. **Commit** script + prefab + scene, and re-render the dashboard to confirm the rank chip still
    matches.
 
-### Blocked / needed from you
+### Design coverage (Figma)
 
-- **A fresh Figma token** (the current one returns `403 Token expired`). Without it I cannot read
-  any new frame, so screens from #7 on can only be built from screenshots. Two assets are still
-  missing for the finished screens as well: the decorative artwork behind the auth cards and the
-  design's padlock icon (currently drawn in code).
+The file has four pages: **High-Fidelity-Web-UI** (the desktop source of truth), **Mobile
+Responsive UI** (the same flows at phone width), **Design System** (colour palette, typography,
+buttons, tabs, popups, header, sidebar, states, domino tiles) and **Draft**.
+
+Every desktop flow, the screens inside it, and what they map to in the client:
+
+| Figma flow (node) | Screens | Client screens |
+|---|---|---|
+| Onboarding Flow (`9:6`) | Login, Registration, Account created OK / failed, Forgot password, Create new password ×2 | #4, #5, #6 — **done**; the success/failure and new-password screens are not built yet |
+| Dashboard (`113:3362`, `174:9469`, `780:25875`) | Dashboard, Dashboard before login, Monthly / Daily challenge, header before & after login | #2, #3 — **done**; the logged-out dashboard and header variants are not built yet |
+| Leaderboard (`263:24215`) | Leaderboard, empty state | #7 |
+| Shop Flow (`44:4`) | Tiles, Icons, Frames, Boards, Boards pop-up, Badges | #8 |
+| Achievements & Rewards (`188:47834`) | 2 screens | #9 |
+| Party Flow (`175:10323`) | Party, send invitation, waiting, start game, select mode, mode selected, 2 pop-ups | #10 |
+| Friends List (`115:3033`) | 11 states: no matches, no friends, has friends, add / remove / not-found pop-ups | #11, #12 |
+| Club (`167:6176`) | 20 screens: empty states, detail, members, chat, applications, roles, create / leave pop-ups | #13 |
+| Rules (`94:1640`) | Rules, Rules/Block, Rules/Concentrate | #14 |
+| Review Flow (`201:15821`) | Review, on hover, Review detail | #15 |
+| Help (`68:218`) | Help | #16 |
+| Settings (`63:199`) | Game type selection pop-up | #17, #23 |
+| Profile (`249:24823`) | Profile, Account settings, Edit profile, Delete profile ×3 | #18, #19 |
+| Notification (`248:42429`) | Notification | header bell (not yet a client screen) |
+| Payment Portal (`441:34252`) | 2 screens | #22 and the shop checkout |
+| Block Game — Single vs AI (`178:10920`) | Games, game type pop-up (+ before login), 1v1 / 1v3 / 2v2 boards, result pop-ups | #23, #25, #26 |
+| Block Game — Casual & Competitive (`185:24058`) | 13 screens incl. in-match chat | #23, #25, #26 |
+| Concentrate — Single vs AI (`235:23741`) | 13 screens, solo / 1v1 / 1v3 / 2v2, 28 and 56 tiles | #23, #25, #26 |
+| Tournament (`188:44375`) | Tournament | #29 (needs code) |
+
+Notes from the mapping:
+
+- The design has **"before login" variants** (dashboard, header, games, game-type pop-up) that the
+  client does not implement — the logged-out state currently shows the same screens with empty
+  data. Worth scheduling after the leaderboard.
+- The **Mobile Responsive UI** page is a real phone layout, not just a scaled card. The screens
+  built so far scale to fit (`FitInArea`); matching the mobile design properly is a separate pass
+  once the desktop screens are done.
+- Nothing in the design covers the loading/retry overlay (#27) or the session/error pop-ups (#28),
+  so those follow the design system components rather than a frame.
+
+### Still needed
+
+- The decorative artwork behind the auth cards and the design's padlock icon are still missing from
+  the built screens (the lock is drawn in code); both can now be exported from Figma.
 - **Which leaderboard panel to keep** (see step 1 above) — my recommendation is `_New`.
 
 ---

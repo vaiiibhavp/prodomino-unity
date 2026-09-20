@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static ProDomino.Dashboard.Editor.SidebarRestyler;
+using static ProDomino.Dashboard.Editor.PdUiKit;
 
 namespace ProDomino.Dashboard.Editor
 {
@@ -17,12 +18,12 @@ namespace ProDomino.Dashboard.Editor
     {
         private const string UccPath = "Assets/_ProDomino/Shared/Prefabs/UserControlCenter.prefab";
         private const string CanvasPath = "Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab";
-        private const string GeneratedDir = "Assets/_ProDomino/Dashboard/Generated";
-        private const string IconDir = "Assets/_ProDomino/_UI/Icons/Icons_Dashboard";
 
-        private static readonly Color ClassChipBg = Hex("#040717");
-        private static readonly Color DropdownBg = Hex("#0A0E1C");
-        private static readonly Color Muted = Hex("#B0B0B4");
+
+
+        private static readonly Color ClassChipBg = ChipBg;
+        private static readonly Color DropdownBg = PdUiKit.DropdownBg;
+        private static readonly Color Muted = TextMuted;
         private static readonly Color AvatarBg = Hex("#C54216");
 
         // Header geometry, in pixels of the 1920x1080 reference: chips are 64 tall, 20 from the
@@ -45,7 +46,7 @@ namespace ProDomino.Dashboard.Editor
             fontSemiBold = LoadFont("Montserrat-SemiBold");
             chipSprite = MakeRoundedSprite("Rounded_Chip_R10", 64, 64, 10, Hex("#040614"), Hex("#191A1D"));
             rewardChipSprite = MakeRoundedSprite("Rounded_RewardChip_R10", 97, 44, 10, Hex("#031173"), Hex("#E2E6FF"));
-            circleSprite = MakeCircle("Circle_128", 128);
+            circleSprite = MakeCircleSprite("Circle_128", 128);
             chevronSprite = MakeChevron("Chevron_Down", 32);
 
             RestyleHeader();
@@ -958,22 +959,6 @@ namespace ProDomino.Dashboard.Editor
             rt.sizeDelta = new Vector2(width, ChipHeight);
         }
 
-        private static void MiddleLeft(RectTransform rt, float x, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0.5f);
-            rt.pivot = new Vector2(0f, 0.5f);
-            rt.anchoredPosition = new Vector2(x, 0f);
-            rt.sizeDelta = new Vector2(w, h);
-        }
-
-        private static void MiddleRight(RectTransform rt, float fromRight, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0.5f);
-            rt.pivot = new Vector2(1f, 0.5f);
-            rt.anchoredPosition = new Vector2(-fromRight, 0f);
-            rt.sizeDelta = new Vector2(w, h);
-        }
-
         private static void Arrow(Transform parent, string name, float fromRight, float size)
         {
             var t = parent.Find(name);
@@ -982,21 +967,6 @@ namespace ProDomino.Dashboard.Editor
             img.sprite = chevronSprite; img.color = Color.white; img.raycastTarget = false; img.preserveAspect = true;
             MiddleRight((RectTransform)go.transform, fromRight, size, size);
             go.transform.SetAsLastSibling();
-        }
-
-        private static TextMeshProUGUI Label(TextMeshProUGUI tmp, TMP_FontAsset font, float size, Color color)
-        {
-            tmp.font = font; tmp.fontSharedMaterial = font.material;
-            tmp.enableAutoSizing = true; tmp.fontSizeMin = Mathf.Min(10f, size); tmp.fontSizeMax = size; tmp.fontSize = size;
-            tmp.fontStyle = FontStyles.Normal;
-            tmp.color = color;
-            tmp.alignment = TextAlignmentOptions.MidlineLeft;
-            tmp.textWrappingMode = TextWrappingModes.NoWrap;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
-            tmp.margin = Vector4.zero;
-            tmp.lineSpacing = 0f;
-            tmp.raycastTarget = false;
-            return tmp;
         }
 
         private static void StyleButton(Button button, Graphic target)
@@ -1014,64 +984,6 @@ namespace ProDomino.Dashboard.Editor
             var nav = button.navigation; nav.mode = Navigation.Mode.None; button.navigation = nav;
         }
 
-        private static void Forward(GameObject from, Button target)
-        {
-            var type = FindType("ProDomino.Shared.ForwardClick");
-            var comp = from.TryGetComponent(type, out var existing) ? existing : from.AddComponent(type);
-            var so = new SerializedObject(comp);
-            so.FindProperty("target").objectReferenceValue = target;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void AddSortingCanvas(GameObject go, int order)
-        {
-            var canvas = go.AddComponent<Canvas>();
-            var so = new SerializedObject(canvas);
-            so.FindProperty("m_OverrideSorting").boolValue = true;
-            so.FindProperty("m_SortingOrder").intValue = order;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            go.AddComponent<GraphicRaycaster>();
-        }
-
-        private static void DisableFitter(Transform t)
-        {
-            var f = t.GetComponent<AspectRatioFitter>();
-            if (f) f.enabled = false;
-        }
-
-        private static void HideImage(Transform parent, string child)
-        {
-            var t = parent.Find(child);
-            if (t && t.TryGetComponent<Image>(out var img)) img.enabled = false;
-        }
-
-        private static void SetSprite(Transform t, Sprite sprite, Image.Type type = Image.Type.Sliced)
-        {
-            if (t == null) return;
-            var img = t.GetComponent<Image>();
-            img.sprite = sprite; img.type = type; img.pixelsPerUnitMultiplier = 1f;
-        }
-
-        private static T GetOrAdd<T>(Transform t) where T : Component =>
-            t.TryGetComponent<T>(out var c) ? c : t.gameObject.AddComponent<T>();
-
-        private static Type FindType(string fullName) =>
-            AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName)).FirstOrDefault(x => x != null)
-            ?? throw new Exception($"Type {fullName} not found (compile error?).");
-
-        private static Sprite MakeCircle(string name, int size)
-        {
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            float r = size / 2f;
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r));
-                tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(r - d + 0.5f)));
-            }
-            return SaveSprite(name, tex);
-        }
-
         // White "v" chevron for dropdown affordances.
         private static Sprite MakeChevron(string name, int size)
         {
@@ -1087,7 +999,7 @@ namespace ProDomino.Dashboard.Editor
                 float d = Mathf.Min(DistToSegment(p, a, b), DistToSegment(p, b, c));
                 tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(half - d + 0.5f)));
             }
-            return SaveSprite(name, tex);
+            return SaveSprite($"{GeneratedDir}/{name}.png", tex);
         }
 
         private static float DistToSegment(Vector2 p, Vector2 a, Vector2 b)
@@ -1097,21 +1009,14 @@ namespace ProDomino.Dashboard.Editor
             return Vector2.Distance(p, a + t * ab);
         }
 
-        private static Sprite SaveSprite(string name, Texture2D tex)
+        // Makes a chip background behave like a click on the button it wraps.
+        private static void Forward(GameObject from, Button target)
         {
-            tex.Apply();
-            var path = $"{GeneratedDir}/{name}.png";
-            WritePng(path, tex);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spriteImportMode = SpriteImportMode.Single;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            var comp = AddByName(from.transform, "ProDomino.Shared.ForwardClick");
+            if (!comp) return;
+            var so = new SerializedObject(comp);
+            so.FindProperty("target").objectReferenceValue = target;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
