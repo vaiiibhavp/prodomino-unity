@@ -13,6 +13,10 @@ namespace ProDomino.Leaderboard
     public class LeaderboardElement : MonoBehaviour
     {
         [SerializeField] private TMP_Text rankingLabel;
+        [SerializeField] private Image rankingTrophyImage;
+        [SerializeField] private Sprite goldTrophySprite;
+        [SerializeField] private Sprite silverTrophySprite;
+        [SerializeField] private Sprite bronzeTrophySprite;
         [SerializeField] private TMP_Text playerNameLabel;
         [SerializeField] private TMP_Text idLabel;
 
@@ -71,8 +75,28 @@ namespace ProDomino.Leaderboard
             }
 
             // Set text fields
-            if (rankingLabel)
-                rankingLabel.text = (CurrentLeaderboardInfo.leaderboardData.rank + 1).ToString(); // +1 because the rank is 0-based in the leaderboard system
+            int rankNum = CurrentLeaderboardInfo.leaderboardData.rank + 1;
+            if (rankingTrophyImage != null && (rankNum >= 1 && rankNum <= 3))
+            {
+                rankingTrophyImage.gameObject.SetActive(true);
+                rankingTrophyImage.sprite = rankNum switch
+                {
+                    1 => goldTrophySprite,
+                    2 => silverTrophySprite,
+                    3 => bronzeTrophySprite,
+                    _ => null
+                };
+                if (rankingLabel) rankingLabel.gameObject.SetActive(false);
+            }
+            else
+            {
+                if (rankingTrophyImage) rankingTrophyImage.gameObject.SetActive(false);
+                if (rankingLabel)
+                {
+                    rankingLabel.gameObject.SetActive(true);
+                    rankingLabel.text = rankNum.ToString();
+                }
+            }
             
             // Set player username
             if (playerNameLabel)
@@ -142,7 +166,7 @@ namespace ProDomino.Leaderboard
                     thirdPlaceLabel.text = PlayerLeaderboardData.analyticsData.competitive3rdPositionCount.ToString();
 
                 if (victoriesRateLabel)
-                    victoriesRateLabel.text = PlayerLeaderboardData.analyticsData.CompetitiveWLRatio.ToString("P2"); // Format as percentage with 2 decimal places
+                    victoriesRateLabel.text = PlayerLeaderboardData.analyticsData.CompetitiveWLRatio.ToString("0.00");
             }
 
             // Fill in achievements images
@@ -184,6 +208,8 @@ namespace ProDomino.Leaderboard
 
         private void SetDefaultValues()
         {
+            if (rankingTrophyImage)
+                rankingTrophyImage.gameObject.SetActive(false);
             if (rankingLabel)
                 rankingLabel.text = "-";
             if (playerNameLabel)

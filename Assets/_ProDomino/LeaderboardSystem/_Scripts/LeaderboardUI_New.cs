@@ -1,3 +1,4 @@
+using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
 using DG.Tweening.Core.Easing;
 using HelperSharedLibrary;
@@ -19,6 +20,18 @@ using static TMPro.TMP_Dropdown;
 
 namespace ProDomino.Leaderboard
 {
+    [Serializable]
+    public class LeaderboardPodiumSlot
+    {
+        public GameObject root;
+        public Image avatarImage;
+        public Image avatarGlow;
+        public TMP_Text playerNameText;
+        public Image trophyImage;
+        public TMP_Text eloText;
+        public TMP_Text pedestalRankText;
+    }
+
     internal class LeaderboardUI_New : AbstractLeaderboardUI, INavigationPanel
     {
         [Header("Leaderboard UI - New")]
@@ -29,6 +42,19 @@ namespace ProDomino.Leaderboard
         [SerializeField] private TMP_Dropdown tierFiltersDropdown;
         [SerializeField] private TMP_Dropdown playerAmountFiltersDropdown;
         [SerializeField] private TMP_Dropdown nationalityFiltersDropdown;
+
+        [Header("Podium (Top 3)")]
+        [SerializeField] private GameObject podiumContainer;
+        [SerializeField] private LeaderboardPodiumSlot podium1st;
+        [SerializeField] private LeaderboardPodiumSlot podium2nd;
+        [SerializeField] private LeaderboardPodiumSlot podium3rd;
+
+        [Header("Your Rank Badge")]
+        [SerializeField] private GameObject ownRankBadge;
+        [SerializeField] private TMP_Text ownRankBadgeText;
+
+        [Header("Table Layout")]
+        [SerializeField] private GameObject tableContainer;
 
         protected Func<PlayerLeaderboardData[]> getNationalityPlayers;
         protected AsyncActionHandler<NationalityType> tryToGetLeaderboardsFromRTDB;
@@ -374,6 +400,99 @@ namespace ProDomino.Leaderboard
 
             // Wait until the next frame (gameobjects are enabled/disabled and the layout is updated) before refreshing the layout groups to ensure that the UI updates correctly and the elements are displayed in the right order and with the correct spacing.
             await UniTask.NextFrame();
+        }
+
+        protected override void ConfigureOwnPlayerUI()
+        {
+            base.ConfigureOwnPlayerUI();
+
+            if (ownRankBadgeText != null)
+            {
+                var currentLeaderboard = getLeaderboardID?.Invoke(SelectedGameMode, SelectedNumberPlayers) ?? $"{SelectedGameMode}{SelectedNumberPlayers}";
+                if ((PlayerLeaderboards?.TryGetValue(currentLeaderboard, out var ownPlayerEntry) ?? false) && ownPlayerEntry != null)
+                {
+                    int rank = ownPlayerEntry.Rank + 1;
+                    string suffix = rank switch
+                    {
+                        1 => "st",
+                        2 => "nd",
+                        3 => "rd",
+                        _ => "th"
+                    };
+                    ownRankBadgeText.text = $"<size=70%><color=#8E95A5>Your rank</color></size>\n<b><color=#F59E0B>{rank}{suffix}</color></b>";
+                }
+                else
+                {
+                    ownRankBadgeText.text = "<size=70%><color=#8E95A5>Your rank</color></size>\n<b><color=#F59E0B>N/A</color></b>";
+                }
+            }
+        }
+
+        protected override void ConfigureLeaderboardElements(PlayerLeaderboardData[] filteredPlayers)
+        {
+            base.ConfigureLeaderboardElements(filteredPlayers);
+
+            bool hasEntries = filteredPlayers != null && filteredPlayers.Length > 0;
+
+            if (podiumContainer != null)
+                podiumContainer.SetActive(hasEntries);
+
+            if (tableContainer != null)
+                tableContainer.SetActive(hasEntries);
+
+            if (noLeaderboardEntriesLabel != null)
+                noLeaderboardEntriesLabel.SetActive(!hasEntries);
+
+            if (hasEntries)
+            {
+                ConfigurePodiumSlot(podium1st, filteredPlayers.ElementAtOrDefault(0), 1);
+                ConfigurePodiumSlot(podium2nd, filteredPlayers.ElementAtOrDefault(1), 2);
+                ConfigurePodiumSlot(podium3rd, filteredPlayers.ElementAtOrDefault(2), 3);
+            }
+            else
+            {
+                if (podium1st?.root != null) podium1st.root.SetActive(false);
+                if (podium2nd?.root != null) podium2nd.root.SetActive(false);
+                if (podium3rd?.root != null) podium3rd.root.SetActive(false);
+            }
+        }
+
+        private void ConfigurePodiumSlot(LeaderboardPodiumSlot slot, PlayerLeaderboardData playerData, int rank)
+        {
+            if (slot == null || slot.root == null) return;
+
+            if (playerData == null)
+            {
+                slot.root.SetActive(false);
+                return;
+            }
+
+            slot.root.SetActive(true);
+
+            var info = playerData.leaderboardInfos?.FirstOrDefault(x => x.leaderboardId == CurrentLeaderboardId);
+
+            if (slot.playerNameText != null)
+                slot.playerNameText.text = info?.leaderboardData?.playerName ?? playerData.playerId ?? "-";
+
+            if (slot.eloText != null)
+            {
+                int elo = playerData.playerMatchData?.elo ?? (info != null ? (int)info.leaderboardData.score : 0);
+                slot.eloText.text = $"<b>{elo}</b>\n<size=65%><color=#7A8499>Elo Number</color></size>";
+            }
+
+            if (slot.pedestalRankText != null)
+            {
+                string rankStr = rank switch { 1 => "1st", 2 => "2nd", 3 => "3rd", _ => $"{rank}th" };
+                slot.pedestalRankText.text = rankStr;
+            }
+
+            if (slot.avatarImage != null)
+            {
+                var iconId = playerData.playerProfileData?.profileIconID ?? string.Empty;
+                var icon = GetSprite(iconId, Consts.CollectionKeys.Icons);
+                if (icon != null)
+                    slot.avatarImage.sprite = icon;
+            }
         }
     }
 }
