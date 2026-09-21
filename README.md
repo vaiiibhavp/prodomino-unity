@@ -107,7 +107,113 @@ Used to (re)apply the UI design to the prefabs and to verify the result headless
 The render tools write PNGs of the canvas (edit-mode and simulated runtime) so UI changes can be
 checked without entering Play mode.
 
+### AI-assisted development (Unity MCP)
+
+The project includes a **Model Context Protocol (MCP)** bridge that lets
+[Antigravity](https://deepmind.google/antigravity) (Google's AI coding assistant) control the
+live Unity Editor — read logs, inspect GameObjects, execute menu items, toggle Play mode, and
+capture screenshots — all from the chat window.
+
+**Architecture**
+
+```
+┌──────────────────┐   stdio (JSON-RPC)   ┌───────────────────┐    HTTP 127.0.0.1:8080    ┌───────────────────┐
+│   Antigravity     │ ◄──────────────────► │  Node.js MCP      │ ◄──────────────────────► │  Unity Editor      │
+│   (AI Agent)      │                      │  server.js         │                          │  UnityMcpBridge.cs │
+└──────────────────┘                      └───────────────────┘                          └───────────────────┘
+                                           .agents/mcp/                                   Assets/_ProDomino/
+                                           unity-bridge/                                  Dashboard/Editor/
+```
+
+- **UnityMcpBridge.cs** — an `[InitializeOnLoad]` Editor script that starts an `HttpListener`
+  on `127.0.0.1:8080` (tries ports 8080–8084). It exposes REST-style endpoints and dispatches
+  Unity API calls to the main thread via `EditorApplication.delayCall`.
+- **server.js** — a lightweight Node.js process that speaks the MCP JSON-RPC protocol over
+  stdio and translates each tool call into an HTTP request to the Unity bridge.
+
+**Available MCP tools**
+
+| Tool | Description | Example use |
+|---|---|---|
+| `unity_status` | Check Unity version, active scene, play mode state | "Is the editor running?" |
+| `unity_execute_menu_item` | Run any `MenuItem` on the main thread | "Run `ProDomino/Dashboard/Restyle Sidebar + Render`" |
+| `unity_get_logs` | Retrieve recent console logs (filter by Error / Warning / Log) | "Show me the last errors" |
+| `unity_clear_logs` | Clear the captured log buffer | "Clear the console" |
+| `unity_get_hierarchy` | List root GameObjects in the active scene | "What objects are in the scene?" |
+| `unity_inspect_object` | Inspect components and RectTransform of a named GameObject | "Inspect the `Dashboard_Content` object" |
+| `unity_play_mode` | Start, pause, or stop Play Mode | "Enter play mode" |
+| `unity_capture_screenshot` | Capture a screenshot of the Game/Scene view | "Take a screenshot" |
+
+**Verifying the bridge is running**
+
+1. In Unity, go to **ProDomino → MCP → Check Status** — you'll see
+   `[UnityMcpBridge] Running: True on port 8080` in the Console.
+2. The bridge auto-starts when Unity loads (domain reload). Use **ProDomino → MCP → Restart
+   Bridge Server** if it ever stops.
+
+**Troubleshooting**
+
+| Problem | Fix |
+|---|---|
+| `ECONNREFUSED` when Antigravity calls a tool | Unity Editor is not running, or the bridge hasn't compiled yet. Open Unity and wait for the console to show `[UnityMcpBridge] Connected`. |
+| Port 8080 already in use | The bridge auto-tries ports 8080–8084. If all are taken, free one or change `DefaultPort` in `UnityMcpBridge.cs`. |
+| Tools don't appear in Antigravity | Make sure `.agents/mcp.json` exists at the repo root (it should after cloning). Or run `Tools/setup-antigravity.ps1` to configure the global config. |
+
 ---
+
+## Developer setup (Antigravity AI)
+
+### Quick start (zero config)
+
+```bash
+git clone git@github.com:pipaliyavivek/ProDomino.git
+# Open the project in Unity Editor (wait for compilation — the MCP bridge auto-starts)
+# Open the project folder in Antigravity — Unity MCP tools are available immediately
+```
+
+That's it. Antigravity auto-discovers the project-level MCP config at
+[`.agents/mcp.json`](.agents/mcp.json), which uses a relative path to the bundled
+[`server.js`](.agents/mcp/unity-bridge/server.js). No global configuration is needed.
+
+### Optional: global MCP config
+
+If you want the Unity MCP tools available in **all** Antigravity sessions (not just when this
+project workspace is open), run the setup script:
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools\setup-antigravity.ps1
+```
+
+**macOS / Linux (Bash):**
+```bash
+chmod +x Tools/setup-antigravity.sh
+./Tools/setup-antigravity.sh
+```
+
+The script writes (or merges into) `~/.gemini/config/mcp_config.json` with the absolute path
+to this repo's `server.js`. It preserves any other MCP servers you have configured.
+
+### What's in `.agents/`
+
+```
+.agents/
+├── mcp.json                         # Project-level MCP server registration
+└── mcp/
+    └── unity-bridge/
+        ├── package.json             # Node.js package metadata (no dependencies)
+        └── server.js                # MCP stdio server (bridges to Unity HTTP)
+```
+
+This folder is **committed to git** so every developer gets the same AI tooling on clone.
+
+### Prerequisites
+
+| Requirement | Version | Why |
+|---|---|---|
+| Node.js | ≥ 18.0.0 | Runs the MCP stdio server |
+| Unity | 6000.4.1f1 | The editor that hosts the HTTP bridge |
+| Antigravity | Latest | AI coding assistant that consumes MCP tools |
 
 ## UI redesign
 
