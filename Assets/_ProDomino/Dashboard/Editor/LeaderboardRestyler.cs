@@ -50,9 +50,9 @@ namespace ProDomino.Dashboard.Editor
         [InitializeOnLoadMethod]
         private static void AutoRunOnce()
         {
-            if (!SessionState.GetBool("PD_LeaderboardRestyler_Ran_v4", false))
+            if (!SessionState.GetBool("PD_LeaderboardRestyler_Ran_v5", false))
             {
-                SessionState.SetBool("PD_LeaderboardRestyler_Ran_v4", true);
+                SessionState.SetBool("PD_LeaderboardRestyler_Ran_v5", true);
                 EditorApplication.delayCall += () =>
                 {
                     ApplyAndRender();
@@ -85,7 +85,7 @@ namespace ProDomino.Dashboard.Editor
             headerBg = MakePanelSprite("Lb_HeaderBg", 32, 32, 6, Hex("#0D111A"), Hex("#090D15"), Hex("#141924"), 1f);
 
             podiumBlockSprite = MakePedestalSprite("Lb_PedestalBg", 48, 64, 8);
-            sunburstSprite = MakeSunburstSprite("Lb_SunburstRays", 512, 256);
+            sunburstSprite = MakeSunburstSprite("Lb_SunburstRays", 1024, 512);
         }
 
         private static Sprite EnsureSprite(string path)
@@ -280,7 +280,7 @@ namespace ProDomino.Dashboard.Editor
                 podiumRt.anchorMax = new Vector2(1, 1);
                 podiumRt.pivot = new Vector2(0.5f, 1);
                 podiumRt.anchoredPosition = new Vector2(0, -75);
-                podiumRt.sizeDelta = new Vector2(-40, 235);
+                podiumRt.sizeDelta = new Vector2(-40, 255);
 
                 // Sunburst background rays behind podium
                 var sunburstGo = new GameObject("SunburstRays", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -294,14 +294,14 @@ namespace ProDomino.Dashboard.Editor
                 sunburstRt.anchorMax = new Vector2(0.5f, 0.5f);
                 sunburstRt.pivot = new Vector2(0.5f, 0.5f);
                 sunburstRt.anchoredPosition = Vector2.zero;
-                sunburstRt.sizeDelta = new Vector2(680, 235);
+                sunburstRt.sizeDelta = new Vector2(980, 265);
 
                 // 2nd Place (Left)
-                var p2 = BuildPodiumSlot(podiumGo.transform, "Podium_2nd", -155f, 95f, 2, "2nd", "David", 2200, trophySilver, glowSilver);
+                var p2 = BuildPodiumSlot(podiumGo.transform, "Podium_2nd", -205f, 115f, 160f, 2, "2nd", "David", 2200, trophySilver, glowSilver);
                 // 1st Place (Center - Highest)
-                var p1 = BuildPodiumSlot(podiumGo.transform, "Podium_1st", 0f, 125f, 1, "1st", "AlexStorm", 2240, trophyGold, glowGold);
+                var p1 = BuildPodiumSlot(podiumGo.transform, "Podium_1st", 0f, 150f, 180f, 1, "1st", "AlexStorm", 2240, trophyGold, glowGold);
                 // 3rd Place (Right - Shortest)
-                var p3 = BuildPodiumSlot(podiumGo.transform, "Podium_3rd", 155f, 75f, 3, "3rd", "Robert", 2140, trophyBronze, glowBronze);
+                var p3 = BuildPodiumSlot(podiumGo.transform, "Podium_3rd", 205f, 90f, 160f, 3, "3rd", "Robert", 2140, trophyBronze, glowBronze);
 
                 // --- 3. TABLE SECTION ---
                 var tableGo = new GameObject("TableContainer", typeof(RectTransform));
@@ -311,7 +311,7 @@ namespace ProDomino.Dashboard.Editor
                 tableRt.anchorMax = new Vector2(1, 1);
                 tableRt.pivot = new Vector2(0.5f, 0);
                 tableRt.offsetMin = new Vector2(20, 16);
-                tableRt.offsetMax = new Vector2(-20, -322);
+                tableRt.offsetMax = new Vector2(-20, -345);
 
                 // Rankings_Header into TableContainer
                 var headerRowGo = new GameObject("Rankings_Header", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -563,7 +563,7 @@ namespace ProDomino.Dashboard.Editor
             return dd;
         }
 
-        private static GameObject BuildPodiumSlot(Transform parent, string name, float xOffset, float pedestalH, int rank, string rankLabel, string defaultName, int defaultElo, Sprite trophy, Sprite glow)
+        private static GameObject BuildPodiumSlot(Transform parent, string name, float xOffset, float pedestalH, float slotWidth, int rank, string rankLabel, string defaultName, int defaultElo, Sprite trophy, Sprite glow)
         {
             var slotGo = new GameObject(name, typeof(RectTransform));
             slotGo.transform.SetParent(parent, false);
@@ -572,7 +572,7 @@ namespace ProDomino.Dashboard.Editor
             slotRt.anchorMax = new Vector2(0.5f, 0);
             slotRt.pivot = new Vector2(0.5f, 0);
             slotRt.anchoredPosition = new Vector2(xOffset, 0);
-            slotRt.sizeDelta = new Vector2(130, pedestalH + 115);
+            slotRt.sizeDelta = new Vector2(slotWidth, pedestalH + 130);
 
             // Pedestal Block
             var blockGo = new GameObject("PedestalBlock", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -592,7 +592,7 @@ namespace ProDomino.Dashboard.Editor
             var rankNumGo = new GameObject("PedestalRankText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             rankNumGo.transform.SetParent(blockGo.transform, false);
             var rankNumTmp = rankNumGo.GetComponent<TextMeshProUGUI>();
-            float rankFontSize = rank == 1 ? 38f : 32f;
+            float rankFontSize = rank == 1 ? 40f : 34f;
             Color rankColor = rank switch
             {
                 1 => Hex("#8A7A4A"),
@@ -630,7 +630,7 @@ namespace ProDomino.Dashboard.Editor
             trophyRt.anchorMin = new Vector2(0.5f, 0);
             trophyRt.anchorMax = new Vector2(0.5f, 0);
             trophyRt.pivot = new Vector2(0.5f, 0);
-            trophyRt.anchoredPosition = new Vector2(0, pedestalH + 2);
+            trophyRt.anchoredPosition = new Vector2(0, pedestalH + 3);
             trophyRt.sizeDelta = rank == 1 ? new Vector2(22, 22) : new Vector2(18, 18);
 
             // Player Name Text
@@ -642,7 +642,7 @@ namespace ProDomino.Dashboard.Editor
             nameRt.anchorMin = new Vector2(0, 0);
             nameRt.anchorMax = new Vector2(1, 0);
             nameRt.pivot = new Vector2(0.5f, 0);
-            nameRt.anchoredPosition = new Vector2(0, pedestalH + 26);
+            nameRt.anchoredPosition = new Vector2(0, pedestalH + 28);
             nameRt.sizeDelta = new Vector2(0, 20);
 
             // Avatar Glow Frame
@@ -651,12 +651,12 @@ namespace ProDomino.Dashboard.Editor
             var glowImg = glowGo.GetComponent<Image>();
             glowImg.sprite = glow;
             glowImg.color = Color.white;
-            float glowSize = rank == 1 ? 82f : 72f;
+            float glowSize = rank == 1 ? 84f : 74f;
             var glowRt = (RectTransform)glowGo.transform;
             glowRt.anchorMin = new Vector2(0.5f, 0);
             glowRt.anchorMax = new Vector2(0.5f, 0);
             glowRt.pivot = new Vector2(0.5f, 0);
-            glowRt.anchoredPosition = new Vector2(0, pedestalH + 48);
+            glowRt.anchoredPosition = new Vector2(0, pedestalH + 52);
             glowRt.sizeDelta = new Vector2(glowSize, glowSize);
 
             // Avatar Image (inside glow frame)
@@ -665,7 +665,7 @@ namespace ProDomino.Dashboard.Editor
             var avImg = avGo.GetComponent<Image>();
             avImg.sprite = defaultAvatarSprite;
             avImg.color = Color.white;
-            float avSize = glowSize - 12f;
+            float avSize = rank == 1 ? 72f : 62f;
             var avRt = (RectTransform)avGo.transform;
             avRt.anchorMin = new Vector2(0.5f, 0.5f);
             avRt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -694,16 +694,16 @@ namespace ProDomino.Dashboard.Editor
         // =========================================================================
         private static void RestyleHeaderColumns(Transform headerTf)
         {
-            (string name, string label, float x, float w, TextAlignmentOptions align)[] cols =
+            (string name, string label, float minX, float maxX, TextAlignmentOptions align)[] cols =
             {
-                ("RankCol", "#", 15f, 40f, TextAlignmentOptions.Center),
-                ("UserCol", "Username", 65f, 220f, TextAlignmentOptions.Left),
-                ("EloCol", "Elo Rank", 300f, 100f, TextAlignmentOptions.Center),
-                ("WCol", "W", 430f, 60f, TextAlignmentOptions.Center),
-                ("LCol", "L", 510f, 60f, TextAlignmentOptions.Center),
-                ("Col2nd", "2nd", 590f, 60f, TextAlignmentOptions.Center),
-                ("Col3rd", "3rd", 670f, 60f, TextAlignmentOptions.Center),
-                ("WLCol", "W/L", 750f, 70f, TextAlignmentOptions.Center)
+                ("RankCol", "#", 0.015f, 0.065f, TextAlignmentOptions.Center),
+                ("UserCol", "Username", 0.075f, 0.36f, TextAlignmentOptions.MidlineLeft),
+                ("EloCol", "Elo Rank", 0.37f, 0.48f, TextAlignmentOptions.Center),
+                ("WCol", "W", 0.49f, 0.57f, TextAlignmentOptions.Center),
+                ("LCol", "L", 0.58f, 0.66f, TextAlignmentOptions.Center),
+                ("Col2nd", "2nd", 0.67f, 0.75f, TextAlignmentOptions.Center),
+                ("Col3rd", "3rd", 0.76f, 0.84f, TextAlignmentOptions.Center),
+                ("WLCol", "W/L", 0.85f, 0.985f, TextAlignmentOptions.Center)
             };
 
             foreach (var col in cols)
@@ -711,13 +711,13 @@ namespace ProDomino.Dashboard.Editor
                 var colGo = new GameObject(col.name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
                 colGo.transform.SetParent(headerTf, false);
                 var tmp = colGo.GetComponent<TextMeshProUGUI>();
-                Text(tmp, col.label, fSemiBold, 11f, Hex("#7A8499"), col.align);
+                Text(tmp, col.label, fSemiBold, 11.5f, Hex("#7A8499"), col.align);
                 var rt = (RectTransform)colGo.transform;
-                rt.anchorMin = new Vector2(0, 0.5f);
-                rt.anchorMax = new Vector2(0, 0.5f);
-                rt.pivot = new Vector2(0, 0.5f);
-                rt.anchoredPosition = new Vector2(col.x, 0);
-                rt.sizeDelta = new Vector2(col.w, 24);
+                rt.anchorMin = new Vector2(col.minX, 0);
+                rt.anchorMax = new Vector2(col.maxX, 1);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
             }
         }
 
@@ -726,135 +726,122 @@ namespace ProDomino.Dashboard.Editor
         // =========================================================================
         private static void RestyleEntryPrefab()
         {
-            var root = PrefabUtility.LoadPrefabContents(EntryPrefabPath);
+            var root = new GameObject("LeaderboardEntry_Prefab", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LeaderboardElement));
             try
             {
                 var rt = root.GetComponent<RectTransform>();
-                if (rt != null)
-                {
-                    rt.sizeDelta = new Vector2(rt.sizeDelta.x, 46f);
-                }
+                rt.anchorMin = new Vector2(0, 1);
+                rt.anchorMax = new Vector2(1, 1);
+                rt.pivot = new Vector2(0.5f, 1);
+                rt.sizeDelta = new Vector2(0, 46f);
 
-                var bg = GetOrAdd<Image>(root.transform);
+                var bg = root.GetComponent<Image>();
                 bg.sprite = rowSprite;
                 bg.type = Image.Type.Sliced;
                 bg.color = Color.white;
 
-                var element = root.GetComponent<MonoBehaviour>();
+                var element = root.GetComponent<LeaderboardElement>();
                 var so = new SerializedObject(element);
 
-                // 1. Ranking Trophy & Text (# column)
-                var trophyGo = GetOrCreateChild(root.transform, "Ranking_Trophy");
-                var trophyImg = GetOrAdd<Image>(trophyGo.transform);
+                // 1. Ranking Trophy & Text (# column: 0.015 to 0.065)
+                var trophyGo = new GameObject("Ranking_Trophy", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                trophyGo.transform.SetParent(root.transform, false);
+                var trophyImg = trophyGo.GetComponent<Image>();
                 trophyImg.sprite = trophyGold;
                 trophyImg.color = Color.white;
                 trophyImg.preserveAspect = true;
                 trophyImg.type = Image.Type.Simple;
                 var trophyRt = (RectTransform)trophyGo.transform;
-                trophyRt.anchorMin = new Vector2(0, 0.5f);
-                trophyRt.anchorMax = new Vector2(0, 0.5f);
+                trophyRt.anchorMin = new Vector2(0.015f, 0.5f);
+                trophyRt.anchorMax = new Vector2(0.065f, 0.5f);
                 trophyRt.pivot = new Vector2(0.5f, 0.5f);
-                trophyRt.anchoredPosition = new Vector2(35, 0);
+                trophyRt.anchoredPosition = Vector2.zero;
                 trophyRt.sizeDelta = new Vector2(20, 20);
 
-                var rankText = so.FindProperty("rankingLabel")?.objectReferenceValue as TextMeshProUGUI;
-                if (rankText != null)
-                {
-                    var rankRt = rankText.rectTransform;
-                    rankRt.anchorMin = new Vector2(0, 0.5f);
-                    rankRt.anchorMax = new Vector2(0, 0.5f);
-                    rankRt.pivot = new Vector2(0.5f, 0.5f);
-                    rankRt.anchoredPosition = new Vector2(35, 0);
-                    rankRt.sizeDelta = new Vector2(40, 24);
-                    rankText.font = fSemiBold;
-                    rankText.fontSize = 12.5f;
-                    rankText.color = Hex("#8E95A5");
-                    rankText.alignment = TextAlignmentOptions.Center;
-                }
+                var rankGo = new GameObject("Ranking_Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                rankGo.transform.SetParent(root.transform, false);
+                var rankTmp = rankGo.GetComponent<TextMeshProUGUI>();
+                Text(rankTmp, "4", fSemiBold, 13f, Hex("#8E95A5"), TextAlignmentOptions.Center);
+                var rankRt = (RectTransform)rankGo.transform;
+                rankRt.anchorMin = new Vector2(0.015f, 0);
+                rankRt.anchorMax = new Vector2(0.065f, 1);
+                rankRt.pivot = new Vector2(0.5f, 0.5f);
+                rankRt.offsetMin = Vector2.zero;
+                rankRt.offsetMax = Vector2.zero;
 
-                // 2. Avatar & Username (Username column)
-                var playerImg = so.FindProperty("playerImage")?.objectReferenceValue as Image;
-                if (playerImg != null)
-                {
-                    var pRt = playerImg.rectTransform;
-                    pRt.anchorMin = new Vector2(0, 0.5f);
-                    pRt.anchorMax = new Vector2(0, 0.5f);
-                    pRt.pivot = new Vector2(0, 0.5f);
-                    pRt.anchoredPosition = new Vector2(65, 0);
-                    pRt.sizeDelta = new Vector2(28, 28);
-                }
+                // 2. Avatar & Username (Username column: 0.075 to 0.36)
+                var avatarGo = new GameObject("Player_Avatar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                avatarGo.transform.SetParent(root.transform, false);
+                var avImg = avatarGo.GetComponent<Image>();
+                avImg.sprite = defaultAvatarSprite;
+                avImg.color = Color.white;
+                avImg.preserveAspect = true;
+                var avRt = (RectTransform)avatarGo.transform;
+                avRt.anchorMin = new Vector2(0.075f, 0.5f);
+                avRt.anchorMax = new Vector2(0.075f, 0.5f);
+                avRt.pivot = new Vector2(0, 0.5f);
+                avRt.anchoredPosition = Vector2.zero;
+                avRt.sizeDelta = new Vector2(28, 28);
 
-                var nameText = so.FindProperty("playerNameLabel")?.objectReferenceValue as TextMeshProUGUI;
-                if (nameText != null)
-                {
-                    var nRt = nameText.rectTransform;
-                    nRt.anchorMin = new Vector2(0, 0.5f);
-                    nRt.anchorMax = new Vector2(0, 0.5f);
-                    nRt.pivot = new Vector2(0, 0.5f);
-                    nRt.anchoredPosition = new Vector2(100, 0);
-                    nRt.sizeDelta = new Vector2(180, 24);
-                    nameText.font = fSemiBold;
-                    nameText.fontSize = 13f;
-                    nameText.color = Color.white;
-                    nameText.alignment = TextAlignmentOptions.MidlineLeft;
-                }
+                var nameGo = new GameObject("Player_Name", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                nameGo.transform.SetParent(root.transform, false);
+                var nameTmp = nameGo.GetComponent<TextMeshProUGUI>();
+                Text(nameTmp, "PlayerName", fSemiBold, 13.5f, Color.white, TextAlignmentOptions.MidlineLeft);
+                var nameRt = (RectTransform)nameGo.transform;
+                nameRt.anchorMin = new Vector2(0.075f, 0);
+                nameRt.anchorMax = new Vector2(0.36f, 1);
+                nameRt.pivot = new Vector2(0, 0.5f);
+                nameRt.offsetMin = new Vector2(36, 0);
+                nameRt.offsetMax = Vector2.zero;
 
                 // 3. Stats Columns
-                PositionCol(so.FindProperty("eloLabel")?.objectReferenceValue as TextMeshProUGUI, 300f, 100f, fMedium, 12.5f);
-                PositionCol(so.FindProperty("victoriesLabel")?.objectReferenceValue as TextMeshProUGUI, 430f, 60f, fMedium, 12.5f);
-                PositionCol(so.FindProperty("losesLabel")?.objectReferenceValue as TextMeshProUGUI, 510f, 60f, fMedium, 12.5f);
-                PositionCol(so.FindProperty("secondPlaceLabel")?.objectReferenceValue as TextMeshProUGUI, 590f, 60f, fMedium, 12.5f);
-                PositionCol(so.FindProperty("thirdPlaceLabel")?.objectReferenceValue as TextMeshProUGUI, 670f, 60f, fMedium, 12.5f);
-                PositionCol(so.FindProperty("victoriesRateLabel")?.objectReferenceValue as TextMeshProUGUI, 750f, 70f, fMedium, 12.5f);
+                var eloTmp = CreateStatCol(root.transform, "Elo_Text", 0.37f, 0.48f, "1850");
+                var wTmp = CreateStatCol(root.transform, "Wins_Text", 0.49f, 0.57f, "120");
+                var lTmp = CreateStatCol(root.transform, "Loses_Text", 0.58f, 0.66f, "35");
+                var c2Tmp = CreateStatCol(root.transform, "SecondPlace_Text", 0.67f, 0.75f, "24");
+                var c3Tmp = CreateStatCol(root.transform, "ThirdPlace_Text", 0.76f, 0.84f, "18");
+                var wlTmp = CreateStatCol(root.transform, "WinLossRatio_Text", 0.85f, 0.985f, "3.42");
 
-                // Hide legacy / unused text & images that clutter the row
-                string[] hideProps = { "idLabel", "scoreLabel", "tierInitialsLabel", "completedAchievementsLabel" };
-                foreach (var prop in hideProps)
-                {
-                    var tmp = so.FindProperty(prop)?.objectReferenceValue as TextMeshProUGUI;
-                    if (tmp != null)
-                    {
-                        tmp.gameObject.SetActive(false);
-                    }
-                }
-
-                var allImgs = root.GetComponentsInChildren<Image>(true);
-                foreach (var img in allImgs)
-                {
-                    if (img != bg && img != trophyImg && img != playerImg)
-                    {
-                        img.gameObject.SetActive(false);
-                    }
-                }
-
+                // Wire Serialized Properties on LeaderboardElement
                 SetField(so, "rankingTrophyImage", trophyImg);
+                SetField(so, "rankingLabel", rankTmp);
+                SetField(so, "playerNameLabel", nameTmp);
+                SetField(so, "playerImage", avImg);
+                SetField(so, "defaultAvatarSprite", defaultAvatarSprite);
                 SetField(so, "goldTrophySprite", trophyGold);
                 SetField(so, "silverTrophySprite", trophySilver);
                 SetField(so, "bronzeTrophySprite", trophyBronze);
+                SetField(so, "eloLabel", eloTmp);
+                SetField(so, "victoriesLabel", wTmp);
+                SetField(so, "losesLabel", lTmp);
+                SetField(so, "secondPlaceLabel", c2Tmp);
+                SetField(so, "thirdPlaceLabel", c3Tmp);
+                SetField(so, "victoriesRateLabel", wlTmp);
 
                 so.ApplyModifiedPropertiesWithoutUndo();
+
                 PrefabUtility.SaveAsPrefabAsset(root, EntryPrefabPath);
-                Debug.Log("[LeaderboardRestyler] LeaderboardEntry_Prefab saved successfully.");
+                Debug.Log("[LeaderboardRestyler] LeaderboardEntry_Prefab rebuilt cleanly from scratch!");
             }
             finally
             {
-                PrefabUtility.UnloadPrefabContents(root);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 
-        private static void PositionCol(TextMeshProUGUI tmp, float x, float w, TMP_FontAsset font, float size)
+        private static TextMeshProUGUI CreateStatCol(Transform parent, string name, float minX, float maxX, string defaultText)
         {
-            if (tmp == null) return;
-            var rt = tmp.rectTransform;
-            rt.anchorMin = new Vector2(0, 0.5f);
-            rt.anchorMax = new Vector2(0, 0.5f);
-            rt.pivot = new Vector2(0, 0.5f);
-            rt.anchoredPosition = new Vector2(x, 0);
-            rt.sizeDelta = new Vector2(w, 24);
-            tmp.font = font;
-            tmp.fontSize = size;
-            tmp.color = Hex("#D1D5DB");
-            tmp.alignment = TextAlignmentOptions.Center;
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            go.transform.SetParent(parent, false);
+            var tmp = go.GetComponent<TextMeshProUGUI>();
+            Text(tmp, defaultText, fMedium, 13f, Hex("#D1D5DB"), TextAlignmentOptions.Center);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(minX, 0);
+            rt.anchorMax = new Vector2(maxX, 1);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            return tmp;
         }
 
         // =========================================================================

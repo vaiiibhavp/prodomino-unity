@@ -34,6 +34,7 @@ namespace ProDomino.Leaderboard
         [SerializeField] private Image playerImage;
         [SerializeField] private Image nationalityImage;
         [SerializeField] private Image[] achievementsImages;
+        [SerializeField] private Sprite defaultAvatarSprite;
 
         private Func<string, string, Sprite> getSprite;
 
@@ -136,6 +137,8 @@ namespace ProDomino.Leaderboard
 
                 if (profileIcon)
                     playerImage.sprite = profileIcon;
+                else if (defaultAvatarSprite)
+                    playerImage.sprite = defaultAvatarSprite;
             }
 
             // Set player nationality
@@ -148,8 +151,15 @@ namespace ProDomino.Leaderboard
             }
 
             // Set the ELO
-            if (eloLabel && PlayerLeaderboardData.playerMatchData is not null)
-                eloLabel.text = PlayerLeaderboardData.playerMatchData.elo.ToString();
+            if (eloLabel)
+            {
+                if (PlayerLeaderboardData.playerMatchData is not null)
+                    eloLabel.text = PlayerLeaderboardData.playerMatchData.elo.ToString();
+                else if (CurrentLeaderboardInfo?.leaderboardData is not null)
+                    eloLabel.text = CurrentLeaderboardInfo.leaderboardData.score.ToString();
+                else
+                    eloLabel.text = "0";
+            }
 
             if (PlayerLeaderboardData.analyticsData is not null)
             { 
@@ -167,6 +177,14 @@ namespace ProDomino.Leaderboard
 
                 if (victoriesRateLabel)
                     victoriesRateLabel.text = PlayerLeaderboardData.analyticsData.CompetitiveWLRatio.ToString("0.00");
+            }
+            else
+            {
+                if (victoriesLabel) victoriesLabel.text = "0";
+                if (losesLabel) losesLabel.text = "0";
+                if (secondPlaceLabel) secondPlaceLabel.text = "0";
+                if (thirdPlaceLabel) thirdPlaceLabel.text = "0";
+                if (victoriesRateLabel) victoriesRateLabel.text = "0.00";
             }
 
             // Fill in achievements images
@@ -221,19 +239,19 @@ namespace ProDomino.Leaderboard
             if (eloLabel)
                 eloLabel.text = "-";
             if (victoriesLabel)
-                victoriesLabel.text = "-";
+                victoriesLabel.text = "0";
             if (losesLabel)
-                losesLabel.text = "-";
+                losesLabel.text = "0";
             if (secondPlaceLabel)
-                secondPlaceLabel.text = "-";
+                secondPlaceLabel.text = "0";
             if (thirdPlaceLabel)
-                thirdPlaceLabel.text = "-";
+                thirdPlaceLabel.text = "0";
             if (victoriesRateLabel)
-                victoriesRateLabel.text = "-";
+                victoriesRateLabel.text = "0.00";
             if (completedAchievementsLabel)
                 completedAchievementsLabel.text = "Completed Achievements: -";
             if (playerImage)
-                playerImage.sprite = null;
+                playerImage.sprite = defaultAvatarSprite;
             if (nationalityImage)
                 nationalityImage.sprite = null;
         }
