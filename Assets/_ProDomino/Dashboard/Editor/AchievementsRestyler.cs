@@ -17,18 +17,21 @@ namespace ProDomino.Dashboard.Editor
     /// the Figma reference (node 188:47834, media_1790018335447.png):
     /// - Header: Trophy Icon + "Achievements" title grouped together on the top left
     /// - 3 Metric Summary Cards:
-    ///     1) Total Achievements (Horn icon, 12 / 20, Total Achievements)
-    ///     2) Total Achievement Points (Star icon, 12, Total Achievement Points)
-    ///     3) Current Rank (Class C crest, Class C, Current Rank)
+    ///     [Achievements tab]:
+    ///         1) Total Achievements (Horn icon, 12 / 20, Total Achievements)
+    ///         2) Total Achievement Points (Star icon, 12, Total Achievement Points)
+    ///         3) Current Rank (Class C crest, Class C, Current Rank)
+    ///     [Challenges tab]:
+    ///         1) Total Daily Challenges (Calendar icon, progress bar, 1/30)
+    ///         2) Total Weekly Challenges (Calendar icon, progress bar, 1/4)
+    ///         3) Total Monthly Challenges (Calendar icon, progress bar, 0/1)
     /// - Tab Bar & Filters Row:
-    ///     Left: [ Achievements | Challenges ] segmented pill
+    ///     Left: [ Achievements | Challenges ] interactive segmented pill button
     ///     Right: [ Sort By v ] [ Status v ] [ Game v ] dropdown pills
     /// - Table Section:
-    ///     5-Column Header: Achievement Info (42%), Game (14%), Achievement Points (14%), Progress Bar (15%), Action (12.5%)
-    ///     Vertical ScrollView with smooth elastic scrolling
-    ///     Pre-populated sample rows matching Figma (Claim, Claimed, In progress)
-    /// - Row Prefab (Achiev_List_Container.prefab):
-    ///     Flat 5-column layout with proper icons, progress track, and 3 Action button states
+    ///     5-Column Header: Achievement/Challenge Info, Game, Achievement Points/Reward, Progress Bar, Action
+    ///     Dual-content views (Achievements with star icons vs Challenges with coin icons)
+    ///     Interactive AchievementsTabController component handling live tab switching
     /// </summary>
     internal static class AchievementsRestyler
     {
@@ -65,9 +68,9 @@ namespace ProDomino.Dashboard.Editor
         [InitializeOnLoadMethod]
         private static void AutoRunOnce()
         {
-            if (!SessionState.GetBool("PD_AchievementsRestyler_Ran_v2", false))
+            if (!SessionState.GetBool("PD_AchievementsRestyler_Ran_v3", false))
             {
-                SessionState.SetBool("PD_AchievementsRestyler_Ran_v2", true);
+                SessionState.SetBool("PD_AchievementsRestyler_Ran_v3", true);
                 EditorApplication.delayCall += () =>
                 {
                     ApplyAndRender();
@@ -208,7 +211,7 @@ namespace ProDomino.Dashboard.Editor
                 glRt.anchoredPosition = new Vector2(32f, 0f);
                 glRt.sizeDelta = new Vector2(-36f, 24f);
 
-                // 3. Column: Achievement Points [0.570 .. 0.710]
+                // 3. Column: Achievement Points / Reward [0.570 .. 0.710]
                 var colPoints = CreateExplicitRect(root.transform, "Col_Points", 0.570f, 0f, 0.710f, 1f);
                 var starGo = CreateExplicitRect(colPoints, "StarIcon", 0f, 0.5f, 0f, 0.5f);
                 starGo.pivot = new Vector2(0f, 0.5f);
@@ -321,6 +324,7 @@ namespace ProDomino.Dashboard.Editor
                 rt.offsetMax = Vector2.zero;
 
                 var achUI = root.GetComponent<AchievementUI>() ?? root.AddComponent<AchievementUI>();
+                var tabCtrl = root.GetComponent<AchievementsTabController>() ?? root.AddComponent<AchievementsTabController>();
                 var cg = root.GetComponent<CanvasGroup>() ?? root.AddComponent<CanvasGroup>();
 
                 if (root.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup vlgRoot)
@@ -364,22 +368,42 @@ namespace ProDomino.Dashboard.Editor
                 // -----------------------------------------------------------------
                 // 2. Summary Metric Cards Section (Top y = -46px, Height = 112px)
                 // -----------------------------------------------------------------
-                var cardsSection = CreateExplicitRect(mainContent, "Cards_Section", 0f, 1f, 1f, 1f);
-                cardsSection.pivot = new Vector2(0.5f, 1f);
-                cardsSection.sizeDelta = new Vector2(0f, 112f);
-                cardsSection.anchoredPosition = new Vector2(0f, -46f);
+                // 2a. Achievements Cards Container
+                var cardsSectionAchiev = CreateExplicitRect(mainContent, "Cards_Section_Achievements", 0f, 1f, 1f, 1f);
+                cardsSectionAchiev.pivot = new Vector2(0.5f, 1f);
+                cardsSectionAchiev.sizeDelta = new Vector2(0f, 112f);
+                cardsSectionAchiev.anchoredPosition = new Vector2(0f, -46f);
 
-                var cardsHlg = cardsSection.gameObject.AddComponent<HorizontalLayoutGroup>();
-                cardsHlg.childAlignment = TextAnchor.MiddleCenter;
-                cardsHlg.spacing = 18f;
-                cardsHlg.childControlWidth = true;
-                cardsHlg.childControlHeight = true;
-                cardsHlg.childForceExpandWidth = true;
-                cardsHlg.childForceExpandHeight = true;
+                var cardsHlgAchiev = cardsSectionAchiev.gameObject.AddComponent<HorizontalLayoutGroup>();
+                cardsHlgAchiev.childAlignment = TextAnchor.MiddleCenter;
+                cardsHlgAchiev.spacing = 18f;
+                cardsHlgAchiev.childControlWidth = true;
+                cardsHlgAchiev.childControlHeight = true;
+                cardsHlgAchiev.childForceExpandWidth = true;
+                cardsHlgAchiev.childForceExpandHeight = true;
 
-                CreateMetricCard(cardsSection, "Card_TotalAchievements", hornSprite, Hex("#FBBF24"), "12 / 20", "Total Achievements", out var totalAchievTmp);
-                CreateMetricCard(cardsSection, "Card_AchievementPoints", starSprite, Hex("#FBBF24"), "12", "Total Achievement Points", out var pointsTmp);
-                CreateMetricCard(cardsSection, "Card_CurrentRank", classCIcon, Color.white, "Class C", "Current Rank", out var rankTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_TotalAchievements", hornSprite, Hex("#FBBF24"), "12 / 20", "Total Achievements", out var totalAchievTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_AchievementPoints", starSprite, Hex("#FBBF24"), "12", "Total Achievement Points", out var pointsTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_CurrentRank", classCIcon, Color.white, "Class C", "Current Rank", out var rankTmp);
+
+                // 2b. Challenges Cards Container (for Challenges tab)
+                var cardsSectionChallenges = CreateExplicitRect(mainContent, "Cards_Section_Challenges", 0f, 1f, 1f, 1f);
+                cardsSectionChallenges.pivot = new Vector2(0.5f, 1f);
+                cardsSectionChallenges.sizeDelta = new Vector2(0f, 112f);
+                cardsSectionChallenges.anchoredPosition = new Vector2(0f, -46f);
+
+                var cardsHlgChal = cardsSectionChallenges.gameObject.AddComponent<HorizontalLayoutGroup>();
+                cardsHlgChal.childAlignment = TextAnchor.MiddleCenter;
+                cardsHlgChal.spacing = 18f;
+                cardsHlgChal.childControlWidth = true;
+                cardsHlgChal.childControlHeight = true;
+                cardsHlgChal.childForceExpandWidth = true;
+                cardsHlgChal.childForceExpandHeight = true;
+
+                CreateChallengeMetricCard(cardsSectionChallenges, "Card_DailyChallenges", "Total Daily Challenges", "1/30", 1f / 30f);
+                CreateChallengeMetricCard(cardsSectionChallenges, "Card_WeeklyChallenges", "Total Weekly Challenges", "1/4", 0.25f);
+                CreateChallengeMetricCard(cardsSectionChallenges, "Card_MonthlyChallenges", "Total Monthly Challenges", "0/1", 0.05f);
+                cardsSectionChallenges.gameObject.SetActive(false);
 
                 // -----------------------------------------------------------------
                 // 3. Tab Bar & Filters Row (Top y = -170px, Height = 40px)
@@ -398,20 +422,25 @@ namespace ProDomino.Dashboard.Editor
                 tabSegImg.sprite = tabInactiveBg;
                 tabSegImg.type = Image.Type.Sliced;
 
-                // Tab 1: Achievements (Active blue)
+                // Tab 1: Achievements (Active blue button)
                 var tabAchiev = CreateExplicitRect(tabSegment, "Tab_Achievements", 0f, 0f, 0.5f, 1f);
                 tabAchiev.offsetMin = new Vector2(2f, 2f);
                 tabAchiev.offsetMax = new Vector2(-2f, -2f);
                 var tabAchievImg = tabAchiev.gameObject.AddComponent<Image>();
                 tabAchievImg.sprite = tabActiveBg;
                 tabAchievImg.type = Image.Type.Sliced;
-                CreateExplicitText(tabAchiev, "Label", "Achievements", fSemiBold, 12.5f, Color.white, TextAlignmentOptions.Center);
+                var tabAchievBtn = tabAchiev.gameObject.AddComponent<Button>();
+                var tabAchievTxt = CreateExplicitText(tabAchiev, "Label", "Achievements", fSemiBold, 12.5f, Color.white, TextAlignmentOptions.Center);
 
-                // Tab 2: Challenges (Inactive dark)
+                // Tab 2: Challenges (Inactive dark button)
                 var tabChallenges = CreateExplicitRect(tabSegment, "Tab_Challenges", 0.5f, 0f, 1f, 1f);
                 tabChallenges.offsetMin = new Vector2(2f, 2f);
                 tabChallenges.offsetMax = new Vector2(-2f, -2f);
-                CreateExplicitText(tabChallenges, "Label", "Challenges", fMedium, 12.5f, Hex("#64748B"), TextAlignmentOptions.Center);
+                var tabChallengesImg = tabChallenges.gameObject.AddComponent<Image>();
+                tabChallengesImg.sprite = tabInactiveBg;
+                tabChallengesImg.type = Image.Type.Sliced;
+                var tabChallengesBtn = tabChallenges.gameObject.AddComponent<Button>();
+                var tabChallengesTxt = CreateExplicitText(tabChallenges, "Label", "Challenges", fMedium, 12.5f, Hex("#64748B"), TextAlignmentOptions.Center);
 
                 // Right: Filters (Sort By, Status, Game)
                 var filtersContainer = CreateExplicitRect(tabBarRow, "FiltersContainer", 1f, 0.5f, 1f, 0.5f);
@@ -452,9 +481,9 @@ namespace ProDomino.Dashboard.Editor
                 thImg.type = Image.Type.Sliced;
                 thImg.color = new Color(1f, 1f, 1f, 0.8f);
 
-                CreateHeaderCol(tableHeader, "TH_Info", "Achievement Info", 0.015f, 0.430f);
+                var thInfoTmp = CreateHeaderCol(tableHeader, "TH_Info", "Achievement Info", 0.015f, 0.430f);
                 CreateHeaderCol(tableHeader, "TH_Game", "Game", 0.430f, 0.570f);
-                CreateHeaderCol(tableHeader, "TH_Points", "Achievement Points", 0.570f, 0.710f);
+                var thPointsTmp = CreateHeaderCol(tableHeader, "TH_Points", "Achievement Points", 0.570f, 0.710f);
                 CreateHeaderCol(tableHeader, "TH_Progress", "Progress Bar", 0.710f, 0.860f);
                 CreateHeaderCol(tableHeader, "TH_Action", "Action", 0.860f, 0.985f, TextAlignmentOptions.Center);
 
@@ -477,54 +506,101 @@ namespace ProDomino.Dashboard.Editor
                 viewport.offsetMax = Vector2.zero;
                 var mask = viewport.gameObject.AddComponent<RectMask2D>();
 
-                var content = CreateExplicitRect(viewport, "Content", 0f, 1f, 1f, 1f);
-                content.pivot = new Vector2(0.5f, 1f);
-                content.sizeDelta = new Vector2(0f, 0f);
+                // 4c. Achievements Content
+                var contentAchiev = CreateExplicitRect(viewport, "Content_Achievements", 0f, 1f, 1f, 1f);
+                contentAchiev.pivot = new Vector2(0.5f, 1f);
+                contentAchiev.sizeDelta = new Vector2(0f, 0f);
 
-                var vlgContent = content.gameObject.AddComponent<VerticalLayoutGroup>();
-                vlgContent.childAlignment = TextAnchor.UpperCenter;
-                vlgContent.spacing = 6f;
-                vlgContent.padding = new RectOffset(4, 4, 6, 6);
-                vlgContent.childControlWidth = true;
-                vlgContent.childControlHeight = false;
-                vlgContent.childForceExpandWidth = true;
-                vlgContent.childForceExpandHeight = false;
+                var vlgContentAchiev = contentAchiev.gameObject.AddComponent<VerticalLayoutGroup>();
+                vlgContentAchiev.childAlignment = TextAnchor.UpperCenter;
+                vlgContentAchiev.spacing = 6f;
+                vlgContentAchiev.padding = new RectOffset(4, 4, 6, 6);
+                vlgContentAchiev.childControlWidth = true;
+                vlgContentAchiev.childControlHeight = false;
+                vlgContentAchiev.childForceExpandWidth = true;
+                vlgContentAchiev.childForceExpandHeight = false;
 
-                var csf = content.gameObject.AddComponent<ContentSizeFitter>();
-                csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                var csfAchiev = contentAchiev.gameObject.AddComponent<ContentSizeFitter>();
+                csfAchiev.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+                // 4d. Challenges Content
+                var contentChallenges = CreateExplicitRect(viewport, "Content_Challenges", 0f, 1f, 1f, 1f);
+                contentChallenges.pivot = new Vector2(0.5f, 1f);
+                contentChallenges.sizeDelta = new Vector2(0f, 0f);
+
+                var vlgContentChal = contentChallenges.gameObject.AddComponent<VerticalLayoutGroup>();
+                vlgContentChal.childAlignment = TextAnchor.UpperCenter;
+                vlgContentChal.spacing = 6f;
+                vlgContentChal.padding = new RectOffset(4, 4, 6, 6);
+                vlgContentChal.childControlWidth = true;
+                vlgContentChal.childControlHeight = false;
+                vlgContentChal.childForceExpandWidth = true;
+                vlgContentChal.childForceExpandHeight = false;
+
+                var csfChal = contentChallenges.gameObject.AddComponent<ContentSizeFitter>();
+                csfChal.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // Set default viewport content
                 scrollRect.viewport = viewport;
-                scrollRect.content = content;
+                scrollRect.content = contentAchiev;
 
                 // Load entry prefab
                 var entryPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(EntryPrefabPath);
                 var entryElem = entryPrefab.GetComponent<AchievementElement>();
 
-                // Instantiate 5 sample rows matching Figma reference!
-                InstantiateSampleRow(content, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                // Instantiate 5 sample rows for Achievements tab (Star icon)
+                InstantiateSampleRow(contentAchiev, entryPrefab, "Tutorial_Block_Achiev_Icon",
                     "Complete all of the tutorials available for the Block Mode",
                     "Complete all of the tutorials available for the Block Mode",
-                    "Block Game", "200", "2/5", 0.4f, RowActionState.Claim);
+                    "Block Game", starSprite, "200", "2/5", 0.4f, RowActionState.Claim);
 
-                InstantiateSampleRow(content, entryPrefab, "Class_B_Block _Mode_Achiev_Icon",
+                InstantiateSampleRow(contentAchiev, entryPrefab, "Class_B_Block _Mode_Achiev_Icon",
                     "Reach class B in Block Mode",
                     "Reach class B in Block Mode",
-                    "Block Game", "200", "2/5", 0.4f, RowActionState.Claim);
+                    "Block Game", starSprite, "200", "2/5", 0.4f, RowActionState.Claim);
 
-                InstantiateSampleRow(content, entryPrefab, "Tutorial_Concentrate_Achiev_Icon",
+                InstantiateSampleRow(contentAchiev, entryPrefab, "Tutorial_Concentrate_Achiev_Icon",
                     "Complete all of the tutorials available for the Concentrate Mode",
                     "Complete all of the tutorials available for the Concentrate Mode",
-                    "Concentrate Game", "200", "5/5", 1.0f, RowActionState.Claimed);
+                    "Concentrate Game", starSprite, "200", "5/5", 1.0f, RowActionState.Claimed);
 
-                InstantiateSampleRow(content, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                InstantiateSampleRow(contentAchiev, entryPrefab, "Tutorial_Block_Achiev_Icon",
                     "Complete all of the tutorials available for the Block Mode",
                     "Complete all of the tutorials available for the Block Mode",
-                    "Block Game", "200", "2/5", 0.4f, RowActionState.InProgress);
+                    "Block Game", starSprite, "200", "2/5", 0.4f, RowActionState.InProgress);
 
-                InstantiateSampleRow(content, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                InstantiateSampleRow(contentAchiev, entryPrefab, "Tutorial_Block_Achiev_Icon",
                     "Complete all of the tutorials available for the Block Mode",
                     "Complete all of the tutorials available for the Block Mode",
-                    "Block Game", "200", "2/5", 0.4f, RowActionState.Claim);
+                    "Block Game", starSprite, "200", "2/5", 0.4f, RowActionState.Claim);
+
+                // Instantiate 5 sample rows for Challenges tab (Gold Coin icon + Challenge titles)
+                InstantiateSampleRow(contentChallenges, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                    "Play 50 games across all block game mode",
+                    "Complete all of the tutorials available for the Block Mode",
+                    "Block Game", coinIcon, "200", "2/5", 0.4f, RowActionState.Claim);
+
+                InstantiateSampleRow(contentChallenges, entryPrefab, "Class_B_Block _Mode_Achiev_Icon",
+                    "Reach class B in Block Mode",
+                    "Reach class B in Block Mode",
+                    "Block Game", coinIcon, "200", "2/5", 0.4f, RowActionState.Claim);
+
+                InstantiateSampleRow(contentChallenges, entryPrefab, "Tutorial_Concentrate_Achiev_Icon",
+                    "Complete all of the tutorials available for the Concentrate Mode",
+                    "Complete all of the tutorials available for the Concentrate Mode",
+                    "Concentrate Game", coinIcon, "200", "5/5", 1.0f, RowActionState.Claimed);
+
+                InstantiateSampleRow(contentChallenges, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                    "Complete all of the tutorials available for the Block Mode",
+                    "Complete all of the tutorials available for the Block Mode",
+                    "Block Game", coinIcon, "200", "2/5", 0.4f, RowActionState.InProgress);
+
+                InstantiateSampleRow(contentChallenges, entryPrefab, "Tutorial_Block_Achiev_Icon",
+                    "Complete all of the tutorials available for the Block Mode",
+                    "Complete all of the tutorials available for the Block Mode",
+                    "Block Game", coinIcon, "200", "2/5", 0.4f, RowActionState.Claim);
+
+                contentChallenges.gameObject.SetActive(false);
 
                 // Wire Serialized Object properties on AchievementUI
                 var soUI = new SerializedObject(achUI);
@@ -533,8 +609,27 @@ namespace ProDomino.Dashboard.Editor
                 soUI.FindProperty("totalAchievementsPointsLabel").objectReferenceValue = pointsTmp;
                 soUI.FindProperty("categoryAchievementCompletedLabel").objectReferenceValue = rankTmp;
                 soUI.FindProperty("achievementElementPrefab").objectReferenceValue = entryElem;
-                soUI.FindProperty("achievementElementParent").objectReferenceValue = content;
+                soUI.FindProperty("achievementElementParent").objectReferenceValue = contentAchiev;
                 soUI.ApplyModifiedPropertiesWithoutUndo();
+
+                // Wire Serialized Object properties on AchievementsTabController
+                var soTab = new SerializedObject(tabCtrl);
+                soTab.FindProperty("achievementsTabButton").objectReferenceValue = tabAchievBtn;
+                soTab.FindProperty("challengesTabButton").objectReferenceValue = tabChallengesBtn;
+                soTab.FindProperty("achievementsTabBg").objectReferenceValue = tabAchievImg;
+                soTab.FindProperty("achievementsTabLabel").objectReferenceValue = tabAchievTxt;
+                soTab.FindProperty("challengesTabBg").objectReferenceValue = tabChallengesImg;
+                soTab.FindProperty("challengesTabLabel").objectReferenceValue = tabChallengesTxt;
+                soTab.FindProperty("activeTabSprite").objectReferenceValue = tabActiveBg;
+                soTab.FindProperty("inactiveTabSprite").objectReferenceValue = tabInactiveBg;
+                soTab.FindProperty("achievementsCardsContainer").objectReferenceValue = cardsSectionAchiev.gameObject;
+                soTab.FindProperty("challengesCardsContainer").objectReferenceValue = cardsSectionChallenges.gameObject;
+                soTab.FindProperty("colInfoLabel").objectReferenceValue = thInfoTmp;
+                soTab.FindProperty("colRewardLabel").objectReferenceValue = thPointsTmp;
+                soTab.FindProperty("scrollRect").objectReferenceValue = scrollRect;
+                soTab.FindProperty("achievementsTableContent").objectReferenceValue = contentAchiev.gameObject;
+                soTab.FindProperty("challengesTableContent").objectReferenceValue = contentChallenges.gameObject;
+                soTab.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, ScreenPrefabPath);
             }
@@ -542,13 +637,13 @@ namespace ProDomino.Dashboard.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-            Debug.Log("[AchievementsRestyler] Achievements_Screen prefab restyled successfully!");
+            Debug.Log("[AchievementsRestyler] Achievements_Screen prefab restyled successfully with dual tabs!");
         }
 
         // -------------------------------------------------------------------------------------------------------------
         // UI BUILDING HELPERS
         // -------------------------------------------------------------------------------------------------------------
-        private static void InstantiateSampleRow(Transform parent, GameObject prefab, string iconName, string title, string desc, string game, string points, string progressStr, float progressFill, RowActionState actionState)
+        private static void InstantiateSampleRow(Transform parent, GameObject prefab, string iconName, string title, string desc, string game, Sprite rewardSp, string points, string progressStr, float progressFill, RowActionState actionState)
         {
             var rowGo = UnityEngine.Object.Instantiate(prefab, parent, false);
             rowGo.name = $"Row_{title.Substring(0, Mathf.Min(16, title.Length)).Trim()}";
@@ -572,6 +667,9 @@ namespace ProDomino.Dashboard.Editor
             var gameIcon = rowGo.transform.Find("Col_Game/GameIcon")?.GetComponent<Image>();
             if (gameIcon && game.Contains("Concentrate") && searchIconSprite)
                 gameIcon.sprite = searchIconSprite;
+
+            var starImg = rowGo.transform.Find("Col_Points/StarIcon")?.GetComponent<Image>();
+            if (starImg && rewardSp) starImg.sprite = rewardSp;
 
             var pointsTmp = rowGo.transform.Find("Col_Points/PointsLabel")?.GetComponent<TMP_Text>();
             if (pointsTmp) pointsTmp.text = points;
@@ -599,7 +697,6 @@ namespace ProDomino.Dashboard.Editor
             img.type = Image.Type.Sliced;
             img.color = Color.white;
 
-            // Icon on left: 48x48
             var iconGo = CreateExplicitRect(card, "Icon", 0f, 0.5f, 0f, 0.5f);
             iconGo.pivot = new Vector2(0.5f, 0.5f);
             iconGo.sizeDelta = new Vector2(46f, 46f);
@@ -609,7 +706,6 @@ namespace ProDomino.Dashboard.Editor
             iconImg.color = iconColor;
             iconImg.preserveAspect = true;
 
-            // Value text (explicit positioning, NEVER overlaps subtext)
             valueTmp = CreateExplicitText(card, "ValueText", defaultVal, fBold, 25f, Color.white, TextAlignmentOptions.MidlineLeft);
             var vRt = valueTmp.GetComponent<RectTransform>();
             vRt.pivot = new Vector2(0f, 0.5f);
@@ -618,7 +714,6 @@ namespace ProDomino.Dashboard.Editor
             vRt.anchoredPosition = new Vector2(88f, 15f);
             vRt.sizeDelta = new Vector2(-96f, 32f);
 
-            // Subtext (explicit positioning, below value text)
             var subTmp = CreateExplicitText(card, "Subtext", subtext, fMedium, 12.5f, Hex("#8E9CAE"), TextAlignmentOptions.MidlineLeft);
             var sRt = subTmp.GetComponent<RectTransform>();
             sRt.pivot = new Vector2(0f, 0.5f);
@@ -626,6 +721,55 @@ namespace ProDomino.Dashboard.Editor
             sRt.anchorMax = new Vector2(1f, 0.5f);
             sRt.anchoredPosition = new Vector2(88f, -16f);
             sRt.sizeDelta = new Vector2(-96f, 22f);
+        }
+
+        private static void CreateChallengeMetricCard(Transform parent, string name, string title, string fraction, float fillAmount)
+        {
+            var card = CreateExplicitRect(parent, name, 0f, 0f, 1f, 1f);
+            var img = card.gameObject.AddComponent<Image>();
+            img.sprite = cardBg;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+
+            var iconGo = CreateExplicitRect(card, "Icon", 0f, 0.5f, 0f, 0.5f);
+            iconGo.pivot = new Vector2(0.5f, 0.5f);
+            iconGo.sizeDelta = new Vector2(44f, 44f);
+            iconGo.anchoredPosition = new Vector2(46f, 0f);
+            var iconImg = iconGo.gameObject.AddComponent<Image>();
+            iconImg.sprite = calendarSprite;
+            iconImg.color = Color.white;
+            iconImg.preserveAspect = true;
+
+            var titleTmp = CreateExplicitText(card, "TitleText", title, fSemiBold, 13.5f, Hex("#E2E8F0"), TextAlignmentOptions.MidlineLeft);
+            var tRt = titleTmp.GetComponent<RectTransform>();
+            tRt.pivot = new Vector2(0f, 0.5f);
+            tRt.anchorMin = new Vector2(0f, 0.5f);
+            tRt.anchorMax = new Vector2(1f, 0.5f);
+            tRt.anchoredPosition = new Vector2(88f, 15f);
+            tRt.sizeDelta = new Vector2(-96f, 26f);
+
+            var track = CreateExplicitRect(card, "ProgressTrack", 0f, 0.5f, 0f, 0.5f);
+            track.pivot = new Vector2(0f, 0.5f);
+            track.sizeDelta = new Vector2(140f, 8f);
+            track.anchoredPosition = new Vector2(88f, -14f);
+            var trackImg = track.gameObject.AddComponent<Image>();
+            trackImg.sprite = progressTrackBg;
+            trackImg.type = Image.Type.Sliced;
+
+            var fill = CreateExplicitRect(track, "ProgressFill", 0f, 0f, fillAmount, 1f);
+            fill.offsetMin = Vector2.zero;
+            fill.offsetMax = Vector2.zero;
+            var fillImg = fill.gameObject.AddComponent<Image>();
+            fillImg.sprite = progressFillBg;
+            fillImg.type = Image.Type.Sliced;
+
+            var fracTmp = CreateExplicitText(card, "FractionText", fraction, fMedium, 12f, Hex("#94A3B8"), TextAlignmentOptions.MidlineLeft);
+            var fRt = fracTmp.GetComponent<RectTransform>();
+            fRt.pivot = new Vector2(0f, 0.5f);
+            fRt.anchorMin = new Vector2(0f, 0.5f);
+            fRt.anchorMax = new Vector2(1f, 0.5f);
+            fRt.anchoredPosition = new Vector2(236f, -14f);
+            fRt.sizeDelta = new Vector2(60f, 20f);
         }
 
         private static void CreateFilterPill(Transform parent, string name, string label, float width)
@@ -655,13 +799,14 @@ namespace ProDomino.Dashboard.Editor
             arrowImg.preserveAspect = true;
         }
 
-        private static void CreateHeaderCol(Transform parent, string name, string title, float xMin, float xMax, TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft)
+        private static TMP_Text CreateHeaderCol(Transform parent, string name, string title, float xMin, float xMax, TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft)
         {
             var col = CreateExplicitRect(parent, name, xMin, 0f, xMax, 1f);
             var txt = CreateExplicitText(col, "Title", title, fSemiBold, 12f, Hex("#8E9CAE"), align);
             var tRt = txt.GetComponent<RectTransform>();
             tRt.offsetMin = new Vector2(6f, 0f);
             tRt.offsetMax = new Vector2(-6f, 0f);
+            return txt;
         }
 
         private static RectTransform CreateExplicitRect(Transform parent, string name, float axMin, float ayMin, float axMax, float ayMax)
