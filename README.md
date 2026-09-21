@@ -250,7 +250,7 @@ Every desktop flow, the screens inside it, and what they map to in the client:
 
 | Figma flow (node) | Screens | Client screens |
 |---|---|---|
-| Onboarding Flow (`9:6`) | Login, Registration, Account created OK / failed, Forgot password, Create new password ×2 | #4, #5, #6 — **done**; the success/failure and new-password screens are not built yet |
+| Onboarding Flow (`9:6`) | Login, Registration, Account created OK / failed, Forgot password, Create new password ×2 | #4, #5, #6 and the account created / failed pop-ups (`AuthResult_PopUp`) — **done**. Create new password + Password updated are not built: the game has no in-app reset step (recovery emails a link), so they need backend work first. The design's 3D-domino backdrop behind the card is still open (the pop-up currently opens over the dimmed dashboard). |
 | Dashboard (`113:3362`, `174:9469`, `780:25875`) | Dashboard, Dashboard before login, Monthly / Daily challenge, header before & after login | #2, #3 — **done**; the logged-out dashboard and header variants are not built yet |
 | Leaderboard (`263:24215`) | Leaderboard, empty state | #7 |
 | Shop Flow (`44:4`) | Tiles, Icons, Frames, Boards, Boards pop-up, Badges | #8 |
@@ -283,9 +283,13 @@ Notes from the mapping:
 
 ### Still needed
 
-- The decorative artwork behind the auth cards and the design's padlock icon are still missing from
-  the built screens (the lock is drawn in code); both can now be exported from Figma.
 - **Which leaderboard panel to keep** (see step 1 above) — my recommendation is `_New`.
+- **Onboarding backdrop** — the design's 3D-domino background behind the auth card, or keep the
+  dimmed dashboard.
+- **In-app password reset** — needed before "Create new password" / "Password updated" can work.
+
+Design artwork used by the built screens (card pattern, badge icons, eye icons, 👋) is exported
+from the Figma file into `Assets/_ProDomino/_UI/Icons/Icons_Auth/`.
 
 ---
 
@@ -368,8 +372,8 @@ with the **Deployment** package (`com.unity.services.deployment`) from the Unity
 - The old game-mode selection screen is kept but hidden; its extra options (Draw, Five, 2v2,
   manual difficulty) are not reachable from the new Dashboard.
 - The reference design's "Games" and "Friends List" sidebar rows are not implemented.
-- Two design assets are missing from the auth screens: the decorative artwork behind the card and
-  the padlock icon (drawn in code for now). Both need a Figma export.
+- The design's "Create new password" and "Password updated" screens need an in-app password reset
+  (a backend step that accepts a reset code, and an email link that opens the game with it).
 - Both leaderboard panels (`_New` and `_Old`) are still in the canvas and `LeaderboardManager`
   picks whichever happens to be active.
 - Everything from **Leaderboard** onwards in the redesign is still the old look — see

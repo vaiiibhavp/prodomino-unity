@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using static ProDomino.Dashboard.Editor.SidebarRestyler;
 using static ProDomino.Dashboard.Editor.PdUiKit;
@@ -37,7 +40,11 @@ namespace ProDomino.Dashboard.Editor
         private const float SignInH = 860f, SignUpH = 1024f, RecoveryH = 704f;
         private const float Pad = 80f, ContentW = 720f;
 
-        private static Sprite panelBg, fieldBg, socialBg, checkboxBg, closeBg, outlineBtn, badgeSprite, primaryBtn, lockSprite;
+        private static Sprite panelBg, fieldBg, socialBg, checkboxBg, closeBg, outlineBtn, badgeSprite, primaryBtn;
+
+        // Artwork exported from the Figma file (Design System → Popups, Onboarding Flow).
+        private const string AuthIconDir = "Assets/_ProDomino/_UI/Icons/Icons_Auth";
+        private static Sprite cardPattern, lockQuestion, successIcon, errorIcon, eyeOpen, eyeOff, waveEmoji;
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold;
 
         [MenuItem("ProDomino/Dashboard/Restyle Login + Register + Render")]
@@ -59,13 +66,21 @@ namespace ProDomino.Dashboard.Editor
             badgeSprite = MakePanelSprite("Auth_Badge", 80, 80, 32, Color.white, Color.white, new Color(0, 0, 0, 0), 0);
             // Design: left-to-right #FFA501 -> #FDC653 with a 2 px lighter rim.
             primaryBtn = MakePanelSprite("Auth_PrimaryBtn", 190, 56, 10, Hex("#FFA501"), Hex("#FDC653"), Hex("#FFD98A"), 2, vertical: false);
-            lockSprite = MakeLockSprite("Auth_Lock");
+            cardPattern = AuthArt("Auth_CardPattern.png");        // faint domino tiles, card corner
+            lockQuestion = AuthArt("Auth_Icon_LockQuestion.png"); // forgot password badge
+            successIcon = AuthArt("Auth_Icon_Success.png");
+            errorIcon = AuthArt("Auth_Icon_Error.png");
+            eyeOpen = AuthArt("Auth_Icon_EyeOpen.png");           // password hidden: click to show
+            eyeOff = AuthArt("Auth_Icon_EyeOff.png");             // password shown: click to hide
+            waveEmoji = AuthArt("Auth_Emoji_Wave.png");
 
             RestyleAuthPrefab();
             RevertStaleAuthOverrides();
+            BuildResultPopUp();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             RenderAuthScreens();
+            RenderResultPopUps();
             Debug.Log("AUTH_RESTYLE_DONE");
         }
 
@@ -248,6 +263,35 @@ namespace ProDomino.Dashboard.Editor
         // shows exactly what the screen looks like.
         private static void RenderStandalone(string screenName, string outPath, int width = 1920, int height = 1080, bool withMessages = false)
         {
+            RenderPrefab(AuthPath, outPath, width, height, inst =>
+            {
+                if (inst.TryGetComponent<CanvasGroup>(out var cg)) { cg.alpha = 1f; cg.blocksRaycasts = true; }
+                var container = inst.transform.Find("Auth_Container");
+                foreach (var name in new[] { "SignIn_Container", "SignUp_Container", "Recovery_Container" })
+                {
+                    var t = container ? container.Find(name) : null;
+                    if (t && t.TryGetComponent<CanvasGroup>(out var scg)) scg.alpha = name == screenName ? 1f : 0f;
+                }
+
+                // The validation messages, shown as the app would fill them in, to check that they
+                // push the rest of the form down instead of covering it.
+                if (withMessages)
+                    foreach (var mb in inst.GetComponentsInChildren<MonoBehaviour>(true))
+                    {
+                        if (!mb || mb.GetType().Name != "HideWhenEmpty") continue;
+                        if (new SerializedObject(mb).FindProperty("target")?.objectReferenceValue is not TextMeshProUGUI text) continue;
+                        text.text = mb.name.Contains("_Password_")
+                            ? "* Password must contain at least 1 lowercase letter\n* Password must contain at least 1 uppercase letter\n* Password must contain at least 1 number\n* Password must contain at least 1 symbol"
+                            : "This field is too short";
+                        text.gameObject.SetActive(true);
+                    }
+            });
+        }
+
+        // Renders one UI prefab on its own (its canvas becomes the root canvas: a nested canvas is
+        // not drawn by an off-screen render) at the given window size.
+        private static void RenderPrefab(string prefabPath, string outPath, int width, int height, Action<GameObject> prepare)
+        {
             UnityEditor.SceneManagement.EditorSceneManager.NewScene(
                 UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
 
@@ -261,7 +305,7 @@ namespace ProDomino.Dashboard.Editor
             rt.Create();
             cam.targetTexture = rt;
 
-            var inst = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(AuthPath));
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath));
             inst.SetActive(true);
             var canvas = inst.GetComponent<Canvas>() ?? inst.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
@@ -273,14 +317,6 @@ namespace ProDomino.Dashboard.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            if (inst.TryGetComponent<CanvasGroup>(out var cg)) { cg.alpha = 1f; cg.blocksRaycasts = true; }
-            var container = inst.transform.Find("Auth_Container");
-            foreach (var name in new[] { "SignIn_Container", "SignUp_Container", "Recovery_Container" })
-            {
-                var t = container ? container.Find(name) : null;
-                if (t && t.TryGetComponent<CanvasGroup>(out var scg)) scg.alpha = name == screenName ? 1f : 0f;
-            }
-
             // Buttons start non-interactable (until the form is valid) and would render with their
             // greyed-out tint; show them enabled so the preview reflects the real colours.
             foreach (var s in inst.GetComponentsInChildren<Selectable>(true))
@@ -289,18 +325,7 @@ namespace ProDomino.Dashboard.Editor
                 if (s.targetGraphic && s.targetGraphic.canvasRenderer) s.targetGraphic.canvasRenderer.SetColor(Color.white);
             }
 
-            // The validation messages, shown as the app would fill them in, to check that they push
-            // the rest of the form down instead of covering it.
-            if (withMessages)
-                foreach (var mb in inst.GetComponentsInChildren<MonoBehaviour>(true))
-                {
-                    if (!mb || mb.GetType().Name != "HideWhenEmpty") continue;
-                    if (new SerializedObject(mb).FindProperty("target")?.objectReferenceValue is not TextMeshProUGUI text) continue;
-                    text.text = mb.name.Contains("_Password_")
-                        ? "* Password must contain at least 1 lowercase letter\n* Password must contain at least 1 uppercase letter\n* Password must contain at least 1 number\n* Password must contain at least 1 symbol"
-                        : "This field is too short";
-                    text.gameObject.SetActive(true);
-                }
+            prepare?.Invoke(inst);
 
             for (int i = 0; i < 4; i++)
             {
@@ -420,7 +445,7 @@ namespace ProDomino.Dashboard.Editor
             var header = Column(content, "Auth_Header", 40f, ContentW);
             Logo(header, true);
             var titles = Column(header, "Auth_Titles", 8f, ContentW);
-            Title(card, titles, "Welcome Back!");
+            Title(card, titles, "Welcome Back!", waveEmoji);
             Subtitle(card, titles, "Login to continue playing ProDomino with friends & random opponents.", 348f, 40f);
 
             var form = Column(content, "Auth_Form", 40f, ContentW);
@@ -441,7 +466,7 @@ namespace ProDomino.Dashboard.Editor
             }
 
             var actions = Column(form, "Auth_Actions", 32f, ContentW);
-            PrimaryButton(actions, FindDeep(screen, "SignIn_Button"), "Log In");
+            PrimaryButton(actions, FindDeep(screen, "SignIn_Button"), "Login");
             var socials = Band(actions, "Auth_Socials", ContentW, 48f);
             Social(socials, FindDeep(screen, "SignIn_Google_Button"), "Login with Google", 0f);
             Social(socials, FindDeep(screen, "SignIn_Facebook_Button"), "Login with Facebook", 370f);
@@ -466,7 +491,7 @@ namespace ProDomino.Dashboard.Editor
 
             var form = Column(content, "Auth_Form", 40f, ContentW);
             var fields = Column(form, "Auth_Fields", 20f, ContentW);
-            Field(fields, FindDeep(screen, "SignUp_Username_InputField (TMP)"), "Username", "Enter Username",
+            Field(fields, FindDeep(screen, "SignUp_Username_InputField (TMP)"), "Username", "Username",
                 FindDeep(screen, "SignUp_Username_Feedback"));
             Field(fields, FindDeep(screen, "SignUp_Email_InputField (TMP)"), "Email", "Enter Email ID",
                 FindDeep(screen, "SignUp_Email_Feedback"));
@@ -477,6 +502,9 @@ namespace ProDomino.Dashboard.Editor
 
             CheckRow(fields, FindDeep(screen, "SignUp_TermAndConditions_Toggle"), null, 0f, ContentW, Muted);
             CheckRow(fields, FindDeep(screen, "SignUp_DataTreatment_Toggle"), null, 0f, ContentW, Muted);
+            // The design's wording; the link tags around the words are kept as they are.
+            ReplaceInLabel(FindDeep(screen, "SignUp_TermAndConditions_Toggle"), "Terms and Conditions", "Terms & Conditions");
+            ReplaceInLabel(FindDeep(screen, "SignUp_DataTreatment_Toggle"), "Data treatment", "Data Treatment");
 
             var actions = Column(form, "Auth_Actions", 32f, ContentW);
             PrimaryButton(actions, FindDeep(screen, "SignUp_Button"), "Create an Account");
@@ -502,13 +530,13 @@ namespace ProDomino.Dashboard.Editor
             badgeImg.pixelsPerUnitMultiplier = 1f;
             badgeImg.raycastTarget = false;
 
-            var lockIcon = GetOrCreate(badge, "Icon", () => MakeImage(badge, "Icon", lockSprite, Color.white, Image.Type.Simple).transform);
+            var lockIcon = GetOrCreate(badge, "Icon", () => MakeImage(badge, "Icon", lockQuestion, Color.white, Image.Type.Simple).transform);
             var lrt = (RectTransform)lockIcon;
             lrt.anchorMin = lrt.anchorMax = lrt.pivot = new Vector2(0.5f, 0.5f);
             lrt.anchoredPosition = Vector2.zero;
             lrt.sizeDelta = new Vector2(50f, 50f);
             var lockImg = GetOrAdd<Image>(lockIcon);
-            lockImg.sprite = lockSprite; lockImg.type = Image.Type.Simple;
+            lockImg.sprite = lockQuestion; lockImg.type = Image.Type.Simple;
             lockImg.color = Color.white; lockImg.preserveAspect = true; lockImg.raycastTarget = false;
 
             var titles = Column(header, "Auth_Titles", 4f, ContentW);
@@ -555,7 +583,7 @@ namespace ProDomino.Dashboard.Editor
             {
                 // Login (Figma 57:359, card 880x860)
                 ("SignIn_Container", "Auth_Logo",                          280, 100, 320,  40),
-                ("SignIn_Container", "SignIn_Header_Text",                  80, 180, 720,  44),
+                ("SignIn_Container", "Auth_TitleRow",                       80, 180, 720,  44),   // title + 👋
                 ("SignIn_Container", "SignIn_Description_Text",            266, 232, 348,  40),
                 ("SignIn_Container", "SignIn_Username_InputField (TMP)",    80, 340, 720,  48),
                 ("SignIn_Container", "SignIn_Password_InputField (TMP)",    80, 440, 720,  48),
@@ -587,16 +615,40 @@ namespace ProDomino.Dashboard.Editor
                 ("Recovery_Container", "SignIn_Close_Button",              810,  20,  50,  50),
             };
 
-            var root = PrefabUtility.LoadPrefabContents(AuthPath);
+            // Sign-up result pop-ups (Figma 102:6825 / 102:6897, card 880x531).
+            var resultExpected = new (string screen, string name, float x, float y, float w, float h)[]
+            {
+                ("SignUpSuccess_Card", "Auth_Badge",                         385, 100, 110, 110),
+                ("SignUpSuccess_Card", "SignUpSuccess_Header_Text",           80, 242, 720,  44),
+                ("SignUpSuccess_Card", "SignUpSuccess_Card_Description_Text", 202, 294, 476,  40),
+                ("SignUpSuccess_Card", "SignUpSuccess_Button",                80, 374, 720,  57),
+                ("SignUpSuccess_Card", "SignUpSuccess_Close",                810,  20,  50,  50),
+                ("SignUpError_Card",   "Auth_Badge",                         385, 100, 110, 110),
+                ("SignUpError_Card",   "SignUpError_Header_Text",             80, 242, 720,  44),
+                ("SignUpError_Card",   "SignUpError_Card_Description_Text",  202, 294, 476,  40),
+                ("SignUpError_Card",   "SignUpError_Button",                  80, 374, 720,  57),
+                ("SignUpError_Card",   "SignUpError_Close",                  810,  20,  50,  50),
+            };
+
+            int pass = 0, fail = 0;
+            Measure(AuthPath, expected, ref pass, ref fail);
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ResultPath)) Measure(ResultPath, resultExpected, ref pass, ref fail);
+            else { Debug.Log("VERIFY: MISSING AuthResult_PopUp prefab"); fail++; }
+            Debug.Log($"VERIFY_DONE pass={pass} fail={fail}");
+        }
+
+        private static void Measure(string prefabPath, (string screen, string name, float x, float y, float w, float h)[] expected,
+            ref int pass, ref int fail)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
             try
             {
-                // The cards are laid out by layout groups now, so the sizes have to be computed
-                // before anything can be measured.
+                // The cards are laid out by layout groups, so the sizes have to be computed before
+                // anything can be measured.
                 for (int pass2 = 0; pass2 < 3; pass2++)
                     foreach (var g in root.GetComponentsInChildren<LayoutGroup>(true))
                         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)g.transform);
 
-                int pass = 0, fail = 0;
                 foreach (var e in expected)
                 {
                     var card = FindDeep(root.transform, e.screen);
@@ -619,7 +671,6 @@ namespace ProDomino.Dashboard.Editor
                     Debug.Log($"VERIFY: {(ok ? "PASS" : "FAIL")} {e.screen}/{e.name} " +
                               $"got=({x:0},{y:0},{w:0},{h:0}) want=({e.x:0},{e.y:0},{e.w:0},{e.h:0})");
                 }
-                Debug.Log($"VERIFY_DONE pass={pass} fail={fail}");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
@@ -666,7 +717,40 @@ namespace ProDomino.Dashboard.Editor
                 bg.transform.SetAsFirstSibling();
                 GetOrAdd<LayoutElement>(bg.transform).ignoreLayout = true;
             }
+
+            // Faint domino tiles in the top-left corner (Figma "image 4": 358x358, 2px above the top).
+            var pattern = GetOrCreate(screen, "Auth_CardPattern",
+                () => MakeImage(screen, "Auth_CardPattern", cardPattern, Color.white, Image.Type.Simple).transform);
+            TL((RectTransform)pattern, 0f, -2f, 358f, 358f);
+            var pimg = pattern.GetComponent<Image>();
+            pimg.sprite = cardPattern; pimg.color = Color.white; pimg.type = Image.Type.Simple; pimg.raycastTarget = false;
+            GetOrAdd<LayoutElement>(pattern).ignoreLayout = true;
+            pattern.SetSiblingIndex(bg ? bg.transform.GetSiblingIndex() + 1 : 0);
             return screen;
+        }
+
+        // Imports a design export as a UI sprite (no mipmaps, no compression, alpha kept).
+        private static Sprite AuthArt(string file)
+        {
+            var path = $"{AuthIconDir}/{file}";
+            if (AssetImporter.GetAtPath(path) is not TextureImporter imp)
+            {
+                Debug.LogWarning($"AUTH: design artwork missing at {path}");
+                return null;
+            }
+            if (imp.textureType != TextureImporterType.Sprite || imp.mipmapEnabled
+                || imp.textureCompression != TextureImporterCompression.Uncompressed)
+            {
+                imp.textureType = TextureImporterType.Sprite;
+                imp.spriteImportMode = SpriteImportMode.Single;
+                imp.mipmapEnabled = false;
+                imp.alphaIsTransparency = true;
+                imp.filterMode = FilterMode.Bilinear;
+                imp.wrapMode = TextureWrapMode.Clamp;
+                imp.textureCompression = TextureImporterCompression.Uncompressed;
+                imp.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         private static void TidyCard(Transform card)
@@ -692,14 +776,46 @@ namespace ProDomino.Dashboard.Editor
             logo.gameObject.SetActive(show);
         }
 
-        private static void Title(Transform card, Transform parent, string text)
+        // Card title. With `trailing`, the title and a small image after it (the design's 👋, which
+        // the font can't draw) are centred together as one row.
+        private static void Title(Transform card, Transform parent, string text, Sprite trailing = null)
         {
             var titleT = card.GetComponentsInChildren<TextMeshProUGUI>(true)
                              .FirstOrDefault(t => t && t.name.EndsWith("_Header_Text"))?.transform
                          ?? (FindDeep(card, "Title_Container") is Transform tc && tc.childCount > 0 ? tc.GetChild(0) : null);
             if (!titleT) return;
-            Place(parent, titleT, 0f, ContentW, 44f);
-            Text(titleT.GetComponent<TextMeshProUGUI>(), text, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
+            var title = titleT.GetComponent<TextMeshProUGUI>();
+
+            if (trailing == null)
+            {
+                Place(parent, titleT, 0f, ContentW, 44f);
+                Text(title, text, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
+                return;
+            }
+
+            var row = Band(parent, "Auth_TitleRow", ContentW, 44f);
+            var hlg = GetOrAdd<HorizontalLayoutGroup>(row);
+            hlg.enabled = true;
+            hlg.padding = new RectOffset(0, 0, 0, 0);
+            hlg.spacing = 8f;
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+
+            Reparent(titleT, row);
+            ((RectTransform)titleT).sizeDelta = new Vector2(ContentW, 44f);
+            Text(title, text, fSemiBold, 36f, Color.white, TextAlignmentOptions.Center);
+            title.textWrappingMode = TextWrappingModes.NoWrap;
+            var fit = GetOrAdd<ContentSizeFitter>(titleT);         // as wide as the words
+            fit.enabled = true;
+            fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fit.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            var icon = GetOrCreate(row, "Auth_TitleIcon", () => MakeImage(row, "Auth_TitleIcon", trailing, Color.white, Image.Type.Simple).transform);
+            icon.SetAsLastSibling();
+            ((RectTransform)icon).sizeDelta = new Vector2(36f, 36f);
+            var img = icon.GetComponent<Image>();
+            img.sprite = trailing; img.preserveAspect = true; img.raycastTarget = false;
         }
 
         private static void Subtitle(Transform card, Transform parent, string text, float width, float height)
@@ -781,6 +897,62 @@ namespace ProDomino.Dashboard.Editor
                 input.customCaretColor = true;
                 input.selectionColor = new Color(Accent.r, Accent.g, Accent.b, 0.3f);
             }
+
+            PasswordEye(field);
+        }
+
+        // The show/hide-password toggle that ships with the password field prefab. Its script
+        // (InputfieldVisionController) switches the field between hidden and plain text; here it is
+        // only placed where the design puts the eye and given the design's icons.
+        private static void PasswordEye(Transform field)
+        {
+            var controller = field.GetComponents<MonoBehaviour>()
+                .FirstOrDefault(m => m && m.GetType().Name == "InputfieldVisionController");
+            if (!controller) return;
+            var so = new SerializedObject(controller);
+            var toggle = so.FindProperty("toggleVision")?.objectReferenceValue as Toggle;
+            var whenShown = so.FindProperty("onEnabledCanvasGroup")?.objectReferenceValue as CanvasGroup;
+            var whenHidden = so.FindProperty("onDisabledCanvasGroup")?.objectReferenceValue as CanvasGroup;
+            if (!toggle) return;
+
+            var rt = (RectTransform)toggle.transform;
+            foreach (var f in toggle.GetComponents<AspectRatioFitter>()) f.enabled = false;
+            if (toggle.TryGetComponent<LayoutElement>(out var le)) le.ignoreLayout = true;
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0.5f);
+            rt.pivot = new Vector2(1f, 0.5f);
+            rt.anchoredPosition = new Vector2(-16f, 0f);
+            rt.sizeDelta = new Vector2(24f, 24f);
+            rt.localScale = Vector3.one;
+            toggle.gameObject.SetActive(true);
+            // The toggle itself is just the click area; the icons below it don't take clicks.
+            var hit = GetOrAdd<Image>(toggle.transform);
+            hit.sprite = null; hit.color = new Color(1f, 1f, 1f, 0f); hit.raycastTarget = true;
+            if (!toggle.targetGraphic) toggle.targetGraphic = hit;
+
+            // The icon shows what a click does, as in the design: an open eye while the password is
+            // hidden, a crossed-out eye while it is readable.
+            EyeIcon(whenHidden ? whenHidden.transform : FindDeep(toggle.transform, "NoVision"), eyeOpen);
+            EyeIcon(whenShown ? whenShown.transform : FindDeep(toggle.transform, "Vision"), eyeOff);
+
+            // Save the state the game starts in (password hidden), which the controller's Start()
+            // would otherwise only set at runtime — both layers were stored invisible.
+            if (whenHidden) whenHidden.alpha = 1f;
+            if (whenShown) whenShown.alpha = 0f;
+
+            var area = field.Find("Text Area");
+            if (area) ((RectTransform)area).offsetMax = new Vector2(-52f, -8f);   // text stays clear of the eye
+        }
+
+        private static void EyeIcon(Transform holder, Sprite sprite)
+        {
+            if (!holder || !sprite) return;
+            Stretch((RectTransform)holder);
+            holder.localScale = Vector3.one;
+            var img = holder.GetComponent<Image>() ?? holder.GetComponentInChildren<Image>(true);
+            if (!img) img = holder.gameObject.AddComponent<Image>();
+            if (img.transform != holder) Stretch((RectTransform)img.transform);
+            img.sprite = sprite; img.type = Image.Type.Simple; img.color = Color.white;
+            img.preserveAspect = true; img.raycastTarget = false;
         }
 
         // Validation message under a field: as tall as its text, and out of the layout while empty.
@@ -817,6 +989,12 @@ namespace ProDomino.Dashboard.Editor
 
             if (feedback != line) feedback.gameObject.SetActive(false);   // the emptied container
             line.gameObject.SetActive(false);
+        }
+
+        private static void ReplaceInLabel(Transform toggle, string from, string to)
+        {
+            var label = toggle ? toggle.Find("Label")?.GetComponent<TextMeshProUGUI>() : null;
+            if (label && label.text.Contains(from)) label.text = label.text.Replace(from, to);
         }
 
         // 24x24 check box plus its label.
@@ -939,56 +1117,201 @@ namespace ProDomino.Dashboard.Editor
             if (!button.GetComponent<Button>()) button.gameObject.AddComponent<Button>();
         }
 
-        // ------------------------------------------------------------------ helpers
+        // ------------------------------------------------------------------ sign-up result pop-ups
 
-        // The padlock from the design: shackle arc over a rounded body, red vertical gradient.
-        // Drawn here because the Figma export of that icon is not available offline.
-        private static Sprite MakeLockSprite(string name, int size = 200)
+        private const string ResultPath = "Assets/_ProDomino/Authentication/Prefabs/AuthResult_PopUp.prefab";
+        private const string MiddlePath = "Assets/_ProDomino/Shared/Prefabs/MiddleScreen_Scalable.prefab";
+
+        // "Account Creation Successfully!" and "Uh-Oh! Something went wrong" (Figma 102:6825,
+        // 102:6897). Its own prefab, placed next to AuthUI rather than inside it — the auth pop-up
+        // closes as soon as a sign-up succeeds — and driven by AuthUI's sign-up event.
+        private static void BuildResultPopUp()
         {
-            var path = $"{GeneratedDir}/{name}.png";
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            float scale = size / 50f;                    // the icon is 50 x 50 design units
-            Color top = Hex("#FF0000"), bottom = Hex("#FF6E6E");
-            const float ringCx = 25f, ringCy = 13.5f, ringOuter = 13.5f, ringInner = 8.5f;
-            const float bodyX = 3f, bodyY = 16f, bodyW = 44f, bodyH = 34f, bodyR = 6f;
-
-            for (int py = 0; py < size; py++)
-            for (int px = 0; px < size; px++)
+            bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(ResultPath) != null;
+            var root = exists ? PrefabUtility.LoadPrefabContents(ResultPath) : new GameObject("AuthResult_PopUp", typeof(RectTransform));
+            try
             {
-                float x = (px + 0.5f) / scale;
-                float y = 50f - (py + 0.5f) / scale;     // texture is bottom-up, the design top-down
+                root.layer = LayerMask.NameToLayer("UI");
+                Stretch((RectTransform)root.transform);
 
-                // Shackle: the part of the ring above the body (its legs tuck in behind it).
-                float ring = -99f;
-                if (y <= bodyY + 2f)
+                // Above the auth pop-up (sorting 1000): the error card opens over the sign-up form.
+                var canvas = GetOrAdd<Canvas>(root.transform);
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = 1100;
+                GetOrAdd<GraphicRaycaster>(root.transform);
+                var group = GetOrAdd<CanvasGroup>(root.transform);
+
+                var dim = GetOrCreate(root.transform, "Dim",
+                    () => MakeImage(root.transform, "Dim", null, Color.black, Image.Type.Simple).transform);
+                Stretch((RectTransform)dim);
+                var dimImg = dim.GetComponent<Image>();
+                dimImg.color = new Color(0f, 0f, 0f, 0.72f);
+                dimImg.raycastTarget = true;                        // nothing behind takes clicks
+                dim.SetAsFirstSibling();
+
+                var success = ResultCard(root.transform, "SignUpSuccess", new Color(0.384f, 1f, 0f, 0.2f), successIcon,
+                    "Account Creation Successfully!",
+                    "Welcome to ProDomino - Start playing ProDomino with friends & random opponents.",
+                    "Go to Dashboard");
+                var error = ResultCard(root.transform, "SignUpError", new Color(0.996f, 0.580f, 0.580f, 0.2f), errorIcon,
+                    "Uh-Oh! Something went wrong",
+                    "We couldn’t complete your signup. Please check your details and try again.",
+                    "Try Again");
+
+                var popup = AddByName(root.transform, "ProDomino.Shared.AuthResultPopUp");
+                if (popup)
                 {
-                    float d = Vector2.Distance(new Vector2(x, y), new Vector2(ringCx, ringCy));
-                    ring = Mathf.Min(ringOuter - d, d - ringInner);
+                    var so = new SerializedObject(popup);
+                    so.FindProperty("root").objectReferenceValue = group;
+                    so.FindProperty("successCard").objectReferenceValue = success.GetComponent<CanvasGroup>();
+                    so.FindProperty("errorCard").objectReferenceValue = error.GetComponent<CanvasGroup>();
+                    so.ApplyModifiedPropertiesWithoutUndo();
+
+                    // Every button on both cards (close, "Go to Dashboard", "Try Again") closes it.
+                    foreach (var button in root.GetComponentsInChildren<Button>(true))
+                        OnClickCall(button, popup, "Hide");
                 }
 
-                // Body: rounded rectangle, positive inside.
-                float body = bodyR - CornerDistance(x - bodyX, y - bodyY, (int)bodyW, (int)bodyH, bodyR);
-
-                float sd = Mathf.Max(ring, body);
-                var c = Color.Lerp(top, bottom, Mathf.Clamp01(y / 50f));
-                c.a = Mathf.Clamp01(sd * scale + 0.5f);
-                tex.SetPixel(px, py, c);
+                group.alpha = 0f; group.interactable = false; group.blocksRaycasts = false;  // until a sign-up ends
+                PrefabUtility.SaveAsPrefabAsset(root, ResultPath);
+                Debug.Log("AUTH: AuthResult_PopUp saved.");
             }
-            tex.Apply();
-            WritePng(path, tex);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spriteImportMode = SpriteImportMode.Single;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.spritePixelsPerUnit = 100;
-            imp.spriteBorder = Vector4.zero;
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            finally
+            {
+                if (exists) PrefabUtility.UnloadPrefabContents(root);
+                else UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            InstallResultPopUp();
         }
+
+        // One result card: badge, title, subtitle and the action button, laid out as in the design
+        // (880 wide, padding 100/80, gaps 40 / 32 / 8).
+        private static Transform ResultCard(Transform parent, string key, Color badgeTint, Sprite icon,
+            string title, string subtitle, string action)
+        {
+            var card = GetOrCreate(parent, $"{key}_Card", () => new GameObject($"{key}_Card", typeof(RectTransform)).transform);
+            Reparent(card, parent);
+            card.gameObject.layer = parent.gameObject.layer;
+            GetOrAdd<CanvasGroup>(card);
+            if (!card.Find($"{key}_Background"))
+                MakeImage(card, $"{key}_Background", panelBg, Color.white, Image.Type.Sliced);
+            Card(card);
+
+            Close(card, FindDeep(card, $"{key}_Close") ?? NewButton(card, $"{key}_Close", false));
+
+            var content = Column(card, "Auth_Content", 40f, ContentW);
+            var header = Column(content, "Auth_Header", 32f, ContentW);
+
+            var badge = GetOrCreate(header, "Auth_Badge", () => MakeImage(header, "Auth_Badge", badgeSprite, badgeTint, Image.Type.Sliced).transform);
+            Place(header, badge, 0f, 110f, 110f);
+            var badgeImg = badge.GetComponent<Image>();
+            badgeImg.sprite = badgeSprite; badgeImg.type = Image.Type.Sliced; badgeImg.color = badgeTint;
+            badgeImg.pixelsPerUnitMultiplier = 1f; badgeImg.raycastTarget = false;
+            var iconT = GetOrCreate(badge, "Icon", () => MakeImage(badge, "Icon", icon, Color.white, Image.Type.Simple).transform);
+            var irt = (RectTransform)iconT;
+            irt.anchorMin = irt.anchorMax = irt.pivot = new Vector2(0.5f, 0.5f);
+            irt.anchoredPosition = Vector2.zero;
+            irt.sizeDelta = new Vector2(50f, 50f);
+            var iconImg = iconT.GetComponent<Image>();
+            iconImg.sprite = icon; iconImg.color = Color.white; iconImg.preserveAspect = true; iconImg.raycastTarget = false;
+
+            var titles = Column(header, "Auth_Titles", 8f, ContentW);
+            if (!FindDeep(card, $"{key}_Header_Text"))
+                MakeText(titles, $"{key}_Header_Text", title, fSemiBold, 36f, Color.white);
+            Title(card, titles, title);
+            Subtitle(card, titles, subtitle, 476f, 40f);
+
+            PrimaryButton(content, FindDeep(card, $"{key}_Button") ?? NewButton(content, $"{key}_Button", true), action, 57f);
+            TidyCard(card);
+            return card;
+        }
+
+        private static Transform NewButton(Transform parent, string name, bool withLabel)
+        {
+            var go = MakeImage(parent, name, null, Color.white, Image.Type.Sliced);
+            go.GetComponent<Image>().raycastTarget = true;
+            go.AddComponent<Button>();
+            if (withLabel) MakeText(go.transform, "Label", "", fBold, 24f, OnPrimary);
+            return go.transform;
+        }
+
+        // Places the pop-up next to AuthUI in MiddleScreen_Scalable and hooks AuthUI's
+        // onCredentialsSignUp(bool) to AuthResultPopUp.Show — an Inspector-visible link, no code
+        // change in the auth scripts.
+        private static void InstallResultPopUp()
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(ResultPath);
+            var root = PrefabUtility.LoadPrefabContents(MiddlePath);
+            try
+            {
+                var auth = FindDeep(root.transform, "AuthUI");
+                if (auth == null) { Debug.LogWarning("AUTH: AuthUI not found in MiddleScreen; result pop-up not installed."); return; }
+
+                var inst = auth.parent.Find("AuthResult_PopUp");
+                if (inst == null) inst = ((GameObject)PrefabUtility.InstantiatePrefab(asset, auth.parent)).transform;
+                inst.SetSiblingIndex(auth.GetSiblingIndex() + 1);
+                Stretch((RectTransform)inst);
+                inst.localScale = Vector3.one;
+
+                var authUi = auth.GetComponents<MonoBehaviour>().FirstOrDefault(m => m && m.GetType().Name == "AuthUI");
+                var popup = inst.GetComponents<MonoBehaviour>().FirstOrDefault(m => m && m.GetType().Name == "AuthResultPopUp");
+                if (authUi && popup && FindField(authUi.GetType(), "onCredentialsSignUp")?.GetValue(authUi) is UnityEvent<bool> signUp)
+                {
+                    for (int i = signUp.GetPersistentEventCount() - 1; i >= 0; i--)
+                        if (signUp.GetPersistentTarget(i) == popup) UnityEventTools.RemovePersistentListener(signUp, i);
+                    UnityEventTools.AddPersistentListener(signUp,
+                        (UnityAction<bool>)Delegate.CreateDelegate(typeof(UnityAction<bool>), popup, "Show"));
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(authUi);
+                    Debug.Log("AUTH: AuthUI.onCredentialsSignUp -> AuthResultPopUp.Show wired.");
+                }
+                else Debug.LogWarning("AUTH: could not wire the sign-up event to the result pop-up.");
+
+                PrefabUtility.SaveAsPrefabAsset(root, MiddlePath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        // Persistent (Inspector-visible) click -> method call, added once.
+        private static void OnClickCall(Button button, Component target, string method)
+        {
+            for (int i = button.onClick.GetPersistentEventCount() - 1; i >= 0; i--)
+                if (button.onClick.GetPersistentTarget(i) == target) UnityEventTools.RemovePersistentListener(button.onClick, i);
+            UnityEventTools.AddPersistentListener(button.onClick,
+                (UnityAction)Delegate.CreateDelegate(typeof(UnityAction), target, method));
+        }
+
+        private static FieldInfo FindField(Type type, string name)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                var f = t.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (f != null) return f;
+            }
+            return null;
+        }
+
+        [MenuItem("ProDomino/Dashboard/Render Sign-up Result Pop-ups")]
+        public static void RenderResultPopUps()
+        {
+            var outDir = Environment.GetEnvironmentVariable("PD_RENDER_DIR");
+            if (string.IsNullOrEmpty(outDir)) outDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pd_renders");
+            System.IO.Directory.CreateDirectory(outDir);
+
+            foreach (var succeeded in new[] { true, false })
+                RenderPrefab(ResultPath, System.IO.Path.Combine(outDir, succeeded ? "auth_result_success.png" : "auth_result_error.png"),
+                    1920, 1080, inst =>
+                    {
+                        foreach (var (name, show) in new[] { ("", true), ("SignUpSuccess_Card", succeeded), ("SignUpError_Card", !succeeded) })
+                        {
+                            var t = name == "" ? inst.transform : inst.transform.Find(name);
+                            if (t && t.TryGetComponent<CanvasGroup>(out var g)) { g.alpha = show ? 1f : 0f; g.blocksRaycasts = show; }
+                        }
+                    });
+        }
+
+        // ------------------------------------------------------------------ helpers
+
 
     }
 }

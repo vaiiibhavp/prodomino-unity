@@ -80,14 +80,16 @@ namespace ProDomino.Dashboard.Editor
             {
                 ReportAuthUi("after click");
                 ReportAuthRects();
-                var shot = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pd_renders", "playmode_after_click.png");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(shot));
-                ScreenCapture.CaptureScreenshot(shot);
-                Debug.Log($"PROBE: screenshot requested at {shot}");
+                ProbePasswordEye();
+                FireSignUp(false);                           // what the game raises when a sign-up fails
                 SessionState.SetInt(Stage, 61);
                 return;
             }
-            if (stage >= 61 && stage < 120) { SessionState.SetInt(Stage, stage + 1); return; } // let the capture land
+            if (stage == 70) { ReportResultPopUp("after failed sign-up"); ClickResultButton("SignUpError_Card"); }
+            if (stage == 80) { ReportResultPopUp("after Try Again"); FireSignUp(true); }
+            if (stage == 90) { ReportResultPopUp("after successful sign-up"); ClickResultButton("SignUpSuccess_Card"); }
+            if (stage == 100) ReportResultPopUp("after Go to Dashboard");
+            if (stage >= 61 && stage < 120) { SessionState.SetInt(Stage, stage + 1); return; }
             if (stage == 120)
             {
                 SessionState.SetInt(Stage, 2);
@@ -207,6 +209,61 @@ namespace ProDomino.Dashboard.Editor
             var group = auth.GetComponent<CanvasGroup>() ?? auth.GetComponentInChildren<CanvasGroup>(true);
             Debug.Log($"PROBE: AuthUI ({when}) {Path(auth.transform)} activeInHierarchy={auth.gameObject.activeInHierarchy} " +
                       $"cg={(group ? $"{group.name} alpha={group.alpha} blocks={group.blocksRaycasts}" : "-")}");
+        }
+
+        // Clicks the login password field's eye and reports whether the field switched to plain text.
+        private static void ProbePasswordEye()
+        {
+            var field = FindByName("SignIn_Password_InputField (TMP)");
+            var input = field ? field.GetComponent<TMPro.TMP_InputField>() : null;
+            var toggle = field ? field.GetComponentsInChildren<Toggle>(true).FirstOrDefault() : null;
+            if (!input || !toggle) { Debug.Log("PROBE: eye — password field or toggle not found"); return; }
+
+            string Groups() => string.Join(" ", toggle.GetComponentsInChildren<CanvasGroup>(true).Select(g => $"{g.name}={g.alpha}"));
+            var rt = (RectTransform)toggle.transform;
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            var cam = toggle.GetComponentInParent<Canvas>().rootCanvas.worldCamera;
+            var screen = RectTransformUtility.WorldToScreenPoint(cam, (corners[0] + corners[2]) * 0.5f);
+
+            // A real raycast at the eye, to be sure nothing covers it.
+            var data = new PointerEventData(EventSystem.current) { position = screen, button = PointerEventData.InputButton.Left };
+            var hits = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(data, hits);
+            var top = hits.Count > 0 ? hits[0].gameObject : null;
+            Debug.Log($"PROBE: eye before: contentType={input.contentType} icons[{Groups()}] topHit={(top ? top.name : "none")}");
+
+            var handled = top ? ExecuteEvents.ExecuteHierarchy(top, data, ExecuteEvents.pointerClickHandler) : null;
+            Debug.Log($"PROBE: eye after click (handled by {(handled ? handled.name : "nothing")}): contentType={input.contentType} icons[{Groups()}]");
+        }
+
+        private static void FireSignUp(bool succeeded)
+        {
+            var auth = Resources.FindObjectsOfTypeAll<MonoBehaviour>()
+                .FirstOrDefault(m => m && m.GetType().Name == "AuthUI" && m.gameObject.scene.IsValid());
+            var call = auth?.GetType().GetMethod("CallOnCredentialsSignUpEvent", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (call == null) { Debug.Log("PROBE: AuthUI.CallOnCredentialsSignUpEvent not found"); return; }
+            call.Invoke(auth, new object[] { succeeded });
+            Debug.Log($"PROBE: fired sign-up event ({(succeeded ? "success" : "failure")})");
+        }
+
+        private static void ReportResultPopUp(string when)
+        {
+            var popup = FindByName("AuthResult_PopUp");
+            if (!popup) { Debug.Log($"PROBE: result pop-up not in the scene ({when})"); return; }
+            string A(Transform t) => t && t.TryGetComponent<CanvasGroup>(out var g) ? $"{g.alpha}/{(g.blocksRaycasts ? "blocks" : "passes")}" : "-";
+            Debug.Log($"PROBE: result pop-up {when}: root={A(popup)} success={A(popup.Find("SignUpSuccess_Card"))} error={A(popup.Find("SignUpError_Card"))}");
+        }
+
+        // Presses the card's main button the way a click would reach it.
+        private static void ClickResultButton(string card)
+        {
+            var popup = FindByName("AuthResult_PopUp");
+            var button = popup ? popup.Find(card)?.GetComponentsInChildren<Button>(true).FirstOrDefault(b => b.name.EndsWith("_Button")) : null;
+            if (!button) { Debug.Log($"PROBE: no button on {card}"); return; }
+            var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+            ExecuteEvents.Execute(button.gameObject, data, ExecuteEvents.pointerClickHandler);
+            Debug.Log($"PROBE: clicked {button.name}");
         }
 
         // Where the auth screens actually sit on screen, and whether they are visible.

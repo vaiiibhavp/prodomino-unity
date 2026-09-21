@@ -326,6 +326,41 @@ namespace ProDomino.Dashboard.Editor
             cg.blocksRaycasts = active;
         }
 
+        // State of every show/hide-password toggle in the auth prefab.
+        public static void LogPasswordEyes()
+        {
+            var root = PrefabUtility.LoadPrefabContents("Assets/_ProDomino/Authentication/Prefabs/AuthUI.prefab");
+            try
+            {
+                foreach (var mb in root.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    if (mb == null || mb.GetType().Name != "InputfieldVisionController") continue;
+                    var so = new SerializedObject(mb);
+                    var toggle = so.FindProperty("toggleVision")?.objectReferenceValue as UnityEngine.UI.Toggle;
+                    var shown = so.FindProperty("onEnabledCanvasGroup")?.objectReferenceValue as CanvasGroup;
+                    var hidden = so.FindProperty("onDisabledCanvasGroup")?.objectReferenceValue as CanvasGroup;
+                    Debug.Log($"DIAG: field {Path(mb.transform)}");
+                    if (toggle)
+                    {
+                        var rt = (RectTransform)toggle.transform;
+                        Debug.Log($"DIAG:   toggle {toggle.name} active={toggle.gameObject.activeSelf}/{toggle.gameObject.activeInHierarchy} " +
+                                  $"parent={toggle.transform.parent.name} anchors={rt.anchorMin}-{rt.anchorMax} pos={rt.anchoredPosition} size={rt.rect.size} scale={rt.localScale}");
+                    }
+                    else Debug.Log("DIAG:   toggle NULL");
+                    foreach (var (label, cg) in new[] { ("shown", shown), ("hidden", hidden) })
+                    {
+                        if (!cg) { Debug.Log($"DIAG:   {label} group NULL"); continue; }
+                        var img = cg.GetComponent<UnityEngine.UI.Image>() ?? cg.GetComponentInChildren<UnityEngine.UI.Image>(true);
+                        var crt = (RectTransform)cg.transform;
+                        Debug.Log($"DIAG:   {label} {cg.name} alpha={cg.alpha} active={cg.gameObject.activeSelf} size={crt.rect.size} scale={crt.localScale} " +
+                                  $"image={(img ? $"{img.name} sprite={(img.sprite ? img.sprite.name : "none")} color={img.color} enabled={img.enabled}" : "none")}");
+                    }
+                }
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            Debug.Log("DIAG_DONE");
+        }
+
         // Every screen the canvas holds, with the scripts that own it: the inventory the UI
         // redesign plan is built from.
         public static void LogScreenInventory()
