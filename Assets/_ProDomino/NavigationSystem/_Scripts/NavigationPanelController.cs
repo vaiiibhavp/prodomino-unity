@@ -33,8 +33,10 @@ namespace ProDomino.NavigationSystem
             gameManager = ServiceLocator.Instance.GetService<GameManager>();
             authManager = ServiceLocator.Instance.GetService<AuthManager>();
 
-            // Get all INavigationPanel components in children
-            navigationPanels = navigationPanelsRoot?.GetComponentsInChildren<INavigationPanel>();
+            // Get all INavigationPanel components in children, excluding legacy LeaderboardUI_Old
+            navigationPanels = navigationPanelsRoot?.GetComponentsInChildren<INavigationPanel>(true)
+                ?.Where(panel => panel != null && panel.GetType().Name != "LeaderboardUI_Old" && (panel as MonoBehaviour)?.name != "LeaderboardUI_Old_NavPanel")
+                ?.ToArray();
 
             // Register at start the default navigations panels block state; This will be used to determine if the button could change its interactibility state
             panelsBlockedByDefault = navigationPanels?.ToDictionary(

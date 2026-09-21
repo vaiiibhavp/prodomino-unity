@@ -32,7 +32,7 @@ namespace ProDomino.Leaderboard
         public TMP_Text pedestalRankText;
     }
 
-    internal class LeaderboardUI_New : AbstractLeaderboardUI, INavigationPanel
+    public class LeaderboardUI_New : AbstractLeaderboardUI, INavigationPanel
     {
         [Header("Leaderboard UI - New")]
         [SerializeField] protected Transform elementsParent;
@@ -66,7 +66,17 @@ namespace ProDomino.Leaderboard
 
         internal override void Awake_LeaderboardUI()
         {
-            leaderboardElements = elementsParent.GetComponentsInChildren<LeaderboardElement>(true)?.ToList() ?? new();
+            if (elementsParent == null)
+            {
+                elementsParent = transform.Find("TableContainer/ScrollView/Viewport/Content")
+                    ?? transform.Find("TableSection/ScrollView/Viewport/Content");
+            }
+            leaderboardElements = elementsParent?.GetComponentsInChildren<LeaderboardElement>(true)?.ToList() ?? new();
+
+            if (RootCanvasGroup == null)
+            {
+                RootCanvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            }
 
             // Initialize each leaderboard element with the method to get the sprite for a given game mode
             if (leaderboardElements is not null and { Count: > 0 })
@@ -233,6 +243,34 @@ namespace ProDomino.Leaderboard
             onPlayerLeaderboardDataUpdated.RemoveListener(listener);
         }
 
+        CanvasGroup INavigationPanel.RootCanvasGroup
+        {
+            get
+            {
+                if (base.RootCanvasGroup == null)
+                {
+                    var cg = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+                    base.RootCanvasGroup = cg;
+                }
+                return base.RootCanvasGroup;
+            }
+        }
+
+        void INavigationPanel.SetActiveNavigationPanel(bool isActive)
+        {
+            gameObject.SetActive(isActive);
+            var cg = ((INavigationPanel)this).RootCanvasGroup;
+            if (cg != null)
+            {
+                cg.SetActive(isActive);
+                try { cg.transform.RefreshLayoutGroupsImmediateAndRecursive(); } catch { }
+            }
+            if (isActive)
+            {
+                ConfigureFilters();
+            }
+        }
+
         /// <summary>
         /// Filters the collection of elements based on predefined criteria.
         /// </summary>
@@ -250,6 +288,17 @@ namespace ProDomino.Leaderboard
             // This is especially important after changing
             transform.RefreshLayoutGroupsImmediateAndRecursive();
             transform.RefreshContentSizeFitterImmediateAndRecursive(this);
+        }
+
+        protected override void FilterAndOrderElements(PlayerLeaderboardData[] playerLeaderboardDatas)
+        {
+            ConfigureOwnPlayerUI();
+
+            CurrentLeaderboardId = getLeaderboardID?.Invoke(SelectedGameMode, SelectedNumberPlayers) ?? $"{SelectedGameMode}{SelectedNumberPlayers}";
+
+            var filteredPlayers = FilterElements(playerLeaderboardDatas);
+
+            ConfigureLeaderboardElements(filteredPlayers);
         }
 
         /// <summary>
@@ -404,8 +453,6 @@ namespace ProDomino.Leaderboard
 
         protected override void ConfigureOwnPlayerUI()
         {
-            base.ConfigureOwnPlayerUI();
-
             if (ownRankBadgeText != null)
             {
                 var currentLeaderboard = getLeaderboardID?.Invoke(SelectedGameMode, SelectedNumberPlayers) ?? $"{SelectedGameMode}{SelectedNumberPlayers}";
@@ -430,7 +477,8 @@ namespace ProDomino.Leaderboard
 
         protected override void ConfigureLeaderboardElements(PlayerLeaderboardData[] filteredPlayers)
         {
-            base.ConfigureLeaderboardElements(filteredPlayers);
+            if (leaderboardElements != null && leaderboardElements.Count > 0)
+                base.ConfigureLeaderboardElements(filteredPlayers);
 
             bool hasEntries = filteredPlayers != null && filteredPlayers.Length > 0;
 
@@ -461,13 +509,22 @@ namespace ProDomino.Leaderboard
         {
             if (slot == null || slot.root == null) return;
 
+            slot.root.SetActive(true);
+
+            string rankStr = rank switch { 1 => "1st", 2 => "2nd", 3 => "3rd", _ => $"{rank}th" };
+            if (slot.pedestalRankText != null)
+                slot.pedestalRankText.text = rankStr;
+
             if (playerData == null)
             {
-                slot.root.SetActive(false);
+                if (slot.playerNameText != null)
+                    slot.playerNameText.text = "-";
+
+                if (slot.eloText != null)
+                    slot.eloText.text = "<b>-</b>\n<size=65%><color=#7A8499>Elo Number</color></size>";
+
                 return;
             }
-
-            slot.root.SetActive(true);
 
             var info = playerData.leaderboardInfos?.FirstOrDefault(x => x.leaderboardId == CurrentLeaderboardId);
 
@@ -480,11 +537,6 @@ namespace ProDomino.Leaderboard
                 slot.eloText.text = $"<b>{elo}</b>\n<size=65%><color=#7A8499>Elo Number</color></size>";
             }
 
-            if (slot.pedestalRankText != null)
-            {
-                string rankStr = rank switch { 1 => "1st", 2 => "2nd", 3 => "3rd", _ => $"{rank}th" };
-                slot.pedestalRankText.text = rankStr;
-            }
 
             if (slot.avatarImage != null)
             {

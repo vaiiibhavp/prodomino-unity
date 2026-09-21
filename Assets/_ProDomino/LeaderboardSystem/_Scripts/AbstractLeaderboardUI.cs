@@ -41,7 +41,7 @@ namespace ProDomino.Leaderboard
         internal DateTime NextUpdateTime => getNextUpdateTime?.Invoke() ?? DateTime.UtcNow;
         internal Dictionary<string, LeaderboardEntry> PlayerLeaderboards => getPlayerLeaderboards?.Invoke();
 
-        public string CurrentLeaderboardId { get; private set; }
+        public string CurrentLeaderboardId { get; protected set; }
 
         /// <summary>
         /// Controller representation of the UI Monobehavour Awake method.<br></br>

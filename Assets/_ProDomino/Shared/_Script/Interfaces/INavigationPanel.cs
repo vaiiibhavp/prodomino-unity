@@ -20,8 +20,16 @@ namespace ProDomino.Shared
 
         public virtual void SetActiveNavigationPanel(bool isActive)
         { 
+            if (this is MonoBehaviour mb && mb != null)
+            {
+                if (isActive && !mb.gameObject.activeSelf)
+                    mb.gameObject.SetActive(true);
+            }
             RootCanvasGroup?.SetActive(isActive);
-            RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+            if (RootCanvasGroup != null)
+            {
+                try { RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive(); } catch { }
+            }
         }
 
         public virtual void OnUpdateLoginStatus(bool isLogged) { }

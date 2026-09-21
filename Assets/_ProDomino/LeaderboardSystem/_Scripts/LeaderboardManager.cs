@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using Newtonsoft.Json;
 using ProDomino.Authentication;
@@ -79,7 +79,8 @@ namespace ProDomino.Leaderboard
             {
                 if (_leaderboardUI == null)
                 {
-                    _leaderboardUI = FindFirstObjectByType<AbstractLeaderboardUI>(findObjectsInactive: FindObjectsInactive.Exclude);
+                    _leaderboardUI = FindFirstObjectByType<LeaderboardUI_New>(findObjectsInactive: FindObjectsInactive.Include)
+                        ?? (AbstractLeaderboardUI)FindFirstObjectByType<AbstractLeaderboardUI>(findObjectsInactive: FindObjectsInactive.Exclude);
                     if (_leaderboardUI == null)
                         Debug.LogWarning($"{nameof(AbstractLeaderboardUI)} not found in the scene");
                 }
