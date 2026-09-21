@@ -10,7 +10,7 @@ using static HelperSharedLibrary.Enums;
 
 namespace ProDomino.AchievementSystem
 {
-    internal class AchievementUI : MonoBehaviour, INavigationPanel
+    public class AchievementUI : MonoBehaviour, INavigationPanel
     {
         [field: SerializeField] public CanvasGroup RootCanvasGroup { get; private set; }
         [SerializeField] private Color hightlightColor = Color.yellow;

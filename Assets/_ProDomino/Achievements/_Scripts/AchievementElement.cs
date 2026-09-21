@@ -13,7 +13,7 @@ namespace ProDomino.AchievementSystem
     /// Represents a UI component for displaying and managing achievement information, including progress, rewards, and
     /// claim actions.
     /// </summary>
-    internal class AchievementElement : MonoBehaviour
+    public class AchievementElement : MonoBehaviour
     {
         [SerializeField] private bool isAddingRewardsToDescription;
         [SerializeField] private Button claimButton;
