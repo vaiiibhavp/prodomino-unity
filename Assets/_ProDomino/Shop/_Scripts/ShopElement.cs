@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using Newtonsoft.Json;
 using System;
@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace ProDomino.Shop
 { 
-    internal class ShopElement : MonoBehaviour
+    public class ShopElement : MonoBehaviour
     {
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TMP_Text costLabel;

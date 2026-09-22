@@ -1,4 +1,4 @@
-using HelperSharedLibrary;
+Ôªøusing HelperSharedLibrary;
 using ProDomino.AnalyticsSystem;
 using ProDomino.Shared;
 using System;
@@ -12,7 +12,7 @@ using static HelperSharedLibrary.Enums;
 
 namespace ProDomino.Shop
 {
-    internal class ShopUI : MonoBehaviour, INavigationPanel
+    public class ShopUI : MonoBehaviour, INavigationPanel
     {
         [field: SerializeField] public CanvasGroup RootCanvasGroup { get; private set; }
         [SerializeField] private Transform elementsParent;
@@ -330,7 +330,7 @@ namespace ProDomino.Shop
                 return;
             }
 
-            // If parsedRarity is All or None Å® turn on All and disable others
+            // If parsedRarity is All or None ÔøΩÔøΩ turn on All and disable others
             if (parsedRarity is CosmeticRarity.None)
             {
                 if (CurrentRarityFilter is not CosmeticRarity.None)
@@ -341,7 +341,7 @@ namespace ProDomino.Shop
                 return;
             }
 
-            // If parsedRarity is not All/None/Current Å® add flag
+            // If parsedRarity is not All/None/Current ÔøΩÔøΩ add flag
             if (!CurrentRarityFilter.HasFlag(parsedRarity))
                 AddRarityFilterFlag(parsedRarity);
 
