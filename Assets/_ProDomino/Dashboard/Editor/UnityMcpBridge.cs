@@ -49,10 +49,13 @@ namespace ProDomino.Dashboard.Editor
         private static readonly ConcurrentQueue<Action> mainThreadQueue = new ConcurrentQueue<Action>();
         private const int MaxLogCount = 150;
 
+        private static double lastCheckTime = 0;
+
         static UnityMcpBridge()
         {
             Application.logMessageReceivedThreaded += OnLogMessageReceived;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += StartServer;
             EditorApplication.quitting += Stop;
             EditorApplication.update += ProcessMainThreadQueue;
 
@@ -61,6 +64,12 @@ namespace ProDomino.Dashboard.Editor
 
         private static void ProcessMainThreadQueue()
         {
+            if (!isRunning && EditorApplication.timeSinceStartup - lastCheckTime > 2.0)
+            {
+                lastCheckTime = EditorApplication.timeSinceStartup;
+                StartServer();
+            }
+
             while (mainThreadQueue.TryDequeue(out var action))
             {
                 try { action?.Invoke(); }

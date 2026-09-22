@@ -651,12 +651,53 @@ namespace ProDomino.Dashboard.Editor
 
             StyleLabel(Need(opt, "Text (TMP)"), fontMedium, 16f, TextInactive, TextLeft);
 
+            var toggleInd = opt.Find("NPButton_ToggleIndicator");
+            if (toggleInd == null)
+            {
+                var tGo = new GameObject("NPButton_ToggleIndicator", typeof(RectTransform), typeof(CanvasGroup));
+                tGo.transform.SetParent(opt, false);
+                tGo.transform.SetSiblingIndex(0);
+                toggleInd = tGo.transform;
+            }
+            Stretch((RectTransform)toggleInd);
+            toggleInd.GetComponent<CanvasGroup>().alpha = 0f;
+
+            var toggleGfx = toggleInd.Find("NPButton_ToggleGraphic");
+            if (toggleGfx == null)
+            {
+                var tgGo = new GameObject("NPButton_ToggleGraphic", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                tgGo.transform.SetParent(toggleInd, false);
+                toggleGfx = tgGo.transform;
+            }
+            Stretch((RectTransform)toggleGfx);
+            var tg = toggleGfx.GetComponent<Image>();
+            tg.sprite = roundedOrange; tg.type = Image.Type.Sliced; tg.preserveAspect = false;
+            tg.pixelsPerUnitMultiplier = 1f; tg.color = Color.white; tg.raycastTarget = false;
+
             var cb = opt.GetComponent("CustomButtonUI");
             if (cb == null) return;
             var so = new SerializedObject(cb);
-            so.FindProperty("selectedColor").colorValue = Color.white;
+            so.FindProperty("canvasGroup_toggle").objectReferenceValue = toggleInd.GetComponent<CanvasGroup>();
+            so.FindProperty("selectedColor").colorValue = TextActive;
             so.FindProperty("deselectedColor").colorValue = TextInactive;
             so.FindProperty("hoverColor").colorValue = Color.white;
+
+            var states = so.FindProperty("imageStates");
+            states.ClearArray();
+            states.InsertArrayElementAtIndex(0);
+            var eIcon = states.GetArrayElementAtIndex(0);
+            eIcon.FindPropertyRelative("image").objectReferenceValue = img;
+            eIcon.FindPropertyRelative("selectedStateColor").colorValue = TextActive;
+            eIcon.FindPropertyRelative("deselectedStateColor").colorValue = TextInactive;
+            eIcon.FindPropertyRelative("hoverStateColor").colorValue = Color.white;
+
+            states.InsertArrayElementAtIndex(1);
+            var eTog = states.GetArrayElementAtIndex(1);
+            eTog.FindPropertyRelative("image").objectReferenceValue = tg;
+            eTog.FindPropertyRelative("selectedStateColor").colorValue = Color.white;
+            eTog.FindPropertyRelative("deselectedStateColor").colorValue = new Color(1f, 1f, 1f, 0f);
+            eTog.FindPropertyRelative("hoverStateColor").colorValue = new Color(1f, 1f, 1f, 0f);
+
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -672,60 +713,92 @@ namespace ProDomino.Dashboard.Editor
             RenderCanvas(outPath, 1920, 1080, simulateRuntime, null, inst);
         }
 
+        [MenuItem("ProDomino/Open Main Scene")]
+        public static void OpenMainScene()
+        {
+            const string mainScene = "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
+            if (File.Exists(mainScene))
+            {
+                EditorSceneManager.OpenScene(mainScene, OpenSceneMode.Single);
+                Debug.Log($"[ProDomino] Opened main scene: {mainScene}");
+            }
+        }
+
         internal static void RenderCanvas(string outPath, int width, int height, bool simulateRuntime, Action<GameObject> tweak = null, GameObject existingInstance = null)
         {
-            if (existingInstance == null)
-                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var cam = new GameObject("RenderCam").AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = PageBg;
-            cam.orthographic = true;
-            cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 100f;
-            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-            rt.Create();
-            cam.targetTexture = rt;
-
-            var inst = existingInstance ? existingInstance : (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPath));
-            cam.cullingMask = 1 << inst.layer;
-            var canvas = inst.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = cam;
-            canvas.planeDistance = 10f;
-
-            if (simulateRuntime) SimulateRuntime(inst);
-
-            for (int i = 0; i < 3; i++)
+            string previousScene = EditorSceneManager.GetActiveScene().path;
+            bool createdScene = false;
+            try
             {
-                Canvas.ForceUpdateCanvases();
-                foreach (var g in inst.GetComponentsInChildren<LayoutGroup>(true))
-                    LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)g.transform);
-                if (i == 0) tweak?.Invoke(inst);
-                Canvas.ForceUpdateCanvases();
-                cam.Render();
+                if (existingInstance == null)
+                {
+                    EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                    createdScene = true;
+                }
+                var cam = new GameObject("RenderCam").AddComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = PageBg;
+                cam.orthographic = true;
+                cam.nearClipPlane = 0.1f;
+                cam.farClipPlane = 100f;
+                var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                rt.Create();
+                cam.targetTexture = rt;
+
+                var inst = existingInstance ? existingInstance : (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPath));
+                cam.cullingMask = 1 << inst.layer;
+                var canvas = inst.GetComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = cam;
+                canvas.planeDistance = 10f;
+
+                if (simulateRuntime) SimulateRuntime(inst);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    Canvas.ForceUpdateCanvases();
+                    foreach (var g in inst.GetComponentsInChildren<LayoutGroup>(true))
+                        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)g.transform);
+                    if (i == 0) tweak?.Invoke(inst);
+                    Canvas.ForceUpdateCanvases();
+                    cam.Render();
+                }
+
+                var prev = RenderTexture.active;
+                RenderTexture.active = rt;
+                var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                tex.Apply();
+                RenderTexture.active = prev;
+                File.WriteAllBytes(outPath, tex.EncodeToPNG());
+                Debug.Log($"RENDERED: {outPath}");
+
+                if (simulateRuntime) return;
+                var names = (Environment.GetEnvironmentVariable("PD_RECT_NAMES") ?? "Sidebar_Panel,UserControlCenter,InnerScreen,Dashboard_Content").Split(',');
+                foreach (var n in names)
+                {
+                    var t = FindDeep(inst.transform, n.Trim()) as RectTransform;
+                    if (t == null) { Debug.Log($"SCREENRECT: {n} (not found)"); continue; }
+                    var c = new Vector3[4];
+                    t.GetWorldCorners(c);
+                    var a = cam.WorldToScreenPoint(c[0]);
+                    var b = cam.WorldToScreenPoint(c[2]);
+                    // Screen y is flipped so the numbers read like the PNG (0 = top).
+                    Debug.Log($"SCREENRECT: {n} x={a.x:F0}..{b.x:F0} y={height - b.y:F0}..{height - a.y:F0} pivot={t.pivot} active={t.gameObject.activeInHierarchy} parent={t.parent?.name}");
+                }
             }
-
-            var prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            tex.Apply();
-            RenderTexture.active = prev;
-            File.WriteAllBytes(outPath, tex.EncodeToPNG());
-            Debug.Log($"RENDERED: {outPath}");
-
-            if (simulateRuntime) return;
-            var names = (Environment.GetEnvironmentVariable("PD_RECT_NAMES") ?? "Sidebar_Panel,UserControlCenter,InnerScreen,Dashboard_Content").Split(',');
-            foreach (var n in names)
+            finally
             {
-                var t = FindDeep(inst.transform, n.Trim()) as RectTransform;
-                if (t == null) { Debug.Log($"SCREENRECT: {n} (not found)"); continue; }
-                var c = new Vector3[4];
-                t.GetWorldCorners(c);
-                var a = cam.WorldToScreenPoint(c[0]);
-                var b = cam.WorldToScreenPoint(c[2]);
-                // Screen y is flipped so the numbers read like the PNG (0 = top).
-                Debug.Log($"SCREENRECT: {n} x={a.x:F0}..{b.x:F0} y={height - b.y:F0}..{height - a.y:F0} pivot={t.pivot} active={t.gameObject.activeInHierarchy} parent={t.parent?.name}");
+                if (createdScene)
+                {
+                    string targetScene = !string.IsNullOrEmpty(previousScene) && File.Exists(previousScene)
+                        ? previousScene
+                        : "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
+                    if (File.Exists(targetScene))
+                    {
+                        EditorSceneManager.OpenScene(targetScene, OpenSceneMode.Single);
+                    }
+                }
             }
         }
 

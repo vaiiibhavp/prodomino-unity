@@ -190,14 +190,17 @@ namespace ProDomino.Dashboard.Editor
                 // -----------------------------------------------------------------
                 // Center Cosmetic Item Preview Image
                 // -----------------------------------------------------------------
-                var itemContainer = CreateExplicitRect(root.transform, "ItemContainer", 0f, 0f, 1f, 1f);
-                itemContainer.offsetMin = new Vector2(0f, 38f);
-                itemContainer.offsetMax = new Vector2(0f, 0f);
+                var itemContainer = CreateExplicitRect(root.transform, "ItemContainer", 0.5f, 0.5f, 0.5f, 0.5f);
+                itemContainer.pivot = new Vector2(0.5f, 0.5f);
+                itemContainer.anchoredPosition = new Vector2(0f, 7f);
+                itemContainer.sizeDelta = new Vector2(130f, 130f);
 
-                var previewImgGo = CreateExplicitRect(itemContainer, "Element_Image", 0.5f, 0.5f, 0.5f, 0.5f);
+                var previewImgGo = CreateExplicitRect(itemContainer, "Element_Image", 0f, 0f, 1f, 1f);
                 previewImgGo.pivot = new Vector2(0.5f, 0.5f);
-                previewImgGo.sizeDelta = new Vector2(88f, 134f);
-                previewImgGo.anchoredPosition = new Vector2(0f, -2f);
+                previewImgGo.anchorMin = Vector2.zero;
+                previewImgGo.anchorMax = Vector2.one;
+                previewImgGo.offsetMin = Vector2.zero;
+                previewImgGo.offsetMax = Vector2.zero;
 
                 var elementImageComp = previewImgGo.gameObject.AddComponent<Image>();
                 elementImageComp.sprite = tileDefault;
@@ -251,6 +254,7 @@ namespace ProDomino.Dashboard.Editor
                 elemSo.FindProperty("canvasGroup").objectReferenceValue = cg;
                 elemSo.FindProperty("costLabel").objectReferenceValue = costTmp;
                 elemSo.FindProperty("elementImage").objectReferenceValue = elementImageComp;
+                elemSo.FindProperty("itemContainer").objectReferenceValue = itemContainer;
                 elemSo.FindProperty("openConfirmationPopUpButton").objectReferenceValue = customBtn;
                 elemSo.FindProperty("grayedColor").colorValue = new Color(0.45f, 0.45f, 0.5f, 0.75f);
 
@@ -552,7 +556,7 @@ namespace ProDomino.Dashboard.Editor
 
                 var previewImgGo = CreateExplicitRect(previewBox, "ConfirmPurchase_ImagePreview", 0.5f, 0.5f, 0.5f, 0.5f);
                 previewImgGo.pivot = new Vector2(0.5f, 0.5f);
-                previewImgGo.sizeDelta = new Vector2(96f, 128f);
+                previewImgGo.sizeDelta = new Vector2(130f, 130f);
                 var previewImg = previewImgGo.gameObject.AddComponent<Image>();
                 previewImg.sprite = tileDefault;
                 previewImg.preserveAspect = true;
@@ -772,9 +776,37 @@ namespace ProDomino.Dashboard.Editor
             var go = UnityEngine.Object.Instantiate(prefab, parent);
             go.name = name;
 
-            var elem = go.GetComponent<ShopElement>();
+            var itemContainer = go.transform.Find("ItemContainer") as RectTransform;
+            if (itemContainer != null)
+            {
+                itemContainer.anchorMin = new Vector2(0.5f, 0.5f);
+                itemContainer.anchorMax = new Vector2(0.5f, 0.5f);
+                itemContainer.pivot = new Vector2(0.5f, 0.5f);
+                itemContainer.anchoredPosition = new Vector2(0f, 7f);
+                itemContainer.sizeDelta = new Vector2(130f, 130f);
+            }
+
             var elemImg = go.transform.Find("ItemContainer/Element_Image")?.GetComponent<Image>();
-            if (elemImg != null && tileSprite != null) elemImg.sprite = tileSprite;
+            if (elemImg != null)
+            {
+                if (tileSprite != null) elemImg.sprite = tileSprite;
+                elemImg.preserveAspect = true;
+                var elemRt = elemImg.rectTransform;
+                elemRt.anchorMin = Vector2.zero;
+                elemRt.anchorMax = Vector2.one;
+                elemRt.pivot = new Vector2(0.5f, 0.5f);
+                elemRt.offsetMin = Vector2.zero;
+                elemRt.offsetMax = Vector2.zero;
+            }
+
+            var elem = go.GetComponent<ShopElement>();
+            if (elem != null && itemContainer != null)
+            {
+                var elemSo = new SerializedObject(elem);
+                var icProp = elemSo.FindProperty("itemContainer");
+                if (icProp != null) icProp.objectReferenceValue = itemContainer;
+                elemSo.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             var badgeImg = go.transform.Find("Rarity_Badge")?.GetComponent<Image>();
             if (badgeImg != null && badgeSprite != null) badgeImg.sprite = badgeSprite;

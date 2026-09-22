@@ -196,7 +196,13 @@ namespace ProDomino.Dashboard.Editor
                 ActivateScreen(root, "Learn", "Rules");
             });
 
-            // 5. Runtime Dashboard
+            // 5. Help Screen
+            SidebarRestyler.RenderCanvas(Path.Combine(outDir, "screen_help.png"), 1920, 1080, true, root =>
+            {
+                ActivateScreen(root, "Help", "HelpScreen");
+            });
+
+            // 6. Runtime Dashboard
             SidebarRestyler.RenderCanvas(Path.Combine(outDir, "runtime.png"), 1920, 1080, true);
 
             Debug.Log($"[GlobalBackgroundRestyler] Rendered all screens to {outDir}");

@@ -16,6 +16,7 @@ namespace ProDomino.Shop
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TMP_Text costLabel;
         [SerializeField] private Image elementImage;
+        [SerializeField] private RectTransform itemContainer;
         [SerializeField] private CustomButtonUI openConfirmationPopUpButton;
         [SerializeField] private UnityEvent onPurchaseSuccess;
         [SerializeField] private Color grayedColor = Color.gray;
@@ -35,10 +36,50 @@ namespace ProDomino.Shop
 
         private void Awake()
         {
+            ApplyContainerLayout();
+
             if (openConfirmationPopUpButton)
                 openConfirmationPopUpButton.onClick.AddListener(OpenConfirmationPopUp);
             else
                 Debug.LogWarning("Open confirmation pop-up button is not assigned in the ShopElement");
+        }
+
+        private void OnValidate()
+        {
+            ApplyContainerLayout();
+        }
+
+        public void ApplyContainerLayout()
+        {
+            if (itemContainer == null)
+            {
+                var ic = transform.Find("ItemContainer") as RectTransform;
+                if (ic != null)
+                    itemContainer = ic;
+                else if (elementImage != null && elementImage.transform.parent is RectTransform parentRt)
+                    itemContainer = parentRt;
+            }
+
+            if (itemContainer != null)
+            {
+                itemContainer.anchorMin = new Vector2(0.5f, 0.5f);
+                itemContainer.anchorMax = new Vector2(0.5f, 0.5f);
+                itemContainer.pivot = new Vector2(0.5f, 0.5f);
+                itemContainer.anchoredPosition = new Vector2(0f, 7f);
+                itemContainer.sizeDelta = new Vector2(130f, 130f);
+            }
+
+            if (elementImage != null)
+            {
+                elementImage.preserveAspect = true;
+
+                var rt = elementImage.rectTransform;
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+            }
         }
 
         internal void Initialize
@@ -68,9 +109,16 @@ namespace ProDomino.Shop
             else
                 Debug.LogWarning("Cost label is not assigned in the ShopElement");
 
+            ApplyContainerLayout();
+
             // Set the element image if available
-            if (elementImage && elementSprite is not null)
-                elementImage.sprite = elementSprite;
+            if (elementImage)
+            {
+                if (elementSprite is not null)
+                    elementImage.sprite = elementSprite;
+
+                elementImage.preserveAspect = true;
+            }
             else
                 Debug.LogWarning("Element image or getElementImage function is not assigned");
 
