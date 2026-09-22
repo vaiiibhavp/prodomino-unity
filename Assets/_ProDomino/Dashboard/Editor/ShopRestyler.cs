@@ -632,6 +632,13 @@ namespace ProDomino.Dashboard.Editor
                 uiSo.ApplyModifiedPropertiesWithoutUndo();
 
                 // Configure ToggleGroup buttons
+                var tgSo = new SerializedObject(toggleGroup);
+                var extProp = tgSo.FindProperty("externalButtons");
+                if (extProp != null) extProp.arraySize = 0;
+                tgSo.FindProperty("maxSelectedButtons").intValue = 1;
+                tgSo.FindProperty("isConfiguratingOnAwake").boolValue = true;
+                tgSo.ApplyModifiedPropertiesWithoutUndo();
+
                 toggleGroup.Configure();
 
                 PrefabUtility.SaveAsPrefabAsset(root, MainPrefabPath);

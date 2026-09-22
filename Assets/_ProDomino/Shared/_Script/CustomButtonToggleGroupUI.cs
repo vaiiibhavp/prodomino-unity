@@ -16,7 +16,7 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
     [Header("State (Read-Only)")]
     [field: SerializeField] public bool isAtLeastOneButtonSelected { get; private set; } // Flag if any button is selected
 
-    [SerializeField] private List<CustomButtonUI> externalButtons;
+    [SerializeField] private List<CustomButtonUI> externalButtons = new();
 
     /// <summary>
     /// Public read-only access to the selected buttons list (may contain nulls to preserve slot indices).
@@ -65,23 +65,26 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
             }
         }
 
-        foreach (CustomButtonUI button in externalButtons)
+        if (externalButtons != null)
         {
-            if (buttons.Contains(button))
-                continue;
-
-            buttons.Add(button);
-            button.Initialize(this);
-
-            if (button.IsToggleable)
+            foreach (CustomButtonUI button in externalButtons)
             {
-                // Toggleable buttons subscribe to selection/deselection events
-                button.onSelect.AddListener(() => OnToggleSelected(button));
-                button.onDeselect.AddListener(() => OnToggleDeselected(button));
-            } else
-            {
-                // Non-toggleable buttons use a simple click callback
-                button.onClick.AddListener(() => OnButtonPress(button));
+                if (button == null || buttons.Contains(button))
+                    continue;
+
+                buttons.Add(button);
+                button.Initialize(this);
+
+                if (button.IsToggleable)
+                {
+                    // Toggleable buttons subscribe to selection/deselection events
+                    button.onSelect.AddListener(() => OnToggleSelected(button));
+                    button.onDeselect.AddListener(() => OnToggleDeselected(button));
+                } else
+                {
+                    // Non-toggleable buttons use a simple click callback
+                    button.onClick.AddListener(() => OnButtonPress(button));
+                }
             }
         }
 
