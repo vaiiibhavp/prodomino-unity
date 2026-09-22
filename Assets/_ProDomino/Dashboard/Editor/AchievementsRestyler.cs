@@ -52,7 +52,7 @@ namespace ProDomino.Dashboard.Editor
         private static Sprite calDailySprite, calWeeklySprite, calMonthlySprite;
         private static Sprite trophyIcon, classCIcon, chevronDown, coinIcon;
         private static Sprite blockGameIllustration, concentrateIllustration;
-        private static Sprite cardBg, tableBg, tableHeaderBg, tabActiveBg, tabInactiveBg;
+        private static Sprite cardBg, tableBg, tableHeaderBg, tabActiveBg, tabInactiveBg, screenCardBg;
         private static Sprite btnClaimBg, btnClaimedBg, btnInProgressBg, progressTrackBg, progressFillBg, dropdownPillBg;
         private static Sprite rowDivider;
 
@@ -119,8 +119,9 @@ namespace ProDomino.Dashboard.Editor
                                ?? MakeQuestBadgeSprite("Achiev_Quest_Badge", 128);
 
             // Container and panel sprites
+            screenCardBg = GetOrCreateScreenCardSprite();
             cardBg = MakePanelSprite("Achiev_CardBg", 48, 48, 12, Hex("#0E1322"), Hex("#090E1A"), Hex("#1C263A"), 1f);
-            tableBg = MakePanelSprite("Achiev_TableBg", 48, 48, 14, Hex("#090D18"), Hex("#060912"), Hex("#161F30"), 1f);
+            tableBg = MakePanelSprite("Achiev_TableBg", 48, 48, 14, Hex("#070A12"), Hex("#05080E"), Hex("#141A28"), 0.8f);
             tableHeaderBg = MakePanelSprite("Achiev_TableHeaderBg", 32, 32, 8, Hex("#131A2B"), Hex("#0F1524"), Hex("#1E283C"), 1f);
             tabActiveBg = MakePanelSprite("Achiev_TabActiveBg", 32, 32, 8, Hex("#2563EB"), Hex("#1D4ED8"), Hex("#3B82F6"), 1f);
             tabInactiveBg = MakePanelSprite("Achiev_TabInactiveBg", 32, 32, 8, Hex("#0E1422"), Hex("#0A0F1A"), Hex("#1A2336"), 1f);
@@ -348,6 +349,16 @@ namespace ProDomino.Dashboard.Editor
                 var achUI = root.GetComponent<AchievementUI>() ?? root.AddComponent<AchievementUI>();
                 var tabCtrl = root.GetComponent<AchievementsTabController>() ?? root.AddComponent<AchievementsTabController>();
                 var cg = root.GetComponent<CanvasGroup>() ?? root.AddComponent<CanvasGroup>();
+                cg.alpha = 0f;
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
+
+                // Framed Screen Card Background (1px #1E2538 border, 14px rounded corners, deep midnight card fill)
+                var bg = root.GetComponent<Image>() ?? root.AddComponent<Image>();
+                bg.sprite = screenCardBg;
+                bg.type = Image.Type.Sliced;
+                bg.color = Color.white;
+                bg.raycastTarget = true;
 
                 if (root.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup vlgRoot)
                     UnityEngine.Object.DestroyImmediate(vlgRoot);
@@ -357,10 +368,10 @@ namespace ProDomino.Dashboard.Editor
                     toDestroy.Add(root.transform.GetChild(i).gameObject);
                 foreach (var g in toDestroy) UnityEngine.Object.DestroyImmediate(g);
 
-                // MainContent Container
+                // MainContent Container (Padded inside the rounded card)
                 var mainContent = CreateExplicitRect(root.transform, "MainContent", 0f, 0f, 1f, 1f);
-                mainContent.offsetMin = new Vector2(32f, 20f);
-                mainContent.offsetMax = new Vector2(-32f, -16f);
+                mainContent.offsetMin = new Vector2(24f, 20f);
+                mainContent.offsetMax = new Vector2(-24f, -16f);
 
                 // -----------------------------------------------------------------
                 // 1. Header Section: [Trophy] Achievements (Top-left grouped)
@@ -626,7 +637,8 @@ namespace ProDomino.Dashboard.Editor
 
                 // Wire Serialized Object properties on AchievementUI
                 var soUI = new SerializedObject(achUI);
-                soUI.FindProperty("<RootCanvasGroup>k__BackingField").objectReferenceValue = cg;
+                var rootCgProp = soUI.FindProperty("<RootCanvasGroup>k__BackingField") ?? soUI.FindProperty("RootCanvasGroup") ?? soUI.FindProperty("_rootCanvasGroup");
+                if (rootCgProp != null) rootCgProp.objectReferenceValue = cg;
                 soUI.FindProperty("totalAchievementsLabel").objectReferenceValue = totalAchievTmp;
                 soUI.FindProperty("totalAchievementsPointsLabel").objectReferenceValue = pointsTmp;
                 soUI.FindProperty("categoryAchievementCompletedLabel").objectReferenceValue = rankTmp;

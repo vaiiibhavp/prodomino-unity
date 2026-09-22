@@ -45,7 +45,7 @@ namespace ProDomino.Dashboard.Editor
 
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold, fExtraBold;
         private static Sprite shopIcon, coinIcon, chevronDown;
-        private static Sprite cardBg, cardFooterBg, tabActiveBg, tabInactiveBg, dropdownPillBg, btnBuyPill;
+        private static Sprite cardBg, cardFooterBg, tabActiveBg, tabInactiveBg, dropdownPillBg, btnBuyPill, screenCardBg;
         private static Sprite badgeCommon, badgeMythic, badgeLegendary, badgeSpecial;
         private static Sprite popupPanelBg, btnGoldConfirm, btnDarkCancel;
 
@@ -97,6 +97,7 @@ namespace ProDomino.Dashboard.Editor
             tileRainbow = EnsureSprite($"{TilesArtDir}/Tiles_Rainbow/Tile_Rainbow_27.png");
 
             // UI Sprites
+            screenCardBg = GetOrCreateScreenCardSprite();
             cardBg = MakePanelSprite("Shop_CardBg", 48, 64, 12, Hex("#0D111C"), Hex("#080B14"), Hex("#1E273A"), 1f);
             cardFooterBg = MakeBottomRoundedSprite("Shop_CardFooterBg", 32, 38, 12, Hex("#1E2536"), Hex("#283246"), 1f);
             tabActiveBg = MakePanelSprite("Shop_TabActiveBg", 32, 32, 10, Hex("#3B82F6"), Hex("#1D4ED8"), Hex("#60A5FA"), 1f);
@@ -300,10 +301,11 @@ namespace ProDomino.Dashboard.Editor
                 if (root.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup vlg)
                     UnityEngine.Object.DestroyImmediate(vlg);
 
-                // Full screen dark background
+                // Framed Screen Card Background (1px #1E2538 border, 14px rounded corners, deep midnight card fill)
                 var bg = root.GetComponent<Image>() ?? root.AddComponent<Image>();
-                bg.sprite = null;
-                bg.color = Hex("#01010C");
+                bg.sprite = screenCardBg;
+                bg.type = Image.Type.Sliced;
+                bg.color = Color.white;
                 bg.raycastTarget = true;
 
                 var shopUI = root.GetComponent<ShopUI>() ?? root.AddComponent<ShopUI>();
@@ -314,10 +316,10 @@ namespace ProDomino.Dashboard.Editor
                     toDestroy.Add(root.transform.GetChild(i).gameObject);
                 foreach (var g in toDestroy) UnityEngine.Object.DestroyImmediate(g);
 
-                // Main Content Container (Padded from screen edges)
+                // Main Content Container (Padded inside the rounded card)
                 var mainContent = CreateExplicitRect(root.transform, "MainContent", 0f, 0f, 1f, 1f);
-                mainContent.offsetMin = new Vector2(32f, 20f);
-                mainContent.offsetMax = new Vector2(-32f, -16f);
+                mainContent.offsetMin = new Vector2(24f, 20f);
+                mainContent.offsetMax = new Vector2(-24f, -16f);
 
                 // -----------------------------------------------------------------
                 // 1. Header Section: [Shop Icon] Shop (Top-Left) + [Tokens Badge] (Top-Right)

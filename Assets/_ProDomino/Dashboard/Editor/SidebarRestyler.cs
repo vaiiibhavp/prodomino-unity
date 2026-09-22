@@ -272,10 +272,36 @@ namespace ProDomino.Dashboard.Editor
                 var layout = Need(navCtrl, "NavegationPanel_LayoutGroup");
                 var lower = Need(bg, "LowerScreen");
 
-                // The old gray L-shaped frame becomes a flat page background like the reference.
-                var bgImg = bg.GetComponent<Image>();
-                if (bgImg != null) bgImg.color = PageBg;
-                baseFrame.GetComponent<Image>().color = PageBg;
+                // Ensure a full solid page background exists at the very back of the Canvas
+                var pageBg = root.transform.Find("Page_Background");
+                if (pageBg == null)
+                {
+                    var go = new GameObject("Page_Background", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    go.transform.SetParent(root.transform, false);
+                    go.transform.SetSiblingIndex(0);
+                    pageBg = go.transform;
+                }
+                else
+                {
+                    pageBg.SetSiblingIndex(0);
+                }
+                var pageRt = (RectTransform)pageBg;
+                pageRt.anchorMin = Vector2.zero;
+                pageRt.anchorMax = Vector2.one;
+                pageRt.offsetMin = Vector2.zero;
+                pageRt.offsetMax = Vector2.zero;
+                var pImg = pageBg.GetComponent<Image>() ?? pageBg.gameObject.AddComponent<Image>();
+                pImg.sprite = null;
+                pImg.color = PageBg;
+                pImg.raycastTarget = false;
+
+                // Ensure Background itself and Main_Menu_Base are solid PageBg
+                var bgImg = bg.GetComponent<Image>() ?? bg.gameObject.AddComponent<Image>();
+                bgImg.sprite = null;
+                bgImg.color = PageBg;
+                bgImg.raycastTarget = false;
+                var baseImg = baseFrame.GetComponent<Image>();
+                if (baseImg != null) baseImg.color = PageBg;
 
                 BuildSidebarPanel(bg, baseFrame, ((RectTransform)lower).anchorMin.y);
                 RestyleNavList(layout);

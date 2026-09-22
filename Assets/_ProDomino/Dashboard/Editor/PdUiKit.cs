@@ -24,6 +24,8 @@ namespace ProDomino.Dashboard.Editor
         // ---------------------------------------------------------------- colour tokens
         // Design System → Color palette.
         public static readonly Color PageBg = Hex("#01010C");        // app background
+        public static readonly Color ScreenCardBg = Hex("#070A14"); // framed screen card background
+        public static readonly Color ScreenCardBorder = Hex("#1E2538"); // subtle 1px border matching Figma
         public static readonly Color PanelBg = Hex("#010818");       // sidebar / panel body
         public static readonly Color CardTop = Hex("#27272C");       // card gradient, top
         public static readonly Color CardBottom = Hex("#01010C");    // card gradient, bottom
@@ -105,6 +107,11 @@ namespace ProDomino.Dashboard.Editor
                 tex.SetPixel(x, y, c);
             }
             return SaveSlicedSprite(path, tex, radius + 2);
+        }
+
+        public static Sprite GetOrCreateScreenCardSprite()
+        {
+            return MakePanelSprite("PD_ScreenCardBg", 48, 48, 14, ScreenCardBg, Hex("#040710"), ScreenCardBorder, 1f);
         }
 
         // Horizontal gradient with rounded corners. The gradient stretches with the centre slice,

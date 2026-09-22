@@ -78,7 +78,7 @@ namespace ProDomino.Dashboard.Editor
             glowBronze = EnsureSprite($"{IconsDir}/Avatar_Glow_Bronze.png");
             defaultAvatarSprite = EnsureSprite(DefaultAvatarPath);
 
-            panelBg = MakePanelSprite("Lb_PanelBg", 48, 96, 14, Hex("#0A0E18"), Hex("#05080F"), Hex("#151D2A"), 1f);
+            panelBg = GetOrCreateScreenCardSprite();
             rowSprite = MakePanelSprite("Lb_RowBg", 32, 32, 6, Hex("#0B0E17"), Hex("#080B12"), Hex("#1A202C"), 1f);
             dropdownBg = MakePanelSprite("Lb_DropdownBg", 32, 32, 8, Hex("#0E121D"), Hex("#090D15"), Hex("#222838"), 1f);
             badgeBg = MakePanelSprite("Lb_BadgeBg", 32, 32, 8, Hex("#121622"), Hex("#0E111C"), Hex("#283044"), 1f);
