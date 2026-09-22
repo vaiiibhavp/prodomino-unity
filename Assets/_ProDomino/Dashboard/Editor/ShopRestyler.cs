@@ -45,7 +45,7 @@ namespace ProDomino.Dashboard.Editor
 
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold, fExtraBold;
         private static Sprite shopIcon, coinIcon, chevronDown;
-        private static Sprite cardBg, tabActiveBg, tabInactiveBg, dropdownPillBg, btnBuyPill;
+        private static Sprite cardBg, cardFooterBg, tabActiveBg, tabInactiveBg, dropdownPillBg, btnBuyPill;
         private static Sprite badgeCommon, badgeMythic, badgeLegendary, badgeSpecial;
         private static Sprite popupPanelBg, btnGoldConfirm, btnDarkCancel;
 
@@ -55,22 +55,20 @@ namespace ProDomino.Dashboard.Editor
         [MenuItem("ProDomino/Dashboard/Restyle Shop + Render")]
         public static void ApplyAndRender()
         {
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             PrepareAssets();
             RestyleElementPrefab();
             BuildCleanShopScreenPrefab();
             EnsureHiddenInMiddleScreen();
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             Debug.Log("[ShopRestyler] SUCCESS: Shop screen completely restyled to Figma design and hidden by default!");
         }
 
         [InitializeOnLoadMethod]
         private static void AutoRunOnce()
         {
-            if (!SessionState.GetBool("PD_ShopRestyler_Ran_v3", false))
+            if (!SessionState.GetBool("PD_ShopRestyler_Ran_v4", false))
             {
-                SessionState.SetBool("PD_ShopRestyler_Ran_v3", true);
+                SessionState.SetBool("PD_ShopRestyler_Ran_v4", true);
                 EditorApplication.delayCall += () =>
                 {
                     ApplyAndRender();
@@ -91,25 +89,26 @@ namespace ProDomino.Dashboard.Editor
             coinIcon = EnsureSprite($"{ArtDashboardDir}/Icon_Coin_Raster.png")
                        ?? EnsureSprite($"{DashboardIconsDir}/Icon_Coin.png");
 
-            // Preview domino tiles for initial card templates
-            tileDefault = EnsureSprite($"{TilesArtDir}/Tiles_Default/Tile_Default_27.png");
+            // Preview domino tiles for initial card templates (Domino/Tile_Default_27.png)
+            tileDefault = EnsureSprite($"{TilesArtDir}/Domino/Tile_Default_27.png");
             tileOrange = EnsureSprite($"{TilesArtDir}/Tiles_Orange/Tile_Orange_27.png");
             tilePink = EnsureSprite($"{TilesArtDir}/Tiles_Pink/Tile_Pink_27.png");
             tileBlack = EnsureSprite($"{TilesArtDir}/Tiles_Black/Tile_Black_27.png");
             tileRainbow = EnsureSprite($"{TilesArtDir}/Tiles_Rainbow/Tile_Rainbow_27.png");
 
             // UI Sprites
-            cardBg = MakePanelSprite("Shop_CardBg", 48, 64, 12, Hex("#0E1320"), Hex("#080B14"), Hex("#1E273A"), 1f);
+            cardBg = MakePanelSprite("Shop_CardBg", 48, 64, 12, Hex("#0D111C"), Hex("#080B14"), Hex("#1E273A"), 1f);
+            cardFooterBg = MakeBottomRoundedSprite("Shop_CardFooterBg", 32, 38, 12, Hex("#1E2536"), Hex("#283246"), 1f);
             tabActiveBg = MakePanelSprite("Shop_TabActiveBg", 32, 32, 10, Hex("#3B82F6"), Hex("#1D4ED8"), Hex("#60A5FA"), 1f);
             tabInactiveBg = MakePanelSprite("Shop_TabInactiveBg", 32, 32, 10, Hex("#0C101C"), Hex("#080B14"), Color.clear, 0f);
             dropdownPillBg = MakePanelSprite("Shop_DropdownPillBg", 32, 32, 10, Hex("#121827"), Hex("#0B101D"), Hex("#222E46"), 1f);
             btnBuyPill = MakePanelSprite("Shop_BtnBuyPill", 32, 32, 8, Hex("#151D2D"), Hex("#0E1320"), Hex("#222E46"), 1f);
 
-            // Rarity badges
-            badgeCommon = MakePanelSprite("Shop_Badge_Common", 32, 16, 6, Hex("#1E293B"), Hex("#0F172A"), Hex("#38BDF8"), 1f);
-            badgeMythic = MakePanelSprite("Shop_Badge_Mythic", 32, 16, 6, Hex("#2E1065"), Hex("#170536"), Hex("#C084FC"), 1f);
-            badgeLegendary = MakePanelSprite("Shop_Badge_Legendary", 32, 16, 6, Hex("#3B1D04"), Hex("#1F0E02"), Hex("#F59E0B"), 1f);
-            badgeSpecial = MakePanelSprite("Shop_Badge_Special", 32, 16, 6, Hex("#380D1E"), Hex("#1E0610"), Hex("#F43F5E"), 1f);
+            // Rarity badges (Matching Figma: vibrant solid badges with dark text)
+            badgeCommon = MakePanelSprite("Shop_Badge_Common", 32, 18, 9, Hex("#B2C2D8"), Hex("#B2C2D8"), Color.clear, 0f);
+            badgeMythic = MakePanelSprite("Shop_Badge_Mythic", 32, 18, 9, Hex("#C084FC"), Hex("#C084FC"), Color.clear, 0f);
+            badgeLegendary = MakePanelSprite("Shop_Badge_Legendary", 32, 18, 9, Hex("#FBBF24"), Hex("#FBBF24"), Color.clear, 0f);
+            badgeSpecial = MakePanelSprite("Shop_Badge_Special", 32, 18, 9, Hex("#FB923C"), Hex("#FB923C"), Color.clear, 0f);
 
             popupPanelBg = MakePanelSprite("Shop_PopupBg", 48, 48, 14, Hex("#0E1322"), Hex("#080C16"), Hex("#1E293B"), 1.2f);
             btnGoldConfirm = MakePanelSprite("Shop_BtnGoldConfirm", 32, 32, 10, Hex("#FBBF24"), Hex("#F59E0B"), Color.clear, 0f);
@@ -175,8 +174,8 @@ namespace ProDomino.Dashboard.Editor
                 // -----------------------------------------------------------------
                 var badgeGo = CreateExplicitRect(root.transform, "Rarity_Badge", 1f, 1f, 1f, 1f);
                 badgeGo.pivot = new Vector2(1f, 1f);
-                badgeGo.anchoredPosition = new Vector2(-8f, -8f);
-                badgeGo.sizeDelta = new Vector2(62f, 20f);
+                badgeGo.anchoredPosition = new Vector2(-6f, -6f);
+                badgeGo.sizeDelta = new Vector2(58f, 18f);
 
                 var badgeImg = badgeGo.gameObject.AddComponent<Image>();
                 badgeImg.sprite = badgeCommon;
@@ -184,20 +183,20 @@ namespace ProDomino.Dashboard.Editor
                 badgeImg.color = Color.white;
                 badgeImg.raycastTarget = false;
 
-                var badgeTmp = CreateExplicitText(badgeGo, "BadgeText", "Common", fSemiBold, 10.5f, Hex("#E2E8F0"), TextAlignmentOptions.Center);
+                var badgeTmp = CreateExplicitText(badgeGo, "BadgeText", "Common", fBold, 10.5f, Hex("#0F172A"), TextAlignmentOptions.Center);
                 badgeTmp.textWrappingMode = TextWrappingModes.NoWrap;
 
                 // -----------------------------------------------------------------
                 // Center Cosmetic Item Preview Image
                 // -----------------------------------------------------------------
                 var itemContainer = CreateExplicitRect(root.transform, "ItemContainer", 0f, 0f, 1f, 1f);
-                itemContainer.offsetMin = new Vector2(14f, 44f);
-                itemContainer.offsetMax = new Vector2(-14f, -30f);
+                itemContainer.offsetMin = new Vector2(0f, 38f);
+                itemContainer.offsetMax = new Vector2(0f, 0f);
 
                 var previewImgGo = CreateExplicitRect(itemContainer, "Element_Image", 0.5f, 0.5f, 0.5f, 0.5f);
                 previewImgGo.pivot = new Vector2(0.5f, 0.5f);
-                previewImgGo.sizeDelta = new Vector2(96f, 128f);
-                previewImgGo.anchoredPosition = Vector2.zero;
+                previewImgGo.sizeDelta = new Vector2(88f, 134f);
+                previewImgGo.anchoredPosition = new Vector2(0f, -2f);
 
                 var elementImageComp = previewImgGo.gameObject.AddComponent<Image>();
                 elementImageComp.sprite = tileDefault;
@@ -205,24 +204,33 @@ namespace ProDomino.Dashboard.Editor
                 elementImageComp.raycastTarget = false;
 
                 // -----------------------------------------------------------------
-                // Bottom Bar: [Coin] [Price / "Purchase"] Pill
+                // Bottom Bar: Full-width [Coin] [Price / "Purchase"] Bar
                 // -----------------------------------------------------------------
                 var bottomBar = CreateExplicitRect(root.transform, "Bottom_Bar", 0f, 0f, 1f, 0f);
                 bottomBar.pivot = new Vector2(0.5f, 0f);
-                bottomBar.anchoredPosition = new Vector2(0f, 6f);
-                bottomBar.sizeDelta = new Vector2(-16f, 32f);
+                bottomBar.offsetMin = new Vector2(0f, 0f);
+                bottomBar.offsetMax = new Vector2(0f, 38f);
+                bottomBar.sizeDelta = new Vector2(0f, 38f);
 
                 var bottomBarImg = bottomBar.gameObject.AddComponent<Image>();
-                bottomBarImg.sprite = btnBuyPill;
+                bottomBarImg.sprite = cardFooterBg;
                 bottomBarImg.type = Image.Type.Sliced;
                 bottomBarImg.color = Color.white;
                 bottomBarImg.raycastTarget = false;
 
+                // Centered price group inside bottom bar
+                var priceGroup = CreateExplicitRect(bottomBar, "PriceGroup", 0f, 0f, 1f, 1f);
+                var hlg = priceGroup.gameObject.AddComponent<HorizontalLayoutGroup>();
+                hlg.childAlignment = TextAnchor.MiddleCenter;
+                hlg.spacing = 6f;
+                hlg.childControlWidth = false;
+                hlg.childControlHeight = false;
+                hlg.childForceExpandWidth = false;
+                hlg.childForceExpandHeight = false;
+
                 // Coin icon
-                var coinGo = CreateExplicitRect(bottomBar, "CoinIcon", 0f, 0.5f, 0f, 0.5f);
-                coinGo.pivot = new Vector2(0f, 0.5f);
-                coinGo.anchoredPosition = new Vector2(10f, 0f);
-                coinGo.sizeDelta = new Vector2(18f, 18f);
+                var coinGo = CreateExplicitRect(priceGroup, "CoinIcon", 0.5f, 0.5f, 0.5f, 0.5f);
+                coinGo.sizeDelta = new Vector2(16f, 16f);
 
                 var coinImg = coinGo.gameObject.AddComponent<Image>();
                 coinImg.sprite = coinIcon;
@@ -230,12 +238,10 @@ namespace ProDomino.Dashboard.Editor
                 coinImg.raycastTarget = false;
 
                 // Cost / Status Label
-                var costTmp = CreateExplicitText(bottomBar, "Cost_Label", "Purchase", fBold, 13.5f, Color.white, TextAlignmentOptions.MidlineLeft);
-                var costRt = costTmp.GetComponent<RectTransform>();
-                costRt.anchorMin = new Vector2(0f, 0f);
-                costRt.anchorMax = new Vector2(1f, 1f);
-                costRt.offsetMin = new Vector2(34f, 0f);
-                costRt.offsetMax = new Vector2(-8f, 0f);
+                var costTmp = CreateExplicitText(priceGroup, "Cost_Label", "Purchase", fBold, 13.5f, Color.white, TextAlignmentOptions.MidlineLeft);
+                var costCsf = costTmp.gameObject.AddComponent<ContentSizeFitter>();
+                costCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                costCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
                 // -----------------------------------------------------------------
                 // Wire Serialized Properties on ShopElement
@@ -247,11 +253,19 @@ namespace ProDomino.Dashboard.Editor
                 elemSo.FindProperty("openConfirmationPopUpButton").objectReferenceValue = customBtn;
                 elemSo.FindProperty("grayedColor").colorValue = new Color(0.45f, 0.45f, 0.5f, 0.75f);
 
+                elemSo.FindProperty("rarityBadgeImage").objectReferenceValue = badgeImg;
+                elemSo.FindProperty("rarityBadgeLabel").objectReferenceValue = badgeTmp;
+                elemSo.FindProperty("badgeCommonSprite").objectReferenceValue = badgeCommon;
+                elemSo.FindProperty("badgeMythicSprite").objectReferenceValue = badgeMythic;
+                elemSo.FindProperty("badgeLegendarySprite").objectReferenceValue = badgeLegendary;
+                elemSo.FindProperty("badgeSpecialSprite").objectReferenceValue = badgeSpecial;
+
                 var avoidProp = elemSo.FindProperty("imagesToAvoidGrayedOut");
-                avoidProp.arraySize = 3;
+                avoidProp.arraySize = 4;
                 avoidProp.GetArrayElementAtIndex(0).objectReferenceValue = rootImg;
                 avoidProp.GetArrayElementAtIndex(1).objectReferenceValue = bottomBarImg;
                 avoidProp.GetArrayElementAtIndex(2).objectReferenceValue = coinImg;
+                avoidProp.GetArrayElementAtIndex(3).objectReferenceValue = badgeImg;
 
                 elemSo.ApplyModifiedPropertiesWithoutUndo();
 
@@ -478,11 +492,11 @@ namespace ProDomino.Dashboard.Editor
                 var elemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ElementPrefabPath);
                 if (elemPrefab != null)
                 {
-                    CreateTemplateCard(content, elemPrefab, "Item_1", tileDefault, "Common", badgeCommon, "Purchase", true);
-                    CreateTemplateCard(content, elemPrefab, "Item_2", tileOrange, "Common", badgeCommon, "5", false);
-                    CreateTemplateCard(content, elemPrefab, "Item_3", tilePink, "Mythic", badgeMythic, "35", false);
-                    CreateTemplateCard(content, elemPrefab, "Item_4", tileBlack, "Legendary", badgeLegendary, "105", false);
-                    CreateTemplateCard(content, elemPrefab, "Item_5", tileRainbow, "Special", badgeSpecial, "250", false);
+                    CreateTemplateCard(content, elemPrefab, "Item_1", tileDefault, "Common", badgeCommon, Hex("#0F172A"), "Purchase", true);
+                    CreateTemplateCard(content, elemPrefab, "Item_2", tileOrange, "Common", badgeCommon, Hex("#0F172A"), "5", false);
+                    CreateTemplateCard(content, elemPrefab, "Item_3", tilePink, "Mythic", badgeMythic, Hex("#3B0764"), "35", false);
+                    CreateTemplateCard(content, elemPrefab, "Item_4", tileBlack, "Legendary", badgeLegendary, Hex("#451A03"), "105", false);
+                    CreateTemplateCard(content, elemPrefab, "Item_5", tileRainbow, "Special", badgeSpecial, Hex("#431407"), "250", false);
                 }
 
                 // -----------------------------------------------------------------
@@ -711,7 +725,7 @@ namespace ProDomino.Dashboard.Editor
             return cb;
         }
 
-        private static void CreateTemplateCard(Transform parent, GameObject prefab, string name, Sprite tileSprite, string rarity, Sprite badgeSprite, string priceText, bool isPurchased)
+        private static void CreateTemplateCard(Transform parent, GameObject prefab, string name, Sprite tileSprite, string rarity, Sprite badgeSprite, Color badgeTextColor, string priceText, bool isPurchased)
         {
             var go = UnityEngine.Object.Instantiate(prefab, parent);
             go.name = name;
@@ -724,14 +738,61 @@ namespace ProDomino.Dashboard.Editor
             if (badgeImg != null && badgeSprite != null) badgeImg.sprite = badgeSprite;
 
             var badgeTxt = go.transform.Find("Rarity_Badge/BadgeText")?.GetComponent<TextMeshProUGUI>();
-            if (badgeTxt != null) badgeTxt.text = rarity;
+            if (badgeTxt != null)
+            {
+                badgeTxt.text = rarity;
+                badgeTxt.color = badgeTextColor;
+            }
 
-            var costTxt = go.transform.Find("Bottom_Bar/Cost_Label")?.GetComponent<TextMeshProUGUI>();
+            var costTxt = go.transform.Find("Bottom_Bar/PriceGroup/Cost_Label")?.GetComponent<TextMeshProUGUI>();
             if (costTxt != null)
             {
                 costTxt.text = priceText;
-                costTxt.color = isPurchased ? Color.white : Hex("#FDC553");
+                costTxt.color = isPurchased ? Hex("#8E9CAE") : Color.white;
             }
+        }
+
+        private static Sprite MakeBottomRoundedSprite(string name, int w, int h, int r, Color fill, Color border, float borderWidth = 1f)
+        {
+            var path = $"{GeneratedDir}/{name}.png";
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float px = x + 0.5f;
+                float py = y + 0.5f;
+                // Only round bottom corners: when py < r and (px < r or px > w - r)
+                float inside = 1f;
+                if (py < r)
+                {
+                    float cx = Mathf.Clamp(px, r, w - r);
+                    float cy = r;
+                    float dist = Vector2.Distance(new Vector2(px, py), new Vector2(cx, cy));
+                    inside = Mathf.Clamp01(r - dist + 0.5f);
+                }
+
+                Color c = fill;
+                if (borderWidth > 0f)
+                {
+                    float distLeft = px;
+                    float distRight = w - px;
+                    float distTop = h - py;
+                    float distBottom = py;
+                    float edgeDist = Mathf.Min(distLeft, distRight, distTop, distBottom);
+                    if (py < r && (px < r || px > w - r))
+                    {
+                        float cx = Mathf.Clamp(px, r, w - r);
+                        float cy = r;
+                        float dist = Vector2.Distance(new Vector2(px, py), new Vector2(cx, cy));
+                        edgeDist = r - dist;
+                    }
+                    float borderMask = Mathf.Clamp01(borderWidth + 0.5f - edgeDist) * border.a;
+                    c = Color.Lerp(fill, border, borderMask);
+                }
+                c.a *= inside;
+                tex.SetPixel(x, y, c);
+            }
+            return SaveSlicedSprite(path, tex, r + 2);
         }
 
         private static RectTransform CreateExplicitRect(Transform parent, string name, float axMin, float ayMin, float axMax, float ayMax)

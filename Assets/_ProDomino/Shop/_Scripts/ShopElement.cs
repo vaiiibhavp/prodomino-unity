@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using Newtonsoft.Json;
 using System;
@@ -20,6 +20,12 @@ namespace ProDomino.Shop
         [SerializeField] private UnityEvent onPurchaseSuccess;
         [SerializeField] private Color grayedColor = Color.gray;
         [SerializeField] private Image[] imagesToAvoidGrayedOut;
+        [SerializeField] private Image rarityBadgeImage;
+        [SerializeField] private TMP_Text rarityBadgeLabel;
+        [SerializeField] private Sprite badgeCommonSprite;
+        [SerializeField] private Sprite badgeMythicSprite;
+        [SerializeField] private Sprite badgeLegendarySprite;
+        [SerializeField] private Sprite badgeSpecialSprite;
 
         private AsyncFuncHandler<PurchaseCosmeticResponse, string> purchaseShopElement;
         private Action<ShopElement> openConfirmationPopUp;
@@ -53,6 +59,8 @@ namespace ProDomino.Shop
                 Debug.LogWarning("Game cosmetic data is null");
                 return;
             }
+
+            UpdateRarity(GameCosmeticData.rarity);
 
             // Set the cost label if available
             if (costLabel)
@@ -159,6 +167,36 @@ namespace ProDomino.Shop
             }
 
             return elementImage.sprite;
+        }
+
+        public void UpdateRarity(Enums.CosmeticRarity rarity)
+        {
+            if (rarityBadgeLabel != null)
+            {
+                rarityBadgeLabel.text = rarity.ToString();
+                switch (rarity)
+                {
+                    case Enums.CosmeticRarity.Common:
+                        rarityBadgeLabel.color = new Color32(15, 23, 42, 255);
+                        if (rarityBadgeImage && badgeCommonSprite) rarityBadgeImage.sprite = badgeCommonSprite;
+                        break;
+                    case Enums.CosmeticRarity.Mythic:
+                        rarityBadgeLabel.color = new Color32(59, 7, 100, 255);
+                        if (rarityBadgeImage && badgeMythicSprite) rarityBadgeImage.sprite = badgeMythicSprite;
+                        break;
+                    case Enums.CosmeticRarity.Legendary:
+                        rarityBadgeLabel.color = new Color32(69, 26, 3, 255);
+                        if (rarityBadgeImage && badgeLegendarySprite) rarityBadgeImage.sprite = badgeLegendarySprite;
+                        break;
+                    case Enums.CosmeticRarity.Special:
+                        rarityBadgeLabel.color = new Color32(67, 20, 7, 255);
+                        if (rarityBadgeImage && badgeSpecialSprite) rarityBadgeImage.sprite = badgeSpecialSprite;
+                        break;
+                    default:
+                        rarityBadgeLabel.color = Color.white;
+                        break;
+                }
+            }
         }
     }
 }

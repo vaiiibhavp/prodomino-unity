@@ -46,6 +46,7 @@ namespace ProDomino.Dashboard.Editor
         }
 
         private static readonly ConcurrentQueue<LogEntry> logBuffer = new ConcurrentQueue<LogEntry>();
+        private static readonly ConcurrentQueue<Action> mainThreadQueue = new ConcurrentQueue<Action>();
         private const int MaxLogCount = 150;
 
         static UnityMcpBridge()
@@ -53,8 +54,18 @@ namespace ProDomino.Dashboard.Editor
             Application.logMessageReceivedThreaded += OnLogMessageReceived;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             EditorApplication.quitting += Stop;
+            EditorApplication.update += ProcessMainThreadQueue;
 
             EditorApplication.delayCall += StartServer;
+        }
+
+        private static void ProcessMainThreadQueue()
+        {
+            while (mainThreadQueue.TryDequeue(out var action))
+            {
+                try { action?.Invoke(); }
+                catch (Exception ex) { Debug.LogException(ex); }
+            }
         }
 
         private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
@@ -309,7 +320,7 @@ namespace ProDomino.Dashboard.Editor
         private static Task<T> RunOnMainThread<T>(Func<T> action)
         {
             var tcs = new TaskCompletionSource<T>();
-            EditorApplication.delayCall += () =>
+            mainThreadQueue.Enqueue(() =>
             {
                 try
                 {
@@ -319,7 +330,7 @@ namespace ProDomino.Dashboard.Editor
                 {
                     tcs.SetException(ex);
                 }
-            };
+            });
             return tcs.Task;
         }
 
