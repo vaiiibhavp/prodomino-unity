@@ -59,17 +59,18 @@ namespace ProDomino.Dashboard.Editor
             PrepareAssets();
             RestyleElementPrefab();
             BuildCleanShopScreenPrefab();
+            EnsureHiddenInMiddleScreen();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[ShopRestyler] SUCCESS: Shop screen completely restyled to Figma design!");
+            Debug.Log("[ShopRestyler] SUCCESS: Shop screen completely restyled to Figma design and hidden by default!");
         }
 
         [InitializeOnLoadMethod]
         private static void AutoRunOnce()
         {
-            if (!SessionState.GetBool("PD_ShopRestyler_Ran_v2", false))
+            if (!SessionState.GetBool("PD_ShopRestyler_Ran_v3", false))
             {
-                SessionState.SetBool("PD_ShopRestyler_Ran_v2", true);
+                SessionState.SetBool("PD_ShopRestyler_Ran_v3", true);
                 EditorApplication.delayCall += () =>
                 {
                     ApplyAndRender();
@@ -278,9 +279,9 @@ namespace ProDomino.Dashboard.Editor
                 rootRt.offsetMax = Vector2.zero;
 
                 var cg = root.GetComponent<CanvasGroup>() ?? root.AddComponent<CanvasGroup>();
-                cg.alpha = 1f;
-                cg.interactable = true;
-                cg.blocksRaycasts = true;
+                cg.alpha = 0f;
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
 
                 if (root.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup vlg)
                     UnityEngine.Object.DestroyImmediate(vlg);
@@ -647,6 +648,40 @@ namespace ProDomino.Dashboard.Editor
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void EnsureHiddenInMiddleScreen()
+        {
+            const string MiddleScreenPath = "Assets/_ProDomino/Shared/Prefabs/MiddleScreen_Scalable.prefab";
+            if (!File.Exists(MiddleScreenPath)) return;
+
+            var middleScreen = PrefabUtility.LoadPrefabContents(MiddleScreenPath);
+            try
+            {
+                var shopPanels = middleScreen.GetComponentsInChildren<ShopUI>(true);
+                foreach (var p in shopPanels)
+                {
+                    if (p.TryGetComponent<CanvasGroup>(out var pcg))
+                    {
+                        pcg.alpha = 0f;
+                        pcg.interactable = false;
+                        pcg.blocksRaycasts = false;
+                    }
+
+                    var pSo = new SerializedObject(p);
+                    var cgProp = pSo.FindProperty("<RootCanvasGroup>k__BackingField") ?? pSo.FindProperty("RootCanvasGroup");
+                    if (cgProp != null && pcg != null)
+                        cgProp.objectReferenceValue = pcg;
+                    pSo.ApplyModifiedPropertiesWithoutUndo();
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(middleScreen, MiddleScreenPath);
+                Debug.Log("[ShopRestyler] Shop panel hidden by default in MiddleScreen_Scalable!");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(middleScreen);
             }
         }
 
