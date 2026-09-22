@@ -1,5 +1,5 @@
 using ProDomino.Shared;
-using System.Collections;
+using System.Collections.Generic;
 using Timba.Database;
 using TMPro;
 using UnityEngine;
@@ -9,198 +9,148 @@ using static ProDomino.LearningTool.LearningToolManager;
 namespace ProDomino.LearningTool
 {
     /// <summary>
-    /// UI panel for displaying learning tool information.
+    /// UI panel for displaying game rules and learning tool information in Figma accordion format.
     /// </summary>
-    internal class LearningToolUI : MonoBehaviour, INavigationPanel
+    public class LearningToolUI : MonoBehaviour, INavigationPanel
     {
         [field: SerializeField] public CanvasGroup RootCanvasGroup { get; private set; }
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.Learn;
         public bool RequiresAuthentication => false;
 
-        /// <summary>
-        /// URL for learning resources.
-        /// </summary>
-        [SerializeField] private string learnUrl;
-
+        [Header("Data")]
         [SerializeField] private LearningToolsDatabase learningToolsGameModeData;
-        [SerializeField] private TMP_Dropdown gameModeDropdown;
-        [SerializeField] private Image gameModeImage;
-        [SerializeField] private TMP_Text gameModeDescriptionText;
-        [SerializeField] private TMP_Text gameModeRulesText;
-        [SerializeField] private RectTransform containerLinkBtns;
-        [SerializeField] private GameObject videoLinkBtnPrefab;
-        [SerializeField] private ScrollRect scrollRectVideoLinks;
-        [SerializeField] private ScrollRect scrollRectRules;
-        [SerializeField] private Button leftButton;
-        [SerializeField] private Button rightButton;
 
-        [Header("Configuración")]
-        [SerializeField] private float scrollStep = 0.25f;
+        [Header("Accordion Items")]
+        [SerializeField] private RectTransform accordionContainer;
+        [SerializeField] private List<RulesAccordionItem> accordionItems = new List<RulesAccordionItem>();
+        [SerializeField] private ScrollRect scrollRect;
 
-        void Start()
+        private void Awake()
         {
-            gameModeDropdown.onValueChanged.AddListener(SelectedMode);
-            SelectedMode(0);
-            
-            leftButton.onClick.AddListener(ScrollLeft);
-            rightButton.onClick.AddListener(ScrollRight);
+            InitItems();
+        }
+
+        private void Start()
+        {
+            InitItems();
+            // Default to expanding the first item (e.g. Block)
+            if (accordionItems != null && accordionItems.Count > 0)
+            {
+                ExpandItem(accordionItems[0]);
+            }
+        }
+
+        private void InitItems()
+        {
+            if (accordionItems == null || accordionItems.Count == 0)
+            {
+                accordionItems = new List<RulesAccordionItem>(GetComponentsInChildren<RulesAccordionItem>(true));
+            }
+            foreach (var item in accordionItems)
+            {
+                if (item != null)
+                {
+                    item.BindToggleCallback(OnItemHeaderClicked);
+                }
+            }
         }
 
         /// <summary>
-        /// Activates or deactivates the navigation panel and optionally opens a learn URL if specified.
+        /// Activates or deactivates the navigation panel.
         /// </summary>
-        /// <param name="isActive">True to activate the navigation panel; false to deactivate it.</param>
-        void INavigationPanel.SetActiveNavigationPanel(bool isActive)
+        public void SetActiveNavigationPanel(bool isActive)
         {
-            if (!string.IsNullOrEmpty(learnUrl))
+            if (RootCanvasGroup != null)
             {
-                // Only open the URL if we're activating the panel, not deactivating it
-                if (isActive)
-                    Application.OpenURL(learnUrl);
-            }
-
-            else
-            { 
-                RootCanvasGroup?.SetActive(isActive);
+                RootCanvasGroup.SetActive(isActive);
                 RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
             }
 
-        }
-
-        #region Learning tools functionalities
-        /// <summary>
-        /// Handles the selection of a game mode from the dropdown.
-        /// </summary>
-        /// <param name="index"></param>
-        private void SelectedMode(int index)
-        {
-            switch(index)
+            if (isActive)
             {
-                case 0:
-                    SetData(learningToolsGameModeData.GetItemById("french"));
-                break;
-                case 1:
-                    SetData(learningToolsGameModeData.GetItemById("draw"));
-                break;
-                case 2:
-                    SetData(learningToolsGameModeData.GetItemById("five"));
-                break;
-                case 3:
-                    SetData(learningToolsGameModeData.GetItemById("block"));
-                break;
-                case 4:
-                    SetData(learningToolsGameModeData.GetItemById("concentrate"));
-                break;
-                default:
-                    Debug.Log("Invalid Option");
-                break;
-            }
-        }
-
-        /// <summary>
-        /// Sets the UI data based on the selected game mode.
-        /// </summary>
-        /// <param name="gameModeDataLearningInfo">The game mode data to display.</param>
-        private void SetData(GameModeDataLearningInfo gameModeDataLearningInfo)
-        {
-            gameModeImage.sprite = gameModeDataLearningInfo.spriteImg;
-            gameModeDescriptionText.text = gameModeDataLearningInfo.descriptionText;
-            gameModeRulesText.text = gameModeDataLearningInfo.rulesText;
-
-            scrollRectVideoLinks.horizontal = true;
-            scrollRectRules.verticalNormalizedPosition = 1f;
-            scrollRectVideoLinks.horizontalNormalizedPosition = 0;
-
-            foreach (Transform child in containerLinkBtns)
-                Destroy(child.gameObject);
-
-            for (int i = 0; i < gameModeDataLearningInfo.linkVideos.Length; i++)
-            {
-                GameObject newBtn = Instantiate(videoLinkBtnPrefab, containerLinkBtns);
-
-                newBtn.transform.localScale = Vector3.one;
-
-                LinkBtnData auxBtnData = newBtn.GetComponentInChildren<LinkBtnData>();
-                
-                auxBtnData.titleText.text = gameModeDataLearningInfo.linkVideos[i].titleText;
-                auxBtnData.subTitleText.text = "(" + gameModeDataLearningInfo.linkVideos[i].subTitleText + ")";
-
-                Button btn = auxBtnData.btn;
-                string auxLink = gameModeDataLearningInfo.linkVideos[i].link;
-                Debug.Log("LINK: " + auxLink);
-                if (btn != null)
+                InitItems();
+                if (accordionItems != null && accordionItems.Count > 0)
                 {
-                    btn.onClick.AddListener(() =>
+                    bool hasExpanded = false;
+                    foreach (var it in accordionItems)
                     {
-                        OpenVideoLink(auxLink);
-                    });
+                        if (it != null && it.IsExpanded) { hasExpanded = true; break; }
+                    }
+                    if (!hasExpanded)
+                    {
+                        ExpandItem(accordionItems[0]);
+                    }
+                }
+
+                if (scrollRect != null)
+                {
+                    scrollRect.verticalNormalizedPosition = 1f;
                 }
             }
+        }
 
-            if(gameModeDataLearningInfo.linkVideos.Length <= 4)
+        /// <summary>
+        /// Registers and sets up an accordion item.
+        /// </summary>
+        public void RegisterAccordionItem(RulesAccordionItem item)
+        {
+            if (item != null && !accordionItems.Contains(item))
             {
-                //containerLinkBtns.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                containerLinkBtns.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-                Vector2 offsetMax = containerLinkBtns.offsetMax;
-                offsetMax.x = 0;
-                containerLinkBtns.offsetMax = offsetMax;
+                accordionItems.Add(item);
+            }
+        }
 
-                scrollRectVideoLinks.horizontal = false;
+        /// <summary>
+        /// Called when an accordion item header is clicked.
+        /// Toggles that item and collapses other items.
+        /// </summary>
+        public void OnItemHeaderClicked(RulesAccordionItem clickedItem)
+        {
+            if (clickedItem == null) return;
 
-                leftButton.gameObject.SetActive(false);
-                rightButton.gameObject.SetActive(false);
+            if (clickedItem.IsExpanded)
+            {
+                clickedItem.SetExpanded(false);
             }
             else
             {
-                containerLinkBtns.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                ExpandItem(clickedItem);
+            }
 
-                scrollRectVideoLinks.horizontal = true;
-
-                leftButton.gameObject.SetActive(true);
-                rightButton.gameObject.SetActive(true);
+            if (scrollRect != null)
+            {
+                Canvas.ForceUpdateCanvases();
             }
         }
 
         /// <summary>
-        /// Opens a video link in the default web browser.
+        /// Expands the specified item and collapses all others.
         /// </summary>
-        /// <param name="link"></param>
-        private void OpenVideoLink(string link)
+        public void ExpandItem(RulesAccordionItem targetItem)
         {
-            if(link != "")
+            foreach (var item in accordionItems)
             {
-                Application.OpenURL(link);   
+                if (item != null)
+                {
+                    item.SetExpanded(item == targetItem);
+                }
             }
         }
 
-        private void ScrollLeft()
+        /// <summary>
+        /// Expands a game mode by its string ID (e.g. "block", "concentrate").
+        /// </summary>
+        public void ExpandModeById(string modeId)
         {
-            StartCoroutine(SmoothScrollTo(scrollRectVideoLinks.horizontalNormalizedPosition - scrollStep));
-        }
-
-        private void ScrollRight()
-        {
-            StartCoroutine(SmoothScrollTo(scrollRectVideoLinks.horizontalNormalizedPosition + scrollStep));
-        }
-
-        private IEnumerator SmoothScrollTo(float target)
-        {
-            target = Mathf.Clamp01(target);
-            float start = scrollRectVideoLinks.horizontalNormalizedPosition;
-            float elapsed = 0f;
-            float duration = 0.25f;
-
-            while (elapsed < duration)
+            foreach (var item in accordionItems)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                scrollRectVideoLinks.horizontalNormalizedPosition = Mathf.Lerp(start, target, t);
-                yield return null;
+                if (item != null && string.Equals(item.ModeId, modeId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    ExpandItem(item);
+                    break;
+                }
             }
-
-            scrollRectVideoLinks.horizontalNormalizedPosition = target;
         }
-        #endregion
     }
 }

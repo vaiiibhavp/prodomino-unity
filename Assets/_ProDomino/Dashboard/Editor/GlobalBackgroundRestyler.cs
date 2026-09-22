@@ -49,10 +49,14 @@ namespace ProDomino.Dashboard.Editor
                 Debug.Log("[GlobalBackgroundRestyler] Applying Leaderboard screen restyle...");
                 LeaderboardRestyler.ApplyAndRender();
 
-                // 6. Update Camera Background in scenes
+                // 6. Restyle Rules Screen
+                Debug.Log("[GlobalBackgroundRestyler] Applying Rules screen restyle...");
+                RulesRestyler.ApplyAndRender();
+
+                // 7. Update Camera Background in scenes
                 UpdateAllSceneCameras();
 
-                // 7. Render screenshots of all screens
+                // 8. Render screenshots of all screens
                 RenderAllScreens();
 
                 AssetDatabase.SaveAssets();
@@ -186,7 +190,13 @@ namespace ProDomino.Dashboard.Editor
                 ActivateScreen(root, "Leaderboard", "Leaderboard");
             });
 
-            // 4. Runtime Dashboard
+            // 4. Rules Screen
+            SidebarRestyler.RenderCanvas(Path.Combine(outDir, "screen_rules.png"), 1920, 1080, true, root =>
+            {
+                ActivateScreen(root, "Learn", "Rules");
+            });
+
+            // 5. Runtime Dashboard
             SidebarRestyler.RenderCanvas(Path.Combine(outDir, "runtime.png"), 1920, 1080, true);
 
             Debug.Log($"[GlobalBackgroundRestyler] Rendered all screens to {outDir}");
@@ -244,7 +254,8 @@ namespace ProDomino.Dashboard.Editor
                     foreach (var b in navCtrl.GetComponentsInChildren(type, true))
                     {
                         string id = (string)idProp?.GetValue(b);
-                        bool select = string.Equals(id, navButtonId, StringComparison.OrdinalIgnoreCase);
+                        bool select = string.Equals(id, navButtonId, StringComparison.OrdinalIgnoreCase)
+                                   || (string.Equals(navButtonId, "Rules", StringComparison.OrdinalIgnoreCase) && string.Equals(id, "Learn", StringComparison.OrdinalIgnoreCase));
                         preview?.Invoke(b, new object[] { select });
                     }
                 }
