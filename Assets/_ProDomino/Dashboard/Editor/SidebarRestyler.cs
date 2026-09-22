@@ -41,8 +41,10 @@ namespace ProDomino.Dashboard.Editor
         private static readonly (string instance, string icon)[] NavIcons =
         {
             ("NavegationPanel_Play_Button", "Nav_Dashboard"),
+            ("NavegationPanel_Games_Button", "Nav_Games"),
             ("NavegationPanel_Leaderboard_Button", "Nav_Leaderboard"),
             ("NavegationPanel_Achievements_Button", "Nav_Achievements"),
+            ("NavegationPanel_FriendsList_Button", "Nav_FriendsList"),
             ("NavegationPanel_Club_Button", "Nav_Club"),
             ("NavegationPanel_Party", "Nav_Party"),
             ("NavegationPanel_Tournament_Button", "Nav_Tournament"),
@@ -51,7 +53,7 @@ namespace ProDomino.Dashboard.Editor
             ("NavegationPanel_Review_Button", "Nav_Review"),
         };
 
-        internal static Sprite roundedWhite, roundedOrange, roundedBlue, glowOrange;
+        internal static Sprite roundedWhite, roundedOrange, roundedBlue, glowOrange, sidebarPanelBg, inviteCardBg, illustrationFG, gamesIcon, friendsListIcon;
         internal static TMP_FontAsset fontRegular, fontMedium, fontBold, fontExtraBold;
 
         [MenuItem("ProDomino/Dashboard/Restyle Sidebar + Render")]
@@ -108,6 +110,11 @@ namespace ProDomino.Dashboard.Editor
             roundedOrange = MakeRoundedSprite("Rounded_Orange_R10", 190, 44, 10, Hex("#FFA501"), Hex("#FDC653"));
             roundedBlue = MakeRoundedSprite("Rounded_Blue_R10", 72, 28, 10, Hex("#416FC3"), Hex("#78ADFF"));
             glowOrange = MakeGlowSprite("Glow_Orange", 128, 64, Hex("#FF9A00"));
+            sidebarPanelBg = MakeSidebarPanelSprite();
+            inviteCardBg = MakePanelSprite("InviteFriends_CardBg", 48, 48, 12, Hex("#090E1C"), Hex("#050812"), Hex("#1E273A"), 1f);
+            illustrationFG = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_ProDomino/_Art/Dashboard/InviteFriends_Illustration_FG.png");
+            gamesIcon = AssetDatabase.LoadAssetAtPath<Sprite>($"{IconDir}/Nav_Games.png");
+            friendsListIcon = AssetDatabase.LoadAssetAtPath<Sprite>($"{IconDir}/Nav_FriendsList.png");
             fontRegular = LoadFont("Montserrat-Regular");
             fontMedium = LoadFont("Montserrat-Medium");
             fontBold = LoadFont("Montserrat-Bold");
@@ -327,22 +334,16 @@ namespace ProDomino.Dashboard.Editor
             const float panelAnchorX = 0.1280724f;
             const float panelAnchorTop = 0.9085986f;
 
-            // Glows sit behind the panel so only a soft orange halo shows past its edges.
-            var glowTop = MakeImage(bg, "Sidebar_GlowTop", glowOrange, new Color(1f, 1f, 1f, 0.35f), Image.Type.Simple);
+            // Subtle top-left warm amber ambient glow behind panel corner
+            var glowTop = MakeImage(bg, "Sidebar_GlowTop", glowOrange, new Color(1f, 0.65f, 0.15f, 0.22f), Image.Type.Simple);
             var gtr = (RectTransform)glowTop.transform;
             gtr.anchorMin = gtr.anchorMax = new Vector2(0f, panelAnchorTop);
-            gtr.pivot = new Vector2(0.5f, 0.5f);
-            gtr.anchoredPosition = new Vector2(24f, -8f);
-            gtr.sizeDelta = new Vector2(150f, 34f);
+            gtr.pivot = new Vector2(0f, 1f);
+            gtr.anchoredPosition = new Vector2(2f, -2f);
+            gtr.sizeDelta = new Vector2(96f, 96f);
 
-            var glowBottom = MakeImage(bg, "Sidebar_GlowBottom", glowOrange, new Color(1f, 1f, 1f, 0.45f), Image.Type.Simple);
-            var gbr = (RectTransform)glowBottom.transform;
-            gbr.anchorMin = gbr.anchorMax = new Vector2(panelAnchorX * 0.5f, bottomAnchorY);
-            gbr.pivot = new Vector2(0.5f, 0.5f);
-            gbr.anchoredPosition = new Vector2(0f, 2f);
-            gbr.sizeDelta = new Vector2(220f, 24f);
-
-            var panel = MakeImage(bg, "Sidebar_Panel", roundedWhite, PanelBg, Image.Type.Sliced);
+            // Sliced panel with 1.3px glowing amber/gold border
+            var panel = MakeImage(bg, "Sidebar_Panel", sidebarPanelBg, Color.white, Image.Type.Sliced);
             var pr = (RectTransform)panel.transform;
             pr.anchorMin = new Vector2(0f, bottomAnchorY);
             pr.anchorMax = new Vector2(panelAnchorX, panelAnchorTop);
@@ -351,8 +352,7 @@ namespace ProDomino.Dashboard.Editor
 
             int i = baseFrame.GetSiblingIndex();
             glowTop.transform.SetSiblingIndex(i + 1);
-            glowBottom.transform.SetSiblingIndex(i + 2);
-            panel.transform.SetSiblingIndex(i + 3);
+            panel.transform.SetSiblingIndex(i + 2);
         }
 
         private static void RestyleNavList(Transform layout)
@@ -367,6 +367,54 @@ namespace ProDomino.Dashboard.Editor
             }
             var oldDivider = layout.Find("Divider_Sections_1");
             if (oldDivider != null) UnityEngine.Object.DestroyImmediate(oldDivider.gameObject);
+
+            // Ensure Games button exists
+            var gamesBtn = FindDeep(layout, "NavegationPanel_Games_Button");
+            if (gamesBtn == null)
+            {
+                var playBtn = FindDeep(layout, "NavegationPanel_Play_Button");
+                if (playBtn != null)
+                {
+                    var go = UnityEngine.Object.Instantiate(playBtn.gameObject, layout, false);
+                    go.name = "NavegationPanel_Games_Button";
+                    gamesBtn = go.transform;
+                }
+            }
+            if (gamesBtn != null)
+            {
+                var cb = gamesBtn.GetComponent<CustomButtonUI>();
+                if (cb != null)
+                {
+                    var so = new SerializedObject(cb);
+                    so.FindProperty("toggleID").stringValue = "Games";
+                    so.FindProperty("isToggleable").boolValue = false;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            // Ensure Friends List button exists
+            var friendsBtn = FindDeep(layout, "NavegationPanel_FriendsList_Button");
+            if (friendsBtn == null)
+            {
+                var clubBtn = FindDeep(layout, "NavegationPanel_Club_Button");
+                if (clubBtn != null)
+                {
+                    var go = UnityEngine.Object.Instantiate(clubBtn.gameObject, layout, false);
+                    go.name = "NavegationPanel_FriendsList_Button";
+                    friendsBtn = go.transform;
+                }
+            }
+            if (friendsBtn != null)
+            {
+                var cb = friendsBtn.GetComponent<CustomButtonUI>();
+                if (cb != null)
+                {
+                    var so = new SerializedObject(cb);
+                    so.FindProperty("toggleID").stringValue = "FriendsList";
+                    so.FindProperty("isToggleable").boolValue = false;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
 
             // Rows 190 wide: the layout group is 207 wide, so 8/9 px side padding.
             var vlg = layout.GetComponent<VerticalLayoutGroup>();
@@ -385,18 +433,19 @@ namespace ProDomino.Dashboard.Editor
                 StyleNavButton(t, AssetDatabase.LoadAssetAtPath<Sprite>($"{IconDir}/{iconName}.png"));
             }
 
-            // Labels: "Play" -> "Dashboard" (its localization entry was updated too) and the Learn
-            // button points at the existing "rules" entry.
+            // Labels: "Play" -> "Dashboard" and other labels
             SetLabel(FindDeep(layout, "NavegationPanel_Play_Button"), "Dashboard", -1);
+            if (gamesBtn != null) SetLabel(gamesBtn, "Games", -1);
+            if (friendsBtn != null) SetLabel(friendsBtn, "Friends List", -1);
             SetLabel(FindDeep(layout, "NavegationPanel_Learn_Button"), "Rules", RulesKeyId);
 
-            // Dashboard sits in its own row-sized container (like "Games" in the reference).
+            // Dashboard & Games sit in top group
             var groupTop = MakeGroup(layout, "Group_Top", 0);
             var groupA = MakeGroup(layout, "Group_A", 8);
             var groupB = MakeGroup(layout, "Group_B", 8);
-            MoveInto(layout, groupTop, "NavegationPanel_Play_Button");
+            MoveInto(layout, groupTop, "NavegationPanel_Play_Button", "NavegationPanel_Games_Button");
             MoveInto(layout, groupA, "NavegationPanel_Leaderboard_Button", "NavegationPanel_Achievements_Button",
-                "NavegationPanel_Club_Button", "NavegationPanel_Party", "NavegationPanel_Tournament_Button");
+                "NavegationPanel_FriendsList_Button", "NavegationPanel_Club_Button", "NavegationPanel_Party", "NavegationPanel_Tournament_Button");
             MoveInto(layout, groupB, "NavegationPanel_Shop_Button", "NavegationPanel_Learn_Button",
                 "NavegationPanel_Review_Button");
 
@@ -419,9 +468,12 @@ namespace ProDomino.Dashboard.Editor
 
             StyleInviteCard(layout);
 
-            // Keeps a full 4-member party list above Settings/Help.
+            // Hide party member rows from sidebar so it matches clean Figma design
             var party = layout.Find("Party_LayoutGroup");
-            if (party != null && party.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup pv) pv.spacing = 5f;
+            if (party != null)
+            {
+                party.gameObject.SetActive(false);
+            }
         }
 
         private static void SetLabel(Transform button, string text, long keyId)
@@ -477,7 +529,7 @@ namespace ProDomino.Dashboard.Editor
             img.sprite = null; img.type = Image.Type.Simple; img.color = DividerColor;
         }
 
-        // Figma "Invite Friends" card: title, subtitle and a small blue "Invite" button.
+        // Figma "Invite Friends" card: title, subtitle, 3D gift chest illustration and small blue "Invite" button.
         private static void StyleInviteCard(Transform layout)
         {
             var container = FindDeep(layout, "InviteFriend_Container");
@@ -488,27 +540,26 @@ namespace ProDomino.Dashboard.Editor
             le.minHeight = 100f;
             le.preferredHeight = 100f;
             var card = container.GetComponent<Image>() ?? container.gameObject.AddComponent<Image>();
-            card.sprite = roundedWhite; card.type = Image.Type.Sliced; card.color = GroupBg;
+            card.sprite = inviteCardBg; card.type = Image.Type.Sliced; card.color = Color.white;
             card.raycastTarget = false; card.pixelsPerUnitMultiplier = 1f;
 
-            foreach (var n in new[] { "Invite_Title", "Invite_Subtitle" })
+            foreach (var n in new[] { "Invite_Title", "Invite_Subtitle", "Invite_Illustration" })
             {
                 var old = container.Find(n);
                 if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
             }
-            var title = MakeText(container, "Invite_Title", "Invite Friends", fontExtraBold, 17f, Color.white);
-            PlaceTopLeft((RectTransform)title.transform, 14f, -10f, 170f, 22f);
-            var sub = MakeText(container, "Invite_Subtitle", "Invite your friends and earn bonus", fontRegular, 11f, TextInactive);
+            var title = MakeText(container, "Invite_Title", "Invite Friends", fontExtraBold, 15.5f, Color.white);
+            PlaceTopLeft((RectTransform)title.transform, 14f, -12f, 115f, 22f);
+            var sub = MakeText(container, "Invite_Subtitle", "Invite your friends and earn bonus", fontRegular, 10f, TextInactive);
             sub.textWrappingMode = TextWrappingModes.Normal;
             sub.alignment = TextAlignmentOptions.TopLeft;
-            PlaceTopLeft((RectTransform)sub.transform, 14f, -34f, 160f, 28f);
+            PlaceTopLeft((RectTransform)sub.transform, 14f, -34f, 105f, 30f);
 
             var brt = (RectTransform)btn;
             brt.anchorMin = brt.anchorMax = Vector2.zero;
             brt.pivot = Vector2.zero;
             brt.anchoredPosition = new Vector2(14f, 10f);
-            brt.sizeDelta = new Vector2(76f, 28f);
-            btn.SetAsLastSibling();
+            brt.sizeDelta = new Vector2(72f, 26f);
 
             var bgImg = Need(btn, "Background").GetComponent<Image>();
             bgImg.sprite = roundedBlue; bgImg.type = Image.Type.Sliced; bgImg.color = Color.white;
@@ -522,11 +573,29 @@ namespace ProDomino.Dashboard.Editor
             tmp.text = "Invite";
             tmp.font = fontBold; tmp.fontSharedMaterial = fontBold.material;
             tmp.color = Color.white; tmp.alignment = TextAlignmentOptions.Center;
-            tmp.enableAutoSizing = false; tmp.fontSize = 12f; tmp.fontStyle = FontStyles.Normal;
+            tmp.enableAutoSizing = false; tmp.fontSize = 11.5f; tmp.fontStyle = FontStyles.Normal;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.margin = Vector4.zero; tmp.lineSpacing = 0f;
-            // The old "Invite a Friend +" string would overwrite the new short label at runtime.
             if (label.GetComponent("LocalizeStringEvent") is Behaviour lse) lse.enabled = false;
+
+            // 3D open gift box with gold coin illustration on the right
+            if (illustrationFG != null)
+            {
+                var illusGo = new GameObject("Invite_Illustration", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                illusGo.transform.SetParent(container, false);
+                var irt = (RectTransform)illusGo.transform;
+                irt.anchorMin = irt.anchorMax = new Vector2(1f, 0.5f);
+                irt.pivot = new Vector2(1f, 0.5f);
+                irt.anchoredPosition = new Vector2(-6f, 0f);
+                irt.sizeDelta = new Vector2(72f, 72f);
+
+                var illusImg = illusGo.GetComponent<Image>();
+                illusImg.sprite = illustrationFG;
+                illusImg.preserveAspect = true;
+                illusImg.raycastTarget = false;
+            }
+
+            btn.SetAsLastSibling();
         }
 
         private static void StyleLowerScreen(Transform lower)

@@ -139,6 +139,41 @@ namespace ProDomino.Shop
                 ?.Where(x => x.Key.isAvailable || x.Value is not null)
                 ?.ToDictionary(x => x.Key, x => x.Value);
 
+            CosmeticDataCollection ??= new();
+            if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Tiles))
+            {
+                var tileCosmetics = new (string id, string name, CosmeticRarity rarity, uint price)[]
+                {
+                    ("Tiles_Default", "White Tile", CosmeticRarity.Common, 0),
+                    ("tiles_orange", "Gold Tile", CosmeticRarity.Common, 5),
+                    ("tiles_pink", "Pink Tile", CosmeticRarity.Mythic, 35),
+                    ("tiles_black", "Black Tile", CosmeticRarity.Legendary, 105),
+                    ("tiles_rainbow", "Special Tile", CosmeticRarity.Special, 250),
+                };
+                foreach (var t in tileCosmetics)
+                {
+                    var gcd = new GameCosmeticData(t.id, t.name, t.name, CosmeticType.Tiles, t.rarity, true, t.price, Currency.Token);
+                    CosmeticDataCollection[gcd] = t.price == 0 ? new PlayerCosmeticData(t.id, 0, 0, Currency.None, CosmeticPurchaseMethod.Default) : null;
+                }
+            }
+
+            if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Boards))
+            {
+                var boardCosmetics = new (string id, string name, CosmeticRarity rarity, uint price)[]
+                {
+                    ("Boards_Default", "Classic Board", CosmeticRarity.Common, 0),
+                    ("table_green", "Emerald Board", CosmeticRarity.Common, 15),
+                    ("table_grey", "Slate Board", CosmeticRarity.Rare, 40),
+                    ("table_orange", "Amber Board", CosmeticRarity.Legendary, 120),
+                    ("table_pink", "Ruby Board", CosmeticRarity.Mythic, 200),
+                };
+                foreach (var b in boardCosmetics)
+                {
+                    var gcd = new GameCosmeticData(b.id, b.name, b.name, CosmeticType.Boards, b.rarity, true, b.price, Currency.Token);
+                    CosmeticDataCollection[gcd] = b.price == 0 ? new PlayerCosmeticData(b.id, 0, 0, Currency.None, CosmeticPurchaseMethod.Default) : null;
+                }
+            }
+
             var currenciesCollection = gameManager.PlayerCurrencyCollection;
             if (currenciesCollection is not null && currenciesCollection.TryGetValue(Currency.Token, out var tokens))
                 PlayerTokenCurrencyAmount = tokens;

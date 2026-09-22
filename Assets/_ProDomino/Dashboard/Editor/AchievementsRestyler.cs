@@ -353,12 +353,11 @@ namespace ProDomino.Dashboard.Editor
                 cg.interactable = false;
                 cg.blocksRaycasts = false;
 
-                // Framed Screen Card Background (1px #1E2538 border, 14px rounded corners, deep midnight card fill)
+                // Achievements Screen Background floats seamlessly on #01010C canvas matching Figma
                 var bg = root.GetComponent<Image>() ?? root.AddComponent<Image>();
-                bg.sprite = screenCardBg;
-                bg.type = Image.Type.Sliced;
-                bg.color = Color.white;
-                bg.raycastTarget = true;
+                bg.sprite = null;
+                bg.color = Color.clear;
+                bg.raycastTarget = false;
 
                 if (root.GetComponent<VerticalLayoutGroup>() is VerticalLayoutGroup vlgRoot)
                     UnityEngine.Object.DestroyImmediate(vlgRoot);
@@ -415,7 +414,7 @@ namespace ProDomino.Dashboard.Editor
                 cardsHlgAchiev.childForceExpandWidth = true;
                 cardsHlgAchiev.childForceExpandHeight = true;
 
-                CreateMetricCard(cardsSectionAchiev, "Card_TotalAchievements", trophyIcon, Hex("#FBBF24"), "12 / 20", "Total Achievements", out var totalAchievTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_TotalAchievements", trophyIcon, Hex("#FBBF24"), "12 / 21", "Total Achievements", out var totalAchievTmp);
                 CreateMetricCard(cardsSectionAchiev, "Card_AchievementPoints", starSprite, Hex("#FBBF24"), "12", "Total Achievement Points", out var pointsTmp);
                 CreateMetricCard(cardsSectionAchiev, "Card_CurrentRank", classCIcon, Color.white, "Class C", "Current Rank", out var rankTmp);
 

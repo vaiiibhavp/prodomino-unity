@@ -33,22 +33,26 @@ namespace ProDomino.Dashboard.Editor
                 // 1. Ensure Canvas has full solid #01010C page background
                 RestyleCanvasBackground();
 
-                // 2. Restyle Achievements Screen
+                // 2. Restyle Sidebar to Figma design (amber border, Games, Friends List, gift box card)
+                Debug.Log("[GlobalBackgroundRestyler] Applying Sidebar restyle...");
+                SidebarRestyler.ApplyAndRender();
+
+                // 3. Restyle Achievements Screen
                 Debug.Log("[GlobalBackgroundRestyler] Applying Achievements screen restyle...");
                 AchievementsRestyler.ApplyAndRender();
 
-                // 3. Restyle Shop Screen
+                // 4. Restyle Shop Screen
                 Debug.Log("[GlobalBackgroundRestyler] Applying Shop screen restyle...");
                 ShopRestyler.ApplyAndRender();
 
-                // 4. Restyle Leaderboard Screen
+                // 5. Restyle Leaderboard Screen
                 Debug.Log("[GlobalBackgroundRestyler] Applying Leaderboard screen restyle...");
                 LeaderboardRestyler.ApplyAndRender();
 
-                // 5. Update Camera Background in scenes
+                // 6. Update Camera Background in scenes
                 UpdateAllSceneCameras();
 
-                // 6. Render screenshots of all screens
+                // 7. Render screenshots of all screens
                 RenderAllScreens();
 
                 AssetDatabase.SaveAssets();
@@ -182,6 +186,9 @@ namespace ProDomino.Dashboard.Editor
                 ActivateScreen(root, "Leaderboard", "Leaderboard");
             });
 
+            // 4. Runtime Dashboard
+            SidebarRestyler.RenderCanvas(Path.Combine(outDir, "runtime.png"), 1920, 1080, true);
+
             Debug.Log($"[GlobalBackgroundRestyler] Rendered all screens to {outDir}");
         }
 
@@ -230,11 +237,36 @@ namespace ProDomino.Dashboard.Editor
             {
                 var preview = type.GetMethod("PreviewVisualState", BindingFlags.Instance | BindingFlags.Public);
                 var idProp = type.GetProperty("CustomButtonID");
-                foreach (var b in canvasRoot.GetComponentsInChildren(type, true))
+
+                var navCtrl = PdUiKit.FindDeep(canvasRoot.transform, "NavegationPanelController");
+                if (navCtrl != null)
                 {
-                    string id = (string)idProp?.GetValue(b);
-                    bool select = string.Equals(id, navButtonId, StringComparison.OrdinalIgnoreCase);
-                    preview?.Invoke(b, new object[] { select });
+                    foreach (var b in navCtrl.GetComponentsInChildren(type, true))
+                    {
+                        string id = (string)idProp?.GetValue(b);
+                        bool select = string.Equals(id, navButtonId, StringComparison.OrdinalIgnoreCase);
+                        preview?.Invoke(b, new object[] { select });
+                    }
+                }
+
+                // If Shop, select "Tiles" category tab
+                if (string.Equals(navButtonId, "Shop", StringComparison.OrdinalIgnoreCase))
+                {
+                    var tilesTab = PdUiKit.FindDeep(canvasRoot.transform, "Tiles_CustomButton");
+                    if (tilesTab != null && tilesTab.TryGetComponent(type, out var tilesCb))
+                    {
+                        preview?.Invoke(tilesCb, new object[] { true });
+                    }
+                }
+
+                // If Achievements, select "Achievements" sub tab
+                if (string.Equals(navButtonId, "Achievements", StringComparison.OrdinalIgnoreCase))
+                {
+                    var achievTab = PdUiKit.FindDeep(canvasRoot.transform, "Achievements_CustomButton");
+                    if (achievTab != null && achievTab.TryGetComponent(type, out var aCb))
+                    {
+                        preview?.Invoke(aCb, new object[] { true });
+                    }
                 }
             }
         }

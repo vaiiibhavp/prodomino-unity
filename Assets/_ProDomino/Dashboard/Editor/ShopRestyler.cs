@@ -718,10 +718,50 @@ namespace ProDomino.Dashboard.Editor
             var txt = CreateExplicitText(tabGo, "Label", label, fSemiBold, 13.5f, isActive ? Color.white : Hex("#8E9CAE"), TextAlignmentOptions.Center);
             txt.raycastTarget = false;
 
+            cb.imageStates = new List<ImageStates>
+            {
+                new ImageStates
+                {
+                    image = img,
+                    selectedStateAsset = tabActiveBg,
+                    selectedStateColor = Color.white,
+                    deselectedStateAsset = tabInactiveBg,
+                    deselectedStateColor = Color.white,
+                    hoverStateAsset = tabInactiveBg,
+                    hoverStateColor = Color.white,
+                    OriginalAsset = isActive ? tabActiveBg : tabInactiveBg,
+                    OriginalColor = Color.white
+                }
+            };
+
             var so = new SerializedObject(cb);
             so.FindProperty("toggleID").stringValue = toggleId;
             so.FindProperty("isToggleable").boolValue = true;
             so.FindProperty("isInteractable").boolValue = true;
+            so.FindProperty("selectedColor").colorValue = Color.white;
+            so.FindProperty("deselectedColor").colorValue = Hex("#8E9CAE");
+
+            var textListProp = so.FindProperty("textElements_toggle");
+            if (textListProp != null)
+            {
+                textListProp.arraySize = 1;
+                textListProp.GetArrayElementAtIndex(0).objectReferenceValue = txt;
+            }
+
+            var imgStatesProp = so.FindProperty("imageStates");
+            if (imgStatesProp != null)
+            {
+                imgStatesProp.arraySize = 1;
+                var elem = imgStatesProp.GetArrayElementAtIndex(0);
+                elem.FindPropertyRelative("image").objectReferenceValue = img;
+                elem.FindPropertyRelative("selectedStateAsset").objectReferenceValue = tabActiveBg;
+                elem.FindPropertyRelative("selectedStateColor").colorValue = Color.white;
+                elem.FindPropertyRelative("deselectedStateAsset").objectReferenceValue = tabInactiveBg;
+                elem.FindPropertyRelative("deselectedStateColor").colorValue = Color.white;
+                elem.FindPropertyRelative("hoverStateAsset").objectReferenceValue = tabInactiveBg;
+                elem.FindPropertyRelative("hoverStateColor").colorValue = Color.white;
+            }
+
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return cb;

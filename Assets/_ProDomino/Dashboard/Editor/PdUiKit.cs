@@ -114,6 +114,43 @@ namespace ProDomino.Dashboard.Editor
             return MakePanelSprite("PD_ScreenCardBg", 48, 48, 14, ScreenCardBg, Hex("#040710"), ScreenCardBorder, 1f);
         }
 
+        public static Sprite MakeSidebarPanelSprite()
+        {
+            const string name = "Sidebar_Panel_AmberGlow";
+            var path = $"{GeneratedDir}/{name}.png";
+            int w = 64;
+            int h = 64;
+            int radius = 16;
+            float borderWidth = 1.3f;
+            var topFill = Hex("#050816");
+            var bottomFill = Hex("#02040B");
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float ty = 1f - (float)y / (h - 1);
+                var fill = Color.Lerp(topFill, bottomFill, ty);
+
+                float sd = radius - CornerDistance(x + 0.5f, y + 0.5f, w, h, radius);
+                float inside = Mathf.Clamp01(sd + 0.5f);
+                var c = fill;
+
+                // Border with amber highlight gradient (bright gold at top/left, amber at bottom, warm bronze on right)
+                float borderMask = Mathf.Clamp01(borderWidth + 0.5f - sd);
+                if (borderMask > 0f)
+                {
+                    float tx = (float)x / (w - 1);
+                    Color borderCol = Color.Lerp(Hex("#FFC038"), Hex("#D97706"), ty * 0.7f + tx * 0.3f);
+                    c = Color.Lerp(fill, borderCol, borderMask);
+                    c.a = Mathf.Max(fill.a, borderMask * borderCol.a);
+                }
+                c.a *= inside;
+                tex.SetPixel(x, y, c);
+            }
+            return SaveSlicedSprite(path, tex, radius + 2);
+        }
+
         // Horizontal gradient with rounded corners. The gradient stretches with the centre slice,
         // so the full sprite width is used for the ramp.
         public static Sprite MakeRoundedSprite(string name, int w, int h, int radius, Color left, Color right)
