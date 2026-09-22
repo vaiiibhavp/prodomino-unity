@@ -320,6 +320,7 @@ namespace ProDomino.Dashboard.Editor
                     tcs.SetException(ex);
                 }
             };
+            EditorApplication.QueuePlayerLoopUpdate();
             return tcs.Task;
         }
 

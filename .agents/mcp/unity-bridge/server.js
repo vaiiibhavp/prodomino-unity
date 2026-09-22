@@ -15,7 +15,7 @@ function httpRequest(path, method = 'GET', body = null) {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 6000,
+      timeout: 60000,
     };
 
     const req = http.request(options, (res) => {
