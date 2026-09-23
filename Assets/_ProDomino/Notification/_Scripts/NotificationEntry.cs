@@ -12,7 +12,7 @@ namespace ProDomino.NotificationSystem
     /// Represents a single visual notification entry in the UI list.
     /// Handles title, body and icon assignment.
     /// </summary>
-    internal class NotificationEntry : MonoBehaviour
+    public class NotificationEntry : MonoBehaviour
     {
         [SerializeField] private Image iconObject;
         [SerializeField] private Image iconImage;
@@ -21,6 +21,11 @@ namespace ProDomino.NotificationSystem
 
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button declineButton;
+
+        [Header("Figma Card Additions")]
+        [SerializeField] private TMP_Text categoryLabel;
+        [SerializeField] private TMP_Text timestampLabel;
+        [SerializeField] private Image avatarImage;
 
         private Func<string> getCurrentPlayerID;
         private Func<string, Sprite> getIconSprite;
@@ -84,6 +89,49 @@ namespace ProDomino.NotificationSystem
             if (iconObject)
                 iconObject.gameObject.SetActive(iconImage.sprite != null);
 
+            if (categoryLabel)
+            {
+                var category = "Notification";
+                if (playerNotificationData.notificationType == HelperSharedLibrary.Enums.NotificationType.FriendRequest)
+                    category = "Friends Notification";
+                else if (playerNotificationData.notificationType == HelperSharedLibrary.Enums.NotificationType.PartyInvite)
+                    category = "Party Notifications";
+                else if (!string.IsNullOrEmpty(playerNotificationData.title) && playerNotificationData.title.IndexOf("Club", StringComparison.OrdinalIgnoreCase) >= 0)
+                    category = "Club Membership";
+                else if (playerNotificationData.isGameNotification)
+                    category = "Game Notification";
+                categoryLabel.text = category;
+            }
+
+            if (timestampLabel)
+            {
+                if (playerNotificationData.timestamp > 0)
+                {
+                    try
+                    {
+                        var dto = DateTimeOffset.FromUnixTimeSeconds(playerNotificationData.timestamp.Value).ToLocalTime();
+                        timestampLabel.text = dto.ToString("hh:mm tt");
+                    }
+                    catch
+                    {
+                        timestampLabel.text = "12:00 PM";
+                    }
+                }
+                else
+                {
+                    timestampLabel.text = "12:00 PM";
+                }
+            }
+
+            if (avatarImage)
+            {
+                if (iconImage != null && iconImage.sprite != null)
+                {
+                    avatarImage.sprite = iconImage.sprite;
+                    avatarImage.gameObject.SetActive(true);
+                }
+            }
+
             var isHimself = playerNotificationData.senderID == getCurrentPlayerID?.Invoke();
             if (confirmButton)
             {
@@ -122,6 +170,10 @@ namespace ProDomino.NotificationSystem
             onConfirmAction = null;
             onDeclineAction = null;
 
+            if (categoryLabel)
+                categoryLabel.text = string.Empty;
+            if (timestampLabel)
+                timestampLabel.text = string.Empty;
             if (headerLabel)
                 headerLabel.text = string.Empty;
             if (bodyLabel)

@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using Newtonsoft.Json;
 using ProDomino.AnalyticsSystem;
@@ -41,6 +41,9 @@ namespace ProDomino.NotificationSystem
         [SerializeField] private Transform notificationEntriesParent;
         [SerializeField] private Button closePopUpButton;
         [SerializeField] private CustomButtonToggleGroupUI notificationFiltersToggleGroupUI;
+        [Header("Sections")]
+        [SerializeField] private GameObject todaySectionHeader;
+        [SerializeField] private GameObject olderSectionHeader;
 
         private AuthManager authManager;
         private GameManager gameManager;
@@ -89,7 +92,8 @@ namespace ProDomino.NotificationSystem
             openPopUpButton?.onClick.AddListener(OpenPopUp);
             closePopUpButton?.onClick.AddListener(ClosePopUp);
 
-            notificationFiltersToggleGroupUI.SetOnCustomButtonSelectedCallback(FilterEntries);
+            if (notificationFiltersToggleGroupUI)
+                notificationFiltersToggleGroupUI.SetOnCustomButtonSelectedCallback(FilterEntries);
 
             // MainReferenceInitialize existing entries
             foreach (var notificationEntry in notificationEntries)
@@ -425,8 +429,36 @@ namespace ProDomino.NotificationSystem
 
             if (playerNotificationDatas is not null and { Count: > 0 })
             {
-                // Show active and relevant entries
-                foreach (var notificationEntryData in playerNotificationDatas)
+                var now = DateTimeOffset.UtcNow;
+                var todayDatas = new List<PlayerNotificationData>();
+                var olderDatas = new List<PlayerNotificationData>();
+
+                foreach (var data in playerNotificationDatas)
+                {
+                    if (data.timestamp > 0)
+                    {
+                        var diff = now - DateTimeOffset.FromUnixTimeSeconds(data.timestamp.Value);
+                        if (diff.TotalHours < 24)
+                            todayDatas.Add(data);
+                        else
+                            olderDatas.Add(data);
+                    }
+                    else
+                    {
+                        todayDatas.Add(data);
+                    }
+                }
+
+                if (todaySectionHeader)
+                    todaySectionHeader.SetActive(todayDatas.Count > 0);
+                if (olderSectionHeader)
+                    olderSectionHeader.SetActive(olderDatas.Count > 0);
+
+                int order = 0;
+                if (todaySectionHeader && todayDatas.Count > 0)
+                    todaySectionHeader.transform.SetSiblingIndex(order++);
+
+                foreach (var notificationEntryData in todayDatas)
                 {
                     var instance = notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf);
                     if (instance != null)
@@ -445,21 +477,60 @@ namespace ProDomino.NotificationSystem
                             _ => default(AsyncActionHandler<PlayerNotificationData>),
                         };
 
-                        instance.Configure
-                            (notificationEntryData,
-                            onConfirm,
-                            onDecline);
+                        instance.Configure(notificationEntryData, onConfirm, onDecline);
                         instance.SetActive(true);
+                        instance.transform.SetSiblingIndex(order++);
                     }
-                    else
-                        Debug.LogWarning("No available instance to configure the notification entry");
+                }
+
+                if (olderSectionHeader && olderDatas.Count > 0)
+                    olderSectionHeader.transform.SetSiblingIndex(order++);
+
+                foreach (var notificationEntryData in olderDatas)
+                {
+                    var instance = notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf);
+                    if (instance != null)
+                    {
+                        var onConfirm = notificationEntryData.notificationType switch
+                        {
+                            NotificationType.Reward => OnConfirmReward,
+                            NotificationType.FriendRequest => OnConfirmFriendRequest,
+                            NotificationType.PartyInvite => OnConfirmPartyRequest,
+                            _ => default(AsyncActionHandler<PlayerNotificationData>),
+                        };
+
+                        var onDecline = notificationEntryData.notificationType switch
+                        {
+                            NotificationType.FriendRequest => OnDeclineFriendRequest,
+                            _ => default(AsyncActionHandler<PlayerNotificationData>),
+                        };
+
+                        instance.Configure(notificationEntryData, onConfirm, onDecline);
+                        instance.SetActive(true);
+                        instance.transform.SetSiblingIndex(order++);
+                    }
                 }
             } 
             else
+            {
+                if (todaySectionHeader) todaySectionHeader.SetActive(false);
+                if (olderSectionHeader) olderSectionHeader.SetActive(false);
                 Debug.LogWarning("Notification entry data collection is null or empty.");
+            }
 
-            // Filter the notifications based on the current view
-            notificationFiltersToggleGroupUI.GetButtonUI(IsViewingLatestNews ? LatestNotifications : NewsNotifications)?.Select();
+            // Filter the notifications based on the current view if toggle group is active
+            if (notificationFiltersToggleGroupUI != null && notificationFiltersToggleGroupUI.gameObject.activeInHierarchy)
+            {
+                notificationFiltersToggleGroupUI.GetButtonUI(IsViewingLatestNews ? LatestNotifications : NewsNotifications)?.Select();
+            }
+            else
+            {
+                if (playerNotificationDatas is not null and { Count: > 0 })
+                    noNotificationsCanvasGroup?.SetActive(false, isSettingInteractable: false, isSettingBlocksRaycasts: false);
+                else
+                    noNotificationsCanvasGroup?.SetActive(true, isSettingInteractable: false, isSettingBlocksRaycasts: false);
+                transform.RefreshLayoutGroupsImmediateAndRecursive();
+            }
         }
 
         private PlayerNotificationData GenerateRequestNotification(string senderID, string targetID, string name)

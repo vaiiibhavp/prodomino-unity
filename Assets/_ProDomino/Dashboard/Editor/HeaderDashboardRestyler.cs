@@ -381,8 +381,8 @@ namespace ProDomino.Dashboard.Editor
             var pressed = (RectTransform)Need(notifUi, "Pressed_NotifUI");
             pressed.anchorMin = pressed.anchorMax = new Vector2(1f, 0f);
             pressed.pivot = new Vector2(1f, 1f);
-            pressed.anchoredPosition = new Vector2(16f, -24f);
-            pressed.sizeDelta = new Vector2(682f, 430f);
+            pressed.anchoredPosition = new Vector2(319f, -14f);
+            pressed.sizeDelta = new Vector2(360f, 760f);
         }
 
         private static void StyleFlagChip(Transform ucc)
