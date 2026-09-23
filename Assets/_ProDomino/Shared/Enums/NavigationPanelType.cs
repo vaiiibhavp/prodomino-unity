@@ -14,6 +14,7 @@ namespace ProDomino.Shared
         Review = 6,
         Shop = 7,
         QuickMatch = 8,
-        HelpScreen = 9
+        HelpScreen = 9,
+        FriendsList = 10
     }
 }
