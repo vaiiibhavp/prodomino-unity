@@ -387,7 +387,7 @@ namespace ProDomino.Dashboard.Editor
                 {
                     var so = new SerializedObject(cb);
                     so.FindProperty("toggleID").stringValue = "Games";
-                    so.FindProperty("isToggleable").boolValue = false;
+                    so.FindProperty("isToggleable").boolValue = true;
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
             }
@@ -411,7 +411,7 @@ namespace ProDomino.Dashboard.Editor
                 {
                     var so = new SerializedObject(cb);
                     so.FindProperty("toggleID").stringValue = "FriendsList";
-                    so.FindProperty("isToggleable").boolValue = false;
+                    so.FindProperty("isToggleable").boolValue = true;
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
             }
@@ -482,12 +482,23 @@ namespace ProDomino.Dashboard.Editor
             var label = Need(button, "NPButton_Text (TMP)");
             label.GetComponent<TextMeshProUGUI>().text = text;
             var lse = label.GetComponent("LocalizeStringEvent");
-            if (lse == null || keyId < 0) return;
-            var so = new SerializedObject(lse);
-            var key = so.FindProperty("m_StringReference.m_TableEntryReference.m_KeyId");
-            if (key == null) { Debug.LogWarning("SIDEBAR: LocalizeStringEvent key property not found."); return; }
-            key.longValue = keyId;
-            so.ApplyModifiedPropertiesWithoutUndo();
+            if (lse != null)
+            {
+                if (keyId < 0)
+                {
+                    UnityEngine.Object.DestroyImmediate(lse);
+                }
+                else
+                {
+                    var so = new SerializedObject(lse);
+                    var key = so.FindProperty("m_StringReference.m_TableEntryReference.m_KeyId");
+                    if (key != null)
+                    {
+                        key.longValue = keyId;
+                        so.ApplyModifiedPropertiesWithoutUndo();
+                    }
+                }
+            }
         }
 
         private static GameObject MakeGroup(Transform parent, string name, int verticalPadding)

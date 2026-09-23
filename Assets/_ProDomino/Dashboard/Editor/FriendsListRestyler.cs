@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 using static ProDomino.Dashboard.Editor.PdUiKit;
@@ -43,12 +44,37 @@ namespace ProDomino.Dashboard.Editor
             var screenPrefab = BuildFriendsScreenPrefab();
             EnsureInMiddleScreen(screenPrefab);
             EnsureSidebarButtonConfigured();
+            EnsureInScene(screenPrefab);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             RenderScreenshots();
             Debug.Log("[FriendsListRestyler] SUCCESS: Friends List screen restyled and rendered successfully!");
+        }
+
+        [MenuItem("ProDomino/Dashboard/Test Click Friends List Button")]
+        public static void TestClickFriendsList()
+        {
+            var btn = GameObject.Find("NavegationPanel_FriendsList_Button");
+            if (btn != null)
+            {
+                var customBtn = btn.GetComponent<CustomButtonUI>();
+                if (customBtn != null)
+                {
+                    Debug.Log("[TestClickFriendsList] Calling customBtn.Select()...");
+                    customBtn.Select();
+                }
+                else
+                {
+                    var uBtn = btn.GetComponent<Button>();
+                    uBtn?.onClick?.Invoke();
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[TestClickFriendsList] NavegationPanel_FriendsList_Button not found in active scene!");
+            }
         }
 
         private static void PrepareAssets()
@@ -395,38 +421,177 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
+        private static void ConfigureSidebarButton(Transform friendsBtn, Sprite iconSprite)
+        {
+            if (friendsBtn == null) return;
+
+            // Set label and remove LocalizeStringEvent so localization does not overwrite text at runtime
+            var label = FindDeep(friendsBtn, "NPButton_Text (TMP)");
+            if (label != null)
+            {
+                var tmp = label.GetComponent<TextMeshProUGUI>();
+                if (tmp != null)
+                {
+                    tmp.text = "Friends List";
+                    tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                }
+
+                var lse = label.GetComponent("LocalizeStringEvent");
+                if (lse != null) UnityEngine.Object.DestroyImmediate(lse);
+            }
+
+            // Set icon
+            if (iconSprite != null)
+            {
+                var iconTr = FindDeep(friendsBtn, "Image") ?? FindDeep(friendsBtn, "Icon");
+                if (iconTr != null && iconTr.TryGetComponent<Image>(out var img))
+                {
+                    img.sprite = iconSprite;
+                    img.color = new Color(0.69f, 0.69f, 0.706f, 1f);
+                }
+            }
+
+            var customBtn = friendsBtn.GetComponent<CustomButtonUI>();
+            if (customBtn != null)
+            {
+                var so = new SerializedObject(customBtn);
+                so.FindProperty("toggleID").stringValue = "FriendsList";
+                so.FindProperty("isInteractable").boolValue = true;
+                so.FindProperty("isToggleable").boolValue = true;
+                so.FindProperty("blockClickHandler").boolValue = false;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            var btn = friendsBtn.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.interactable = true;
+            }
+        }
+
+        private static void ConfigureGamesButton(Transform gamesBtn)
+        {
+            if (gamesBtn == null) return;
+
+            var label = FindDeep(gamesBtn, "NPButton_Text (TMP)");
+            if (label != null)
+            {
+                var tmp = label.GetComponent<TextMeshProUGUI>();
+                if (tmp != null)
+                {
+                    tmp.text = "Games";
+                    tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                }
+
+                var lse = label.GetComponent("LocalizeStringEvent");
+                if (lse != null) UnityEngine.Object.DestroyImmediate(lse);
+            }
+
+            var customBtn = gamesBtn.GetComponent<CustomButtonUI>();
+            if (customBtn != null)
+            {
+                var so = new SerializedObject(customBtn);
+                so.FindProperty("toggleID").stringValue = "Games";
+                so.FindProperty("isInteractable").boolValue = true;
+                so.FindProperty("isToggleable").boolValue = true;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            var btn = gamesBtn.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.interactable = true;
+            }
+        }
+
         private static void EnsureSidebarButtonConfigured()
         {
             var canvasGo = PrefabUtility.LoadPrefabContents(MainCanvasPrefabPath);
             try
             {
                 var friendsBtn = FindDeep(canvasGo.transform, "NavegationPanel_FriendsList_Button");
-                if (friendsBtn != null)
-                {
-                    var customBtn = friendsBtn.GetComponent<CustomButtonUI>();
-                    if (customBtn != null)
-                    {
-                        var so = new SerializedObject(customBtn);
-                        so.FindProperty("toggleID").stringValue = "FriendsList";
-                        so.FindProperty("isInteractable").boolValue = true;
-                        so.FindProperty("isToggleable").boolValue = true;
-                        so.ApplyModifiedPropertiesWithoutUndo();
-                    }
+                ConfigureSidebarButton(friendsBtn, friendsHeaderIcon);
 
-                    var btn = friendsBtn.GetComponent<Button>();
-                    if (btn != null)
-                    {
-                        btn.interactable = true;
-                    }
-
-                    Debug.Log("[FriendsListRestyler] Configured NavegationPanel_FriendsList_Button toggleID='FriendsList'");
-                }
+                var gamesBtn = FindDeep(canvasGo.transform, "NavegationPanel_Games_Button");
+                ConfigureGamesButton(gamesBtn);
 
                 PrefabUtility.SaveAsPrefabAsset(canvasGo, MainCanvasPrefabPath);
+                Debug.Log("[FriendsListRestyler] Configured sidebar buttons in ProDomino_MainCanvas.prefab");
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(canvasGo);
+            }
+        }
+
+        private static void EnsureInScene(GameObject screenPrefab)
+        {
+            const string scenePath = "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
+            var scene = EditorSceneManager.GetActiveScene();
+            if (scene.path != scenePath)
+            {
+                scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            }
+
+            var roots = scene.GetRootGameObjects();
+            Transform canvasRoot = null;
+            foreach (var r in roots)
+            {
+                if (r.name == "ProDomino_MainCanvas")
+                {
+                    canvasRoot = r.transform;
+                    break;
+                }
+            }
+
+            if (canvasRoot != null)
+            {
+                // Configure buttons in the scene's sidebar
+                var friendsBtn = FindDeep(canvasRoot, "NavegationPanel_FriendsList_Button");
+                ConfigureSidebarButton(friendsBtn, friendsHeaderIcon);
+
+                var gamesBtn = FindDeep(canvasRoot, "NavegationPanel_Games_Button");
+                ConfigureGamesButton(gamesBtn);
+
+                // Put FriendsList_Screen into InnerScreen in the scene
+                var innerScreen = FindDeep(canvasRoot, "InnerScreen");
+                if (innerScreen != null)
+                {
+                    var existing = innerScreen.Find("FriendsList_Screen");
+                    if (existing != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(existing.gameObject);
+                    }
+
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(screenPrefab, innerScreen);
+                    instance.name = "FriendsList_Screen";
+
+                    var rt = instance.GetComponent<RectTransform>();
+                    rt.anchorMin = Vector2.zero;
+                    rt.anchorMax = Vector2.one;
+                    rt.offsetMin = Vector2.zero;
+                    rt.offsetMax = Vector2.zero;
+                    rt.localScale = Vector3.one;
+
+                    var cg = instance.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        cg.alpha = 0f;
+                        cg.interactable = false;
+                        cg.blocksRaycasts = false;
+                    }
+                    instance.SetActive(false);
+
+                    Debug.Log("[FriendsListRestyler] Successfully instantiated FriendsList_Screen into InnerScreen in MainSceneDomDemo.unity!");
+                }
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                Debug.Log("[FriendsListRestyler] Successfully saved MainSceneDomDemo.unity!");
+            }
+            else
+            {
+                Debug.LogWarning("[FriendsListRestyler] ProDomino_MainCanvas root not found in MainSceneDomDemo.unity!");
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -259,7 +260,9 @@ namespace ProDomino.Dashboard.Editor
                             if (string.IsNullOrEmpty(targetName))
                                 return "{\"success\":false,\"error\":\"Missing target name\"}";
 
-                            var go = GameObject.Find(targetName);
+                            var scene = SceneManager.GetActiveScene();
+                            var allGos = Resources.FindObjectsOfTypeAll<GameObject>();
+                            var go = allGos.FirstOrDefault(g => g.name == targetName && g.scene == scene);
                             if (go == null)
                                 return $"{{\"success\":false,\"error\":\"GameObject '{EscapeJson(targetName)}' not found in active scene\"}}";
 
@@ -268,13 +271,17 @@ namespace ProDomino.Dashboard.Editor
                             foreach (var c in comps)
                                 if (c != null) compNames.Add(c.GetType().Name);
 
+                            var childNames = new List<string>();
+                            for (int i = 0; i < go.transform.childCount; i++)
+                                childNames.Add(go.transform.GetChild(i).name);
+
                             string rectInfo = string.Empty;
                             if (go.GetComponent<RectTransform>() is RectTransform rt)
                             {
                                 rectInfo = $",\"rect\":{{\"anchoredPosition\":[{rt.anchoredPosition.x},{rt.anchoredPosition.y}],\"sizeDelta\":[{rt.sizeDelta.x},{rt.sizeDelta.y}],\"anchorMin\":[{rt.anchorMin.x},{rt.anchorMin.y}],\"anchorMax\":[{rt.anchorMax.x},{rt.anchorMax.y}]}}";
                             }
 
-                            return $"{{\"success\":true,\"name\":\"{EscapeJson(go.name)}\",\"active\":{(go.activeSelf ? "true" : "false")},\"components\":[\"{string.Join("\",\"", compNames)}\"]{rectInfo}}}";
+                            return $"{{\"success\":true,\"name\":\"{EscapeJson(go.name)}\",\"active\":{(go.activeSelf ? "true" : "false")},\"components\":[\"{string.Join("\",\"", compNames)}\"],\"children\":[\"{string.Join("\",\"", childNames)}\"]{rectInfo}}}";
                         });
                         break;
 

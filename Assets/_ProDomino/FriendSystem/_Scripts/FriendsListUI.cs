@@ -46,8 +46,6 @@ namespace ProDomino.FriendSystem
 
         private void Awake()
         {
-            HidePanel();
-
             if (searchButton != null)
             {
                 searchButton.onClick.AddListener(OnSearchClicked);
