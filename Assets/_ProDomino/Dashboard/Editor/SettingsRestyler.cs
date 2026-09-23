@@ -11,18 +11,18 @@ namespace ProDomino.Dashboard.Editor
 {
     /// <summary>
     /// Restyles SettingsController_PopUp.prefab to match the Figma reference (media_1790146267560.png):
-    /// - Modal Card (630x440, #111625 -> #0D121F, radius 16px, 1.2px border #1E2538)
-    /// - Domino Watermark pattern on top-left (opacity ~0.26)
-    /// - Top-right Close Button (rounded square #1E2538, border #2E3A52, 16px X icon)
-    /// - Header: "Settings" (Montserrat-Bold 26px) + Subtitle (Montserrat-Regular 13px, #94A3B8)
-    /// - Audio Card (550x84, #131826):
-    ///     - Speaker icon on left (30x30, clickable to mute/unmute)
-    ///     - Master Volume slider (dark capsule track #222B3D, 18px height, golden fill #FFA800, white rounded pill handle 10x24px)
-    ///     - Percentage label on right ("30%", Montserrat-Bold 20px, #FFA800)
-    /// - Two side-by-side action buttons (550x52):
-    ///     - "Learning to Play" (navigates to Learn)
-    ///     - "EULA Agreement" (navigates to Help/Rules)
-    /// - Version footer: "VERSION 0.7015" (Montserrat-Medium 11px, #64748B)
+    /// - Enlarged Modal Card (920x600, #111625 -> #0D121F, radius 20px, 1.5px border #1E2538)
+    /// - Domino Watermark pattern on top-left (360x360, opacity ~0.28)
+    /// - Top-right Close Button (48x48, rounded square #1E2538, border #2E3A52, 20px X icon)
+    /// - Header: "Settings" (Montserrat-Bold 36px) + Subtitle (Montserrat-Regular 17px, #94A3B8)
+    /// - Audio Card (800x114, #131826):
+    ///     - Speaker icon on left (40x40, clickable to mute/unmute)
+    ///     - Master Volume slider (dark capsule track #222B3D, 24px height, golden fill #FFA800, white rounded pill handle 14x34px)
+    ///     - Percentage label on right ("30%", Montserrat-Bold 28px, #FFA800)
+    /// - Two side-by-side action buttons (800x72):
+    ///     - "Learning to Play" (20px, navigates to Learn)
+    ///     - "EULA Agreement" (20px, navigates to Help/Rules)
+    /// - Version footer: "VERSION 0.7015" (Montserrat-Medium 14px, #64748B)
     /// </summary>
     public static class SettingsRestyler
     {
@@ -37,7 +37,7 @@ namespace ProDomino.Dashboard.Editor
         [MenuItem("ProDomino/Dashboard/Restyle Settings Popup + Render")]
         public static void ApplyAndRender()
         {
-            Debug.Log("[SettingsRestyler] Starting Settings Popup restyling...");
+            Debug.Log("[SettingsRestyler] Starting Settings Popup restyling (Enlarged to match Figma)...");
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
             PrepareAssets();
@@ -58,27 +58,27 @@ namespace ProDomino.Dashboard.Editor
             fSemiBold = LoadFont("Montserrat-SemiBold");
             fBold = LoadFont("Montserrat-Bold");
 
-            // Modal card background (64x64, radius 16, #111625 -> #0D121F, border #1E2538)
-            modalBg = MakePanelSprite("Settings_Modal_Bg", 64, 64, 16, Hex("#111625"), Hex("#0D121F"), Hex("#1E2538"), 1.2f, true);
+            // Modal card background (80x80, radius 20, #111625 -> #0D121F, border #1E2538)
+            modalBg = MakePanelSprite("Settings_Modal_Bg", 80, 80, 20, Hex("#111625"), Hex("#0D121F"), Hex("#1E2538"), 1.5f, true);
 
-            // Slider card container (48x48, radius 12, #131826 -> #0E1320, border #1F2637)
-            sliderCardBg = MakePanelSprite("Settings_Slider_Card_Bg", 48, 48, 12, Hex("#131826"), Hex("#0E1320"), Hex("#1F2637"), 1f, true);
+            // Slider card container (64x64, radius 14, #131826 -> #0E1320, border #1F2637)
+            sliderCardBg = MakePanelSprite("Settings_Slider_Card_Bg", 64, 64, 14, Hex("#131826"), Hex("#0E1320"), Hex("#1F2637"), 1.2f, true);
 
-            // Slider track (36x18, capsule radius 9, #222B3D)
-            sliderTrackBg = MakePanelSprite("Settings_Slider_Track_Bg", 36, 18, 9, Hex("#222B3D"), Hex("#222B3D"), Color.clear, 0f);
+            // Slider track (48x24, capsule radius 12, #222B3D)
+            sliderTrackBg = MakePanelSprite("Settings_Slider_Track_Bg", 48, 24, 12, Hex("#222B3D"), Hex("#222B3D"), Color.clear, 0f);
 
-            // Slider fill (36x18, capsule radius 9, golden gradient #FFA000 -> #FFC107, horizontal)
-            sliderFillBg = MakePanelSprite("Settings_Slider_Fill_Bg", 36, 18, 9, Hex("#FFA000"), Hex("#FFC107"), Color.clear, 0f, false);
+            // Slider fill (48x24, capsule radius 12, golden gradient #FFA000 -> #FFC107, horizontal)
+            sliderFillBg = MakePanelSprite("Settings_Slider_Fill_Bg", 48, 24, 12, Hex("#FFA000"), Hex("#FFC107"), Color.clear, 0f, false);
 
-            // Slider handle (white vertical pill 18x32, radius 7, border #CBD5E1)
-            sliderHandleBg = MakePanelSprite("Settings_Slider_Handle", 18, 32, 7, Hex("#FFFFFF"), Hex("#F8FAFC"), Hex("#CBD5E1"), 1f, true);
+            // Slider handle (white vertical pill 24x44, radius 10, border #CBD5E1)
+            sliderHandleBg = MakePanelSprite("Settings_Slider_Handle", 24, 44, 10, Hex("#FFFFFF"), Hex("#F8FAFC"), Hex("#CBD5E1"), 1.2f, true);
 
-            // Action buttons (radius 10, #1A2234, border #2A354C)
-            btnNormalBg = MakePanelSprite("Settings_Button_Normal", 48, 48, 10, Hex("#1A2234"), Hex("#161D2B"), Hex("#2A354C"), 1.2f, true);
-            btnHoverBg = MakePanelSprite("Settings_Button_Hover", 48, 48, 10, Hex("#222C44"), Hex("#1C2538"), Hex("#3B4A6B"), 1.2f, true);
+            // Action buttons (radius 12, #1A2234, border #2A354C)
+            btnNormalBg = MakePanelSprite("Settings_Button_Normal", 64, 64, 12, Hex("#1A2234"), Hex("#161D2B"), Hex("#2A354C"), 1.5f, true);
+            btnHoverBg = MakePanelSprite("Settings_Button_Hover", 64, 64, 12, Hex("#222C44"), Hex("#1C2538"), Hex("#3B4A6B"), 1.5f, true);
 
-            // Close button (radius 8, #1E2538, border #2E3A52)
-            closeBtnBg = MakePanelSprite("Settings_Close_Btn_Bg", 36, 36, 8, Hex("#1E2538"), Hex("#1E2538"), Hex("#2E3A52"), 1f);
+            // Close button (radius 10, #1E2538, border #2E3A52)
+            closeBtnBg = MakePanelSprite("Settings_Close_Btn_Bg", 48, 48, 10, Hex("#1E2538"), Hex("#1E2538"), Hex("#2E3A52"), 1.2f);
 
             // Watermark & icons
             watermarkSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{GeneratedDir}/Rules_Domino_Watermark.png");
@@ -131,7 +131,7 @@ namespace ProDomino.Dashboard.Editor
                 var backdropBtn = backdropGo.GetComponent<Button>();
                 backdropBtn.transition = Selectable.Transition.None;
 
-                // 2. Modal Container (630x440)
+                // 2. Modal Container (920x600)
                 var containerGo = new GameObject("SettingsController_Container", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 containerGo.layer = rootGo.layer;
                 containerGo.transform.SetParent(rootGo.transform, false);
@@ -140,7 +140,7 @@ namespace ProDomino.Dashboard.Editor
                 containerRt.anchorMax = new Vector2(0.5f, 0.5f);
                 containerRt.pivot = new Vector2(0.5f, 0.5f);
                 containerRt.anchoredPosition = Vector2.zero;
-                containerRt.sizeDelta = new Vector2(630f, 440f);
+                containerRt.sizeDelta = new Vector2(920f, 600f);
 
                 var containerImg = containerGo.GetComponent<Image>();
                 containerImg.sprite = modalBg;
@@ -148,7 +148,7 @@ namespace ProDomino.Dashboard.Editor
                 containerImg.color = Color.white;
                 containerImg.raycastTarget = true;
 
-                // 2a. Domino Watermark (Top-Left)
+                // 2a. Domino Watermark (Top-Left, 360x360)
                 if (watermarkSprite != null)
                 {
                     var wmGo = new GameObject("Watermark", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -159,15 +159,15 @@ namespace ProDomino.Dashboard.Editor
                     wmRt.anchorMax = new Vector2(0f, 1f);
                     wmRt.pivot = new Vector2(0f, 1f);
                     wmRt.anchoredPosition = new Vector2(0f, 0f);
-                    wmRt.sizeDelta = new Vector2(250f, 250f);
+                    wmRt.sizeDelta = new Vector2(360f, 360f);
                     var wmImg = wmGo.GetComponent<Image>();
                     wmImg.sprite = watermarkSprite;
                     wmImg.preserveAspect = true;
-                    wmImg.color = new Color(1f, 1f, 1f, 0.26f);
+                    wmImg.color = new Color(1f, 1f, 1f, 0.28f);
                     wmImg.raycastTarget = false;
                 }
 
-                // 2b. Close Button (Top-Right)
+                // 2b. Close Button (Top-Right, 48x48)
                 var closeBtnGo = new GameObject("CloseButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
                 closeBtnGo.layer = rootGo.layer;
                 closeBtnGo.transform.SetParent(containerGo.transform, false);
@@ -175,8 +175,8 @@ namespace ProDomino.Dashboard.Editor
                 closeBtnRt.anchorMin = new Vector2(1f, 1f);
                 closeBtnRt.anchorMax = new Vector2(1f, 1f);
                 closeBtnRt.pivot = new Vector2(1f, 1f);
-                closeBtnRt.anchoredPosition = new Vector2(-22f, -22f);
-                closeBtnRt.sizeDelta = new Vector2(38f, 38f);
+                closeBtnRt.anchoredPosition = new Vector2(-28f, -28f);
+                closeBtnRt.sizeDelta = new Vector2(48f, 48f);
 
                 var closeBtnImg = closeBtnGo.GetComponent<Image>();
                 closeBtnImg.sprite = closeBtnBg;
@@ -202,7 +202,7 @@ namespace ProDomino.Dashboard.Editor
                     ciRt.anchorMax = new Vector2(0.5f, 0.5f);
                     ciRt.pivot = new Vector2(0.5f, 0.5f);
                     ciRt.anchoredPosition = Vector2.zero;
-                    ciRt.sizeDelta = new Vector2(16f, 16f);
+                    ciRt.sizeDelta = new Vector2(20f, 20f);
                     var ciImg = closeIconGo.GetComponent<Image>();
                     ciImg.sprite = closeIconSprite;
                     ciImg.color = Hex("#E2E8F0");
@@ -218,13 +218,13 @@ namespace ProDomino.Dashboard.Editor
                 titleRt.anchorMin = new Vector2(0f, 1f);
                 titleRt.anchorMax = new Vector2(1f, 1f);
                 titleRt.pivot = new Vector2(0.5f, 1f);
-                titleRt.anchoredPosition = new Vector2(0f, -36f);
-                titleRt.sizeDelta = new Vector2(500f, 34f);
+                titleRt.anchoredPosition = new Vector2(0f, -48f);
+                titleRt.sizeDelta = new Vector2(700f, 46f);
 
                 var titleTmp = titleGo.GetComponent<TextMeshProUGUI>();
                 titleTmp.text = "Settings";
                 titleTmp.font = fBold;
-                titleTmp.fontSize = 26f;
+                titleTmp.fontSize = 36f;
                 titleTmp.color = Color.white;
                 titleTmp.alignment = TextAlignmentOptions.Center;
                 titleTmp.raycastTarget = false;
@@ -236,18 +236,18 @@ namespace ProDomino.Dashboard.Editor
                 subRt.anchorMin = new Vector2(0f, 1f);
                 subRt.anchorMax = new Vector2(1f, 1f);
                 subRt.pivot = new Vector2(0.5f, 1f);
-                subRt.anchoredPosition = new Vector2(0f, -74f);
-                subRt.sizeDelta = new Vector2(500f, 22f);
+                subRt.anchoredPosition = new Vector2(0f, -100f);
+                subRt.sizeDelta = new Vector2(700f, 30f);
 
                 var subTmp = subGo.GetComponent<TextMeshProUGUI>();
                 subTmp.text = "Start playing ProDomino with friends & random opponents.";
                 subTmp.font = fRegular;
-                subTmp.fontSize = 13f;
+                subTmp.fontSize = 17f;
                 subTmp.color = Hex("#94A3B8");
                 subTmp.alignment = TextAlignmentOptions.Center;
                 subTmp.raycastTarget = false;
 
-                // 2d. Audio Card Container (550x84)
+                // 2d. Audio Card Container (800x114)
                 var audioCardGo = new GameObject("AudioCard", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 audioCardGo.layer = rootGo.layer;
                 audioCardGo.transform.SetParent(containerGo.transform, false);
@@ -255,8 +255,8 @@ namespace ProDomino.Dashboard.Editor
                 acRt.anchorMin = new Vector2(0.5f, 1f);
                 acRt.anchorMax = new Vector2(0.5f, 1f);
                 acRt.pivot = new Vector2(0.5f, 1f);
-                acRt.anchoredPosition = new Vector2(0f, -118f);
-                acRt.sizeDelta = new Vector2(550f, 84f);
+                acRt.anchoredPosition = new Vector2(0f, -160f);
+                acRt.sizeDelta = new Vector2(800f, 114f);
 
                 var acImg = audioCardGo.GetComponent<Image>();
                 acImg.sprite = sliderCardBg;
@@ -272,8 +272,8 @@ namespace ProDomino.Dashboard.Editor
                 spkRt.anchorMin = new Vector2(0f, 0.5f);
                 spkRt.anchorMax = new Vector2(0f, 0.5f);
                 spkRt.pivot = new Vector2(0f, 0.5f);
-                spkRt.anchoredPosition = new Vector2(24f, 0f);
-                spkRt.sizeDelta = new Vector2(36f, 36f);
+                spkRt.anchoredPosition = new Vector2(36f, 0f);
+                spkRt.sizeDelta = new Vector2(48f, 48f);
 
                 var spkBtnImg = speakerBtnGo.GetComponent<Image>();
                 spkBtnImg.color = Color.clear; // invisible click surface
@@ -290,7 +290,7 @@ namespace ProDomino.Dashboard.Editor
                 spkIconRt.anchorMax = new Vector2(0.5f, 0.5f);
                 spkIconRt.pivot = new Vector2(0.5f, 0.5f);
                 spkIconRt.anchoredPosition = Vector2.zero;
-                spkIconRt.sizeDelta = new Vector2(30f, 30f);
+                spkIconRt.sizeDelta = new Vector2(40f, 40f);
 
                 var spkIconImg = spkIconGo.GetComponent<Image>();
                 spkIconImg.sprite = speakerOnSprite;
@@ -306,13 +306,13 @@ namespace ProDomino.Dashboard.Editor
                 pctRt.anchorMin = new Vector2(1f, 0.5f);
                 pctRt.anchorMax = new Vector2(1f, 0.5f);
                 pctRt.pivot = new Vector2(1f, 0.5f);
-                pctRt.anchoredPosition = new Vector2(-24f, 0f);
-                pctRt.sizeDelta = new Vector2(60f, 32f);
+                pctRt.anchoredPosition = new Vector2(-36f, 0f);
+                pctRt.sizeDelta = new Vector2(90f, 44f);
 
                 var pctTmp = pctGo.GetComponent<TextMeshProUGUI>();
                 pctTmp.text = "30%";
                 pctTmp.font = fBold;
-                pctTmp.fontSize = 20f;
+                pctTmp.fontSize = 28f;
                 pctTmp.color = Hex("#FFA800");
                 pctTmp.alignment = TextAlignmentOptions.Right;
                 pctTmp.raycastTarget = false;
@@ -325,8 +325,8 @@ namespace ProDomino.Dashboard.Editor
                 sliderRt.anchorMin = new Vector2(0f, 0.5f);
                 sliderRt.anchorMax = new Vector2(1f, 0.5f);
                 sliderRt.pivot = new Vector2(0.5f, 0.5f);
-                sliderRt.offsetMin = new Vector2(76f, -14f);
-                sliderRt.offsetMax = new Vector2(-96f, 14f);
+                sliderRt.offsetMin = new Vector2(104f, -18f);
+                sliderRt.offsetMax = new Vector2(-130f, 18f);
 
                 var slider = sliderGo.GetComponent<Slider>();
                 slider.direction = Slider.Direction.LeftToRight;
@@ -335,7 +335,7 @@ namespace ProDomino.Dashboard.Editor
                 slider.value = 0.3f;
                 slider.wholeNumbers = false;
 
-                // Slider Track (18px height)
+                // Slider Track (24px height)
                 var trackGo = new GameObject("Background", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 trackGo.layer = rootGo.layer;
                 trackGo.transform.SetParent(sliderGo.transform, false);
@@ -344,7 +344,7 @@ namespace ProDomino.Dashboard.Editor
                 trackRt.anchorMax = new Vector2(1f, 0.5f);
                 trackRt.pivot = new Vector2(0.5f, 0.5f);
                 trackRt.anchoredPosition = Vector2.zero;
-                trackRt.sizeDelta = new Vector2(0f, 18f);
+                trackRt.sizeDelta = new Vector2(0f, 24f);
 
                 var trackImg = trackGo.GetComponent<Image>();
                 trackImg.sprite = sliderTrackBg;
@@ -361,7 +361,7 @@ namespace ProDomino.Dashboard.Editor
                 fillAreaRt.anchorMax = new Vector2(1f, 0.5f);
                 fillAreaRt.pivot = new Vector2(0.5f, 0.5f);
                 fillAreaRt.anchoredPosition = Vector2.zero;
-                fillAreaRt.sizeDelta = new Vector2(0f, 18f);
+                fillAreaRt.sizeDelta = new Vector2(0f, 24f);
 
                 var fillGo = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 fillGo.layer = rootGo.layer;
@@ -385,8 +385,8 @@ namespace ProDomino.Dashboard.Editor
                 var handleAreaRt = handleAreaGo.GetComponent<RectTransform>();
                 handleAreaRt.anchorMin = new Vector2(0f, 0f);
                 handleAreaRt.anchorMax = new Vector2(1f, 1f);
-                handleAreaRt.offsetMin = new Vector2(5f, 0f);
-                handleAreaRt.offsetMax = new Vector2(-5f, 0f);
+                handleAreaRt.offsetMin = new Vector2(8f, 0f);
+                handleAreaRt.offsetMax = new Vector2(-8f, 0f);
 
                 var handleGo = new GameObject("Handle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 handleGo.layer = rootGo.layer;
@@ -395,7 +395,7 @@ namespace ProDomino.Dashboard.Editor
                 handleRt.anchorMin = new Vector2(0.3f, 0.5f);
                 handleRt.anchorMax = new Vector2(0.3f, 0.5f);
                 handleRt.pivot = new Vector2(0.5f, 0.5f);
-                handleRt.sizeDelta = new Vector2(10f, 24f);
+                handleRt.sizeDelta = new Vector2(14f, 34f);
 
                 var handleImg = handleGo.GetComponent<Image>();
                 handleImg.sprite = sliderHandleBg;
@@ -407,7 +407,7 @@ namespace ProDomino.Dashboard.Editor
                 slider.fillRect = fillRt;
                 slider.handleRect = handleRt;
 
-                // 2e. Action Buttons Row (550x52)
+                // 2e. Action Buttons Row (800x72)
                 var actRowGo = new GameObject("ActionsRow", typeof(RectTransform));
                 actRowGo.layer = rootGo.layer;
                 actRowGo.transform.SetParent(containerGo.transform, false);
@@ -415,16 +415,16 @@ namespace ProDomino.Dashboard.Editor
                 actRowRt.anchorMin = new Vector2(0.5f, 1f);
                 actRowRt.anchorMax = new Vector2(0.5f, 1f);
                 actRowRt.pivot = new Vector2(0.5f, 1f);
-                actRowRt.anchoredPosition = new Vector2(0f, -224f);
-                actRowRt.sizeDelta = new Vector2(550f, 52f);
+                actRowRt.anchoredPosition = new Vector2(0f, -305f);
+                actRowRt.sizeDelta = new Vector2(800f, 72f);
 
                 // Button 1: "Learning to Play"
                 var learnBtnGo = CreateActionButton(actRowGo.transform, "LearningButton", "Learning to Play",
-                    new Vector2(0f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(-8f, 0f));
+                    new Vector2(0f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(-12f, 0f), 20f);
 
                 // Button 2: "EULA Agreement"
                 var eulaBtnGo = CreateActionButton(actRowGo.transform, "EulaButton", "EULA Agreement",
-                    new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(0f, 0f));
+                    new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(12f, 0f), new Vector2(0f, 0f), 20f);
 
                 // 2f. Version Footer
                 var verGo = new GameObject("VersionText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -434,13 +434,13 @@ namespace ProDomino.Dashboard.Editor
                 verRt.anchorMin = new Vector2(0.5f, 0f);
                 verRt.anchorMax = new Vector2(0.5f, 0f);
                 verRt.pivot = new Vector2(0.5f, 0f);
-                verRt.anchoredPosition = new Vector2(0f, 26f);
-                verRt.sizeDelta = new Vector2(300f, 20f);
+                verRt.anchoredPosition = new Vector2(0f, 32f);
+                verRt.sizeDelta = new Vector2(400f, 26f);
 
                 var verTmp = verGo.GetComponent<TextMeshProUGUI>();
                 verTmp.text = "VERSION 0.7015";
                 verTmp.font = fMedium;
-                verTmp.fontSize = 11.5f;
+                verTmp.fontSize = 14f;
                 verTmp.characterSpacing = 2f;
                 verTmp.color = Hex("#64748B");
                 verTmp.alignment = TextAlignmentOptions.Center;
@@ -472,7 +472,7 @@ namespace ProDomino.Dashboard.Editor
         }
 
         private static GameObject CreateActionButton(Transform parent, string goName, string text,
-            Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, float fontSize)
         {
             var btnGo = new GameObject(goName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
             btnGo.layer = parent.gameObject.layer;
@@ -510,7 +510,7 @@ namespace ProDomino.Dashboard.Editor
             var tmp = labelGo.GetComponent<TextMeshProUGUI>();
             tmp.text = text;
             tmp.font = fSemiBold;
-            tmp.fontSize = 15f;
+            tmp.fontSize = fontSize;
             tmp.color = Hex("#E2E8F0");
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
