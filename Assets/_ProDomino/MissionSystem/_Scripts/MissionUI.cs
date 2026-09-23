@@ -27,9 +27,9 @@ namespace ProDomino.MissionSystem
         [SerializeField] private Transform weeklyMissionElementParent;
         [SerializeField] private Transform bonusMissionElementParent;
 
-        private List<MissionElement> dailyMissionInstances;
-        private List<MissionElement> weeklyMissionInstances;
-        private List<MissionElement> bonusMissionInstances;
+        private List<MissionElement> dailyMissionInstances = new();
+        private List<MissionElement> weeklyMissionInstances = new();
+        private List<MissionElement> bonusMissionInstances = new();
 
         private Func<bool> checkIfIsAuthenticated;
         private AsyncActionHandler<string> claimReward;
@@ -41,12 +41,16 @@ namespace ProDomino.MissionSystem
         internal DateTime NextDailyReset => getMissionsResetTime?.Invoke().daily ?? DateTime.MinValue;
         internal DateTime NextWeeklyReset => getMissionsResetTime?.Invoke().weekly ?? DateTime.MinValue;
 
+        private void EnsureInstances()
+        {
+            dailyMissionInstances ??= dailyMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
+            weeklyMissionInstances ??= weeklyMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
+            bonusMissionInstances ??= bonusMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
+        }
+
         private void Awake()
         {
-            dailyMissionInstances = dailyMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
-            weeklyMissionInstances = weeklyMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
-            bonusMissionInstances = bonusMissionElementParent?.GetComponentsInChildren<MissionElement>(true)?.ToList() ?? new();
-
+            EnsureInstances();
             openMissionInterfaceButton?.onClick.AddListener(OnPressMissionButton);
         }
 
@@ -64,6 +68,7 @@ namespace ProDomino.MissionSystem
 
         internal void Initialize(Func<bool> checkIfIsAuthenticated, AsyncActionHandler<string> claimReward, Func<DateTime> getEstimateServerTime, Func<(DateTime daily, DateTime weekly)> getMissionsResetTime)
         {
+            EnsureInstances();
             this.checkIfIsAuthenticated = checkIfIsAuthenticated;
             this.claimReward = claimReward;
             this.getEstimateServerTime = getEstimateServerTime;
@@ -85,6 +90,7 @@ namespace ProDomino.MissionSystem
 
         internal void Configure(Dictionary<PlayerMissionData, GameMissionData> missionDataCollection)
         {
+            EnsureInstances();
             if (missionDataCollection is null or { Count: 0 })
             { 
                 Debug.LogWarning("Mission data collection is null or empty.");

@@ -433,6 +433,7 @@ namespace ProDomino.FriendSystem
             // Ensure we have enough instances to display all entries
             if (friendsEntryDatas is not null and { Count: > 0 })
             { 
+                friendEntriesInstances ??= new();
                 for (var i = 0; i < friendsEntryDatas.Count; i++)
                     if (i >= friendEntriesInstances.Count)
                     {
@@ -443,13 +444,22 @@ namespace ProDomino.FriendSystem
                             () => PartyMembers);
                         friendEntriesInstances.Add(newInstance);
                     }
+                    else if (friendEntriesInstances[i] == null)
+                    {
+                        var newInstance = Instantiate(friendEntryPrefab, friendEntriesParent);
+                        newInstance.Initialize
+                            (InviteFriendToPlay, 
+                            RemoveFriendFromList,
+                            () => PartyMembers);
+                        friendEntriesInstances[i] = newInstance;
+                    }
             }
             else
                 Debug.LogWarning("Couldn't create friends entry instances. Friends entry data collection is null or empty.");
 
 
             // Deactivate all current instances
-            friendEntriesInstances.ForEach(instance => instance.SetActive(false));
+            friendEntriesInstances?.ForEach(instance => instance?.SetActive(false));
 
             // Configure and activate only those matching the criteria
             if (friendsEntryDatas is not null and { Count: > 0 })
@@ -458,7 +468,7 @@ namespace ProDomino.FriendSystem
                     if (friendEntryData.Availability is Availability.Invisible or Availability.Away)
                         continue;
 
-                    var instance = friendEntriesInstances?.FirstOrDefault(i => !i.gameObject.activeSelf);
+                    var instance = friendEntriesInstances?.FirstOrDefault(i => i != null && !i.gameObject.activeSelf);
                     if (instance != null)
                     {
                         instance.Configure(friendEntryData, categoriesShown);

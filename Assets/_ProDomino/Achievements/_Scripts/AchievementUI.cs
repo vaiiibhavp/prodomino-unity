@@ -17,6 +17,10 @@ namespace ProDomino.AchievementSystem
         [SerializeField] private TMP_InputField searchAchievementInputfield;
         [SerializeField] private CustomButtonToggleGroupUI filtersToggleGroupUI;
         [SerializeField] private CustomButtonUI[] gameModeFilters;
+        [Space(10), Header("Dropdown Filters")]
+        [SerializeField] private TMP_Dropdown sortByDropdown;
+        [SerializeField] private TMP_Dropdown statusDropdown;
+        [SerializeField] private TMP_Dropdown gameDropdown;
 
         [Space(15), Header("Own Player elements")]
         [SerializeField] private TMP_Text totalAchievementsLabel;
@@ -45,12 +49,22 @@ namespace ProDomino.AchievementSystem
         internal GameModeFilter CurrentGameModeFilter { get; private set; } = GameModeFilter.All;
         internal Dictionary<GameAchievementData, PlayerAchievementData> AchievementDataCollection => getAchievementDataCollection?.Invoke();
 
+        private bool _isAwakeInitialized;
+
+        private void Awake()
+        {
+            Awake_AchievementUI();
+        }
+
         /// <summary>
         /// Initializes the achievement UI by retrieving achievement elements, setting up filter selection callbacks,
         /// and registering the search input listener.
         /// </summary>
         internal void Awake_AchievementUI()
         {
+            if (_isAwakeInitialized) return;
+            _isAwakeInitialized = true;
+
             achievementInstances = achievementElementParent?.GetComponentsInChildren<AchievementElement>(true)?.ToList() ?? new();
 
             if (filtersToggleGroupUI)
@@ -58,6 +72,15 @@ namespace ProDomino.AchievementSystem
 
             if (searchAchievementInputfield)
                 searchAchievementInputfield.onValueChanged.AddListener(OnSearchInputChanged);
+
+            if (sortByDropdown)
+                sortByDropdown.onValueChanged.AddListener(_ => ApplyFilterAndSearch());
+
+            if (statusDropdown)
+                statusDropdown.onValueChanged.AddListener(_ => ApplyFilterAndSearch());
+
+            if (gameDropdown)
+                gameDropdown.onValueChanged.AddListener(_ => ApplyFilterAndSearch());
         }
 
         /// <summary>
@@ -183,7 +206,7 @@ namespace ProDomino.AchievementSystem
 
             // Indicates the total quantity of achievements completed and the total quantity of achievements available
             if (totalAchievementsLabel)
-                totalAchievementsLabel.text = $"{completedAchievements?.Count ?? 0}/{achievementDataCollection.Keys?.Count ?? 0}";
+                totalAchievementsLabel.text = $"{completedAchievements?.Count ?? 0} / {achievementDataCollection.Keys?.Count ?? 0}";
 
             // Indicates the total quantity of achievements completed by game mode
             if (categoryAchievementCompletedLabel)
@@ -221,81 +244,185 @@ namespace ProDomino.AchievementSystem
         /// </summary>
         private void ApplyFilterAndSearch()
         {
-            // Step 0: Apply GameModeFilter visibility
-            foreach (var element in achievementInstances)
+            if (achievementInstances is null or { Count: 0 })
             {
-                if (element?.GameAchievementData is not GameAchievementData data)
-                    continue;
+                if (achievementElementParent != null)
+                    achievementInstances = achievementElementParent.GetComponentsInChildren<AchievementElement>(true)?.ToList() ?? new();
 
-                // Determine filter by game mode
-                var isVisible = CurrentGameModeFilter.HasFlag(data.gameModeFilter ?? GameModeFilter.All)
-                    || CurrentGameModeFilter == GameModeFilter.All
-                    || CurrentGameModeFilter == GameModeFilter.None;
-
-                element.gameObject.SetActive(isVisible);
+                if (achievementInstances is null or { Count: 0 })
+                {
+                    ConfigureUI();
+                    return;
+                }
             }
 
-            // Step 1: Apply achievement filter (ordering logic)
-            currentFilteredList = currentFilter switch
+            // 1. Read current filter selections
+            string selectedGame = gameDropdown != null && gameDropdown.options.Count > gameDropdown.value
+                ? gameDropdown.options[gameDropdown.value].text
+                : "Game";
+
+            string selectedStatus = statusDropdown != null && statusDropdown.options.Count > statusDropdown.value
+                ? statusDropdown.options[statusDropdown.value].text
+                : "Status";
+
+            string selectedSort = sortByDropdown != null && sortByDropdown.options.Count > sortByDropdown.value
+                ? sortByDropdown.options[sortByDropdown.value].text
+                : "Sort By";
+
+            string input = searchAchievementInputfield != null ? searchAchievementInputfield.text.Trim() : string.Empty;
+
+            // 2. Filter visibility for each element
+            foreach (var element in achievementInstances)
             {
-                AchiemeventFilters.All => achievementInstances?
+                if (element == null) continue;
+                var data = element.GameAchievementData;
+                var pData = element.PlayerAchievementData;
+
+                if (data == null)
+                {
+                    // Fallback for sample/preview rows when data is null:
+                    string titleText = element.transform.Find("Col_Info/NameLabel")?.GetComponent<TMP_Text>()?.text ?? "";
+                    string descText = element.transform.Find("Col_Info/DescLabel")?.GetComponent<TMP_Text>()?.text ?? "";
+                    string gameText = element.transform.Find("Col_Game/GameLabel")?.GetComponent<TMP_Text>()?.text ?? "";
+                    bool isClaimActive = element.transform.Find("Col_Action/ClaimButton")?.gameObject.activeSelf ?? false;
+                    bool isClaimedActive = element.transform.Find("Col_Action/CompletedContainer")?.gameObject.activeSelf ?? false;
+                    bool isInProgActive = element.transform.Find("Col_Action/IncompletedContainer")?.gameObject.activeSelf ?? false;
+
+                    bool isVis = true;
+                    if (!string.IsNullOrEmpty(selectedGame) && selectedGame != "Game" && selectedGame != "All Games")
+                    {
+                        if (gameText.IndexOf(selectedGame.Replace(" Game", "").Trim(), StringComparison.OrdinalIgnoreCase) < 0)
+                            isVis = false;
+                    }
+                    if (isVis && !string.IsNullOrEmpty(selectedStatus) && selectedStatus != "Status" && selectedStatus != "All Status")
+                    {
+                        if (selectedStatus == "Claimed" && !isClaimedActive) isVis = false;
+                        else if (selectedStatus == "Claimable" && !isClaimActive) isVis = false;
+                        else if (selectedStatus == "In Progress" && !isInProgActive) isVis = false;
+                    }
+                    if (isVis && !string.IsNullOrEmpty(input))
+                    {
+                        if (titleText.IndexOf(input, StringComparison.OrdinalIgnoreCase) < 0 &&
+                            descText.IndexOf(input, StringComparison.OrdinalIgnoreCase) < 0)
+                            isVis = false;
+                    }
+                    element.gameObject.SetActive(isVis);
+                    if (isVis && !string.IsNullOrEmpty(input)) element.HighlightNameMatches(input);
+                    else element.HighlightNameMatches("");
+                    continue;
+                }
+
+                bool isVisible = true;
+
+                // Game Filter
+                if (!string.IsNullOrEmpty(selectedGame) && selectedGame != "Game" && selectedGame != "All Games")
+                {
+                    string achName = data.name ?? string.Empty;
+                    string filterMode = selectedGame.Replace(" Game", "").Trim();
+                    bool matchesGame = achName.IndexOf(filterMode, StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (!matchesGame && data.gameModeFilter.HasValue)
+                    {
+                        matchesGame = data.gameModeFilter.Value.ToString().IndexOf(filterMode, StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                    if (!matchesGame)
+                        isVisible = false;
+                }
+                else if (CurrentGameModeFilter != GameModeFilter.All && CurrentGameModeFilter != GameModeFilter.None)
+                {
+                    if (data.gameModeFilter.HasValue && !CurrentGameModeFilter.HasFlag(data.gameModeFilter.Value))
+                        isVisible = false;
+                }
+
+                // Status Filter
+                if (isVisible && !string.IsNullOrEmpty(selectedStatus) && selectedStatus != "Status" && selectedStatus != "All Status")
+                {
+                    bool isClaimed = pData?.claimed ?? false;
+                    bool isCompleted = pData?.completed ?? false;
+                    long curProg = pData?.progress ?? 0;
+                    long goal = data.goalAmount > 0 ? data.goalAmount : 1;
+                    bool isClaimable = !isClaimed && (isCompleted || curProg >= goal);
+                    bool isInProgress = !isClaimed && !isCompleted && curProg < goal;
+
+                    if (selectedStatus == "Claimed" && !isClaimed) isVisible = false;
+                    else if (selectedStatus == "Claimable" && !isClaimable) isVisible = false;
+                    else if (selectedStatus == "In Progress" && !isInProgress) isVisible = false;
+                }
+
+                // Search Filter (substring match or token relevance)
+                if (isVisible && !string.IsNullOrEmpty(input))
+                {
+                    string achName = data.name ?? string.Empty;
+                    string achDesc = data.description ?? string.Empty;
+                    bool matchesSearch = achName.IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         achDesc.IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (!matchesSearch)
+                    {
+                        var nameTokens = AchievementManager.Tokenize(achName);
+                        var searchTokens = AchievementManager.Tokenize(input);
+                        int score = CalculateRelevance(nameTokens, searchTokens);
+                        if (score < 2) isVisible = false;
+                    }
+                }
+
+                element.gameObject.SetActive(isVisible);
+
+                // Highlight search matches
+                if (isVisible && !string.IsNullOrEmpty(input))
+                    element.HighlightNameMatches(input);
+                else
+                    element.HighlightNameMatches("");
+            }
+
+            // 3. Sorting visible achievements
+            var visibleList = achievementInstances.Where(x => x != null && x.gameObject.activeSelf).ToList();
+
+            if (selectedSort == "Alphabetical" || currentFilter == AchiemeventFilters.Alphabetical)
+            {
+                visibleList = visibleList.OrderBy(x => x.GameAchievementData?.name).ToList();
+            }
+            else if (selectedSort == "Points")
+            {
+                visibleList = visibleList.OrderByDescending(x => x.GameAchievementData?.points ?? 0).ToList();
+            }
+            else if (selectedSort == "Progress")
+            {
+                visibleList = visibleList.OrderByDescending(x =>
+                {
+                    long cur = x.PlayerAchievementData?.progress ?? 0;
+                    long goal = x.GameAchievementData?.goalAmount ?? 1;
+                    return goal > 0 ? (float)cur / goal : 0f;
+                }).ToList();
+            }
+            else if (selectedSort == "Most Recent" || currentFilter == AchiemeventFilters.MostRecent)
+            {
+                visibleList = visibleList.OrderByDescending(x => x.PlayerAchievementData?.completedTime ?? 0).ToList();
+            }
+            else if (currentFilter == AchiemeventFilters.CompletionStatus)
+            {
+                visibleList = visibleList.OrderByDescending(x => x.PlayerAchievementData?.completed ?? false).ToList();
+            }
+            else if (!string.IsNullOrEmpty(input))
+            {
+                // Order by search relevance
+                visibleList = SearchAchievementsByRelevance(input, visibleList);
+            }
+            else
+            {
+                // Default sorting by rank/tier/type/goal
+                visibleList = visibleList
                     .Select((achievement, index) => new { achievement, index })
                     .OrderBy(x => ((int?)x.achievement?.GameAchievementData?.achievementRank) ?? x.index)
                     .ThenBy(x => x.achievement?.GameAchievementData?.leaderboardTier)
                     .ThenBy(x => x.achievement?.GameAchievementData?.achievementType)
                     .ThenBy(x => x.achievement?.GameAchievementData?.goalAmount)
                     .Select(x => x.achievement)
-                    .ToList(),
+                    .ToList();
+            }
 
-                AchiemeventFilters.Alphabetical => achievementInstances?
-                    .OrderBy(x => x.GameAchievementData.name)
-                    .ToList(),
-
-                AchiemeventFilters.MostRecent => achievementInstances?
-                    .OrderByDescending(x => x.PlayerAchievementData?.completedTime)
-                    .ToList(),
-
-                AchiemeventFilters.CompletionStatus => achievementInstances?
-                    .OrderByDescending(x => x.PlayerAchievementData?.completed)
-                    .ToList(),
-
-                _ => achievementInstances?.ToList()
-            };
-
-            // Step 2: Apply search and relevance ordering
-            var input = searchAchievementInputfield.text;
-            var finalList = string.IsNullOrWhiteSpace(input)
-                ? currentFilteredList
-                : SearchAchievementsByRelevance(input, currentFilteredList);
-
-            // Step 3: Apply ordering and highlight matches
-            if (finalList is not null and { Count: > 0 })
-                for (int i = 0; i < finalList.Count; i++)
-                {
-                    finalList[i].transform.SetSiblingIndex(i);
-                    finalList[i].HighlightNameMatches(searchAchievementInputfield.text);
-                }
-
-            // Step 4: Deactivate elements with very low relevance scores
-            if (!string.IsNullOrWhiteSpace(input))
+            for (int i = 0; i < visibleList.Count; i++)
             {
-                int minMatchScoreThreshold = 2; // Minimum score required to keep visible. Adjust as needed.
-
-                foreach (var element in achievementInstances)
-                {
-                    var nameTokens = AchievementManager.Tokenize(element.GameAchievementData.name);
-                    var searchTokens = AchievementManager.Tokenize(input);
-                    var score = CalculateRelevance(nameTokens, searchTokens);
-
-                    // Deactivate if relevance is too low
-                    bool shouldBeVisible = score >= minMatchScoreThreshold;
-
-                    if (!shouldBeVisible)
-                    {
-                        element.gameObject.SetActive(false);
-                        element.HighlightNameMatches(""); // Clear highlight if hidden
-                    }
-                }
+                visibleList[i].transform.SetSiblingIndex(i);
             }
 
             ConfigureUI();
@@ -407,15 +534,13 @@ namespace ProDomino.AchievementSystem
         {
             if (gameModeFilters is null or { Length: 0 })
             {
-                Debug.LogWarning("Rarity filters are not assigned or empty in the ShopUI");
                 return;
             }
 
             // Get the button UI from the toggle group using the button ID
-            var toggle = gameModeFilters.FirstOrDefault(x => x.CustomButtonID == buttonID);
+            var toggle = gameModeFilters.FirstOrDefault(x => x != null && x.CustomButtonID == buttonID);
             if (toggle == null)
             {
-                Debug.LogWarning($"Button with ID '{buttonID}' not found in the categories toggle group.");
                 return;
             }
 

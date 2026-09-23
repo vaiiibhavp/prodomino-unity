@@ -41,6 +41,7 @@ namespace ProDomino.Dashboard.Editor
     {
         private const string ScreenPrefabPath = "Assets/_ProDomino/Prefabs/UI/Achievements_Screen.prefab";
         private const string EntryPrefabPath = "Assets/_ProDomino/Prefabs/UI/Achiev_List_Container.prefab";
+        private const string DropdownPrefabPath = "Assets/_ProDomino/Prefabs/UI/Dropdown_Choose_game_mode.prefab";
         private const string RankIconsDir = "Assets/_ProDomino/_UI/Icons/Icons_Rank";
         private const string DashboardIconsDir = "Assets/_ProDomino/_UI/Icons/Icons_Dashboard";
         private const string Base64IconsDir = "Assets/_ProDomino/_UI/Icons/Icons_Base_64";
@@ -50,7 +51,7 @@ namespace ProDomino.Dashboard.Editor
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold, fExtraBold;
         private static Sprite starSprite, hornSprite, questBadgeSprite;
         private static Sprite calDailySprite, calWeeklySprite, calMonthlySprite;
-        private static Sprite trophyIcon, classCIcon, chevronDown, coinIcon;
+        private static Sprite trophyIcon, cardTrophyIcon, classCIcon, chevronDown, coinIcon, searchIcon;
         private static Sprite blockGameIllustration, concentrateIllustration;
         private static Sprite cardBg, tableBg, tableHeaderBg, tabActiveBg, tabInactiveBg, screenCardBg;
         private static Sprite btnClaimBg, btnClaimedBg, btnInProgressBg, progressTrackBg, progressFillBg, dropdownPillBg;
@@ -70,12 +71,82 @@ namespace ProDomino.Dashboard.Editor
             Debug.Log("[AchievementsRestyler] SUCCESS: Achievements screen completely restyled to Figma design!");
         }
 
+        [MenuItem("ProDomino/Dashboard/Test Click Achievements Button")]
+        public static void TestClickAchievements()
+        {
+            var btn = GameObject.Find("NavegationPanel_Achievements_Button");
+            if (btn != null)
+            {
+                var customBtn = btn.GetComponent<CustomButtonUI>();
+                if (customBtn != null)
+                {
+                    Debug.Log("[TestClickAchievements] Calling customBtn.Select()...");
+                    customBtn.Select();
+                }
+                else
+                {
+                    var uBtn = btn.GetComponent<UnityEngine.UI.Button>();
+                    uBtn?.onClick?.Invoke();
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[TestClickAchievements] NavegationPanel_Achievements_Button not found in active scene!");
+            }
+        }
+
+        [MenuItem("ProDomino/Dashboard/Test Achievements Search Concentrate")]
+        public static void TestSearchConcentrate()
+        {
+            var achUI = UnityEngine.Object.FindAnyObjectByType<AchievementUI>();
+            var search = achUI != null ? achUI.GetComponentInChildren<TMP_InputField>(true) : null;
+            Debug.Log($"[TestSearchConcentrate] achUI: {achUI}, search: {search}");
+            if (search != null)
+            {
+                Debug.Log("[TestSearchConcentrate] Setting search input to 'Concentrate'...");
+                search.text = "Concentrate";
+            }
+        }
+
+        [MenuItem("ProDomino/Dashboard/Test Achievements Filter Claimed")]
+        public static void TestFilterClaimed()
+        {
+            var achUI = UnityEngine.Object.FindAnyObjectByType<AchievementUI>();
+            var search = achUI != null ? achUI.GetComponentInChildren<TMP_InputField>(true) : null;
+            if (search != null) search.text = "";
+
+            var statusGo = GameObject.Find("Filter_Status");
+            var status = statusGo != null ? statusGo.GetComponent<TMP_Dropdown>() : null;
+            Debug.Log($"[TestFilterClaimed] statusGo: {statusGo}, status: {status}");
+            if (status != null)
+            {
+                int idx = status.options.FindIndex(o => o.text == "Claimed");
+                Debug.Log($"[TestFilterClaimed] Setting status dropdown to Claimed (index {idx})...");
+                status.value = idx;
+            }
+        }
+
+        [MenuItem("ProDomino/Dashboard/Test Achievements Reset Filters")]
+        public static void TestResetFilters()
+        {
+            var achUI = UnityEngine.Object.FindAnyObjectByType<AchievementUI>();
+            var search = achUI != null ? achUI.GetComponentInChildren<TMP_InputField>(true) : null;
+            if (search != null) search.text = "";
+
+            var filters = GameObject.Find("FiltersContainer");
+            if (filters != null)
+            {
+                var dds = filters.GetComponentsInChildren<TMP_Dropdown>(true);
+                foreach (var dd in dds) dd.value = 0;
+            }
+        }
+
         [InitializeOnLoadMethod]
         private static void AutoRunOnce()
         {
-            if (!SessionState.GetBool("PD_AchievementsRestyler_Ran_v4", false))
+            if (!SessionState.GetBool("PD_AchievementsRestyler_Ran_v5", false))
             {
-                SessionState.SetBool("PD_AchievementsRestyler_Ran_v4", true);
+                SessionState.SetBool("PD_AchievementsRestyler_Ran_v5", true);
                 EditorApplication.delayCall += () =>
                 {
                     ApplyAndRender();
@@ -92,18 +163,23 @@ namespace ProDomino.Dashboard.Editor
             fExtraBold = LoadFont("Montserrat-ExtraBold");
 
             trophyIcon = EnsureSprite($"{DashboardIconsDir}/Nav_Achievements.png");
-            classCIcon = EnsureSprite($"{RankIconsDir}/Class_C_Icon.png");
+            cardTrophyIcon = EnsureSprite($"{ArtDashboardDir}/QuickMatch_Competitive_Trophy.png")
+                             ?? trophyIcon;
+            classCIcon = ExtractClassCBadge()
+                         ?? EnsureSprite($"{RankIconsDir}/Class_C_Icon.png");
             chevronDown = EnsureSprite($"{Base64IconsDir}/Arrow_Dropdown_Icon.png");
 
             // Coin Icon
             coinIcon = EnsureSprite($"{ArtDashboardDir}/Icon_Coin_Raster.png")
                        ?? EnsureSprite($"{DashboardIconsDir}/Icon_Coin.png");
 
+            searchIcon = EnsureSprite($"{Base128IconsDir}/Search_Icon.png");
+
             // 3D Game illustrations from Figma
             blockGameIllustration = EnsureSprite($"{ArtDashboardDir}/PlayGames_Block_Illustration.png");
             concentrateIllustration = EnsureSprite($"{ArtDashboardDir}/PlayGames_Concentrate_Illustration.png");
 
-            starSprite = MakeStarSprite("Achiev_Star_Gold", 64, Hex("#FBBF24"));
+            starSprite = MakeStarSprite("Achiev_Star_Gold", 128, Hex("#FBBF24"));
             hornSprite = MakeHornSprite("Achiev_Horn_Gold", 64, Hex("#FBBF24"));
 
             // Figma Calendar icons with red header, rings, and glowing backdrops
@@ -282,32 +358,32 @@ namespace ProDomino.Dashboard.Editor
 
                 // Button 1: Claim (Ready) - Solid vibrant yellow pill with dark bold text
                 var btnClaimGo = CreateExplicitRect(colAction, "ClaimButton", 0.5f, 0.5f, 0.5f, 0.5f);
-                btnClaimGo.sizeDelta = new Vector2(82f, 28f);
+                btnClaimGo.sizeDelta = new Vector2(84f, 30f);
                 btnClaimGo.anchoredPosition = Vector2.zero;
                 var btnClaimImg = btnClaimGo.gameObject.AddComponent<Image>();
                 btnClaimImg.sprite = btnClaimBg;
                 btnClaimImg.type = Image.Type.Sliced;
                 var claimBtn = btnClaimGo.gameObject.AddComponent<Button>();
-                var claimBtnText = CreateExplicitText(btnClaimGo, "ClaimText", "Claim", fBold, 12f, Hex("#0A0F1D"), TextAlignmentOptions.Center);
+                var claimBtnText = CreateExplicitText(btnClaimGo, "ClaimText", "Claim", fBold, 12.5f, Hex("#0A0F1D"), TextAlignmentOptions.Center);
 
                 // Container 2: Claimed (Completed) - Dark pill with amber border & text
                 var containerClaimed = CreateExplicitRect(colAction, "CompletedContainer", 0.5f, 0.5f, 0.5f, 0.5f);
-                containerClaimed.sizeDelta = new Vector2(82f, 28f);
+                containerClaimed.sizeDelta = new Vector2(84f, 30f);
                 containerClaimed.anchoredPosition = Vector2.zero;
                 var claimedImg = containerClaimed.gameObject.AddComponent<Image>();
                 claimedImg.sprite = btnClaimedBg;
                 claimedImg.type = Image.Type.Sliced;
-                var claimedText = CreateExplicitText(containerClaimed, "ClaimedText", "Claimed", fSemiBold, 11.5f, Hex("#F59E0B"), TextAlignmentOptions.Center);
+                var claimedText = CreateExplicitText(containerClaimed, "ClaimedText", "Claimed", fSemiBold, 12f, Hex("#F59E0B"), TextAlignmentOptions.Center);
                 containerClaimed.gameObject.SetActive(false);
 
                 // Container 3: In Progress (Not ready) - Dark translucent pill with silver text
                 var containerInProgress = CreateExplicitRect(colAction, "IncompletedContainer", 0.5f, 0.5f, 0.5f, 0.5f);
-                containerInProgress.sizeDelta = new Vector2(82f, 28f);
+                containerInProgress.sizeDelta = new Vector2(84f, 30f);
                 containerInProgress.anchoredPosition = Vector2.zero;
                 var inProgressImg = containerInProgress.gameObject.AddComponent<Image>();
                 inProgressImg.sprite = btnInProgressBg;
                 inProgressImg.type = Image.Type.Sliced;
-                var inProgressText = CreateExplicitText(containerInProgress, "InProgressText", "In progress", fMedium, 11f, Hex("#94A3B8"), TextAlignmentOptions.Center);
+                var inProgressText = CreateExplicitText(containerInProgress, "InProgressText", "In progress", fMedium, 11.5f, Hex("#94A3B8"), TextAlignmentOptions.Center);
                 containerInProgress.gameObject.SetActive(false);
 
                 // Wire Serialized Object properties on AchievementElement
@@ -319,8 +395,18 @@ namespace ProDomino.Dashboard.Editor
                 soElem.FindProperty("claimButton").objectReferenceValue = claimBtn;
                 soElem.FindProperty("completedContainer").objectReferenceValue = containerClaimed.gameObject;
                 soElem.FindProperty("incompletedContainer").objectReferenceValue = containerInProgress.gameObject;
-                soElem.FindProperty("rewardIcon").objectReferenceValue = starImg;
-                soElem.FindProperty("rewardObject").objectReferenceValue = starGo.gameObject;
+                soElem.FindProperty("rewardIcon").objectReferenceValue = null;
+                soElem.FindProperty("rewardObject").objectReferenceValue = null;
+
+                soElem.FindProperty("pointsLabel").objectReferenceValue = pointsTmp;
+                soElem.FindProperty("pointsIcon").objectReferenceValue = starImg;
+                soElem.FindProperty("gameLabel").objectReferenceValue = gameLabelTmp;
+                soElem.FindProperty("gameIcon").objectReferenceValue = gameIconImg;
+                soElem.FindProperty("progressFillRect").objectReferenceValue = fill;
+                soElem.FindProperty("blockGameSprite").objectReferenceValue = blockGameIllustration;
+                soElem.FindProperty("concentrateGameSprite").objectReferenceValue = concentrateIllustration;
+                soElem.FindProperty("starPointsSprite").objectReferenceValue = starSprite;
+                soElem.FindProperty("questBadgeSprite").objectReferenceValue = questBadgeSprite;
                 soElem.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, EntryPrefabPath);
@@ -414,8 +500,8 @@ namespace ProDomino.Dashboard.Editor
                 cardsHlgAchiev.childForceExpandWidth = true;
                 cardsHlgAchiev.childForceExpandHeight = true;
 
-                CreateMetricCard(cardsSectionAchiev, "Card_TotalAchievements", trophyIcon, Hex("#FBBF24"), "12 / 21", "Total Achievements", out var totalAchievTmp);
-                CreateMetricCard(cardsSectionAchiev, "Card_AchievementPoints", starSprite, Hex("#FBBF24"), "12", "Total Achievement Points", out var pointsTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_TotalAchievements", cardTrophyIcon, Color.white, "12 / 21", "Total Achievements", out var totalAchievTmp);
+                CreateMetricCard(cardsSectionAchiev, "Card_AchievementPoints", starSprite, Color.white, "12", "Total Achievement Points", out var pointsTmp);
                 CreateMetricCard(cardsSectionAchiev, "Card_CurrentRank", classCIcon, Color.white, "Class C", "Current Rank", out var rankTmp);
 
                 // 2b. Challenges Cards Container (for Challenges tab)
@@ -474,21 +560,32 @@ namespace ProDomino.Dashboard.Editor
                 var tabChallengesBtn = tabChallenges.gameObject.AddComponent<Button>();
                 var tabChallengesTxt = CreateExplicitText(tabChallenges, "Label", "Challenges", fMedium, 12.5f, Hex("#64748B"), TextAlignmentOptions.Center);
 
-                // Right: Filters (Sort By, Status, Game)
+                // Right: Filters & Search (Search Bar, Sort By, Status, Game)
                 var filtersContainer = CreateExplicitRect(tabBarRow, "FiltersContainer", 1f, 0.5f, 1f, 0.5f);
                 filtersContainer.pivot = new Vector2(1f, 0.5f);
-                filtersContainer.sizeDelta = new Vector2(340f, 38f);
+                filtersContainer.sizeDelta = new Vector2(530f, 38f);
                 filtersContainer.anchoredPosition = new Vector2(0f, 0f);
+
+                // Add Canvas with overrideSorting so dropdown menus render in front of Table_Section
+                var fCanvas = filtersContainer.gameObject.AddComponent<Canvas>();
+                fCanvas.overrideSorting = true;
+                fCanvas.sortingOrder = 50;
+                filtersContainer.gameObject.AddComponent<GraphicRaycaster>();
 
                 var filtersHlg = filtersContainer.gameObject.AddComponent<HorizontalLayoutGroup>();
                 filtersHlg.childAlignment = TextAnchor.MiddleRight;
-                filtersHlg.spacing = 10f;
+                filtersHlg.spacing = 8f;
                 filtersHlg.childControlWidth = false;
                 filtersHlg.childControlHeight = false;
 
-                CreateFilterPill(filtersContainer, "Filter_SortBy", "Sort By", 102f);
-                CreateFilterPill(filtersContainer, "Filter_Status", "Status", 96f);
-                CreateFilterPill(filtersContainer, "Filter_Game", "Game", 96f);
+                var ddPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DropdownPrefabPath);
+                var searchInput = CreateSearchInputField(filtersContainer, "SearchBar", 185f);
+                var ddSort = CreateDropdownInstance(ddPrefab, filtersContainer, "Filter_SortBy", "Sort By", 104f,
+                    new List<string> { "Sort By", "Alphabetical", "Points", "Progress", "Most Recent" });
+                var ddStatus = CreateDropdownInstance(ddPrefab, filtersContainer, "Filter_Status", "Status", 98f,
+                    new List<string> { "Status", "In Progress", "Claimable", "Claimed" });
+                var ddGame = CreateDropdownInstance(ddPrefab, filtersContainer, "Filter_Game", "Game", 98f,
+                    new List<string> { "Game", "Block Game", "Concentrate Game", "French Game", "Draw Game", "Five Game" });
 
                 // -----------------------------------------------------------------
                 // 4. Table Section (Top y = -222px to bottom)
@@ -640,9 +737,15 @@ namespace ProDomino.Dashboard.Editor
                 if (rootCgProp != null) rootCgProp.objectReferenceValue = cg;
                 soUI.FindProperty("totalAchievementsLabel").objectReferenceValue = totalAchievTmp;
                 soUI.FindProperty("totalAchievementsPointsLabel").objectReferenceValue = pointsTmp;
-                soUI.FindProperty("categoryAchievementCompletedLabel").objectReferenceValue = rankTmp;
+                soUI.FindProperty("categoryAchievementCompletedLabel").objectReferenceValue = null;
                 soUI.FindProperty("achievementElementPrefab").objectReferenceValue = entryElem;
                 soUI.FindProperty("achievementElementParent").objectReferenceValue = contentAchiev;
+                soUI.FindProperty("searchAchievementInputfield").objectReferenceValue = searchInput;
+                soUI.FindProperty("sortByDropdown").objectReferenceValue = ddSort;
+                soUI.FindProperty("statusDropdown").objectReferenceValue = ddStatus;
+                soUI.FindProperty("gameDropdown").objectReferenceValue = ddGame;
+                var gmfProp = soUI.FindProperty("gameModeFilters");
+                if (gmfProp != null) gmfProp.arraySize = 0;
                 soUI.ApplyModifiedPropertiesWithoutUndo();
 
                 // Wire Serialized Object properties on AchievementsTabController
@@ -816,31 +919,121 @@ namespace ProDomino.Dashboard.Editor
             fRt.sizeDelta = new Vector2(50f, 20f);
         }
 
-        private static void CreateFilterPill(Transform parent, string name, string label, float width)
+        private static TMP_Dropdown CreateDropdownInstance(GameObject prefab, Transform parent, string name, string caption, float width, List<string> options)
         {
-            var pill = CreateExplicitRect(parent, name, 0f, 0.5f, 0f, 0.5f);
-            pill.pivot = new Vector2(0.5f, 0.5f);
-            pill.sizeDelta = new Vector2(width, 36f);
-            var img = pill.gameObject.AddComponent<Image>();
-            img.sprite = dropdownPillBg;
-            img.type = Image.Type.Sliced;
+            var go = UnityEngine.Object.Instantiate(prefab, parent);
+            go.name = name;
 
-            var txt = CreateExplicitText(pill, "Label", label, fMedium, 12f, Hex("#CBD5E1"), TextAlignmentOptions.MidlineLeft);
-            var tRt = txt.GetComponent<RectTransform>();
-            tRt.pivot = new Vector2(0f, 0.5f);
-            tRt.anchorMin = new Vector2(0f, 0.5f);
-            tRt.anchorMax = new Vector2(1f, 0.5f);
-            tRt.anchoredPosition = new Vector2(14f, 0f);
-            tRt.sizeDelta = new Vector2(-36f, 24f);
+            var rt = (RectTransform)go.transform;
+            rt.sizeDelta = new Vector2(width, 36f);
 
-            var arrow = CreateExplicitRect(pill, "Arrow", 1f, 0.5f, 1f, 0.5f);
-            arrow.pivot = new Vector2(1f, 0.5f);
-            arrow.sizeDelta = new Vector2(12f, 12f);
-            arrow.anchoredPosition = new Vector2(-12f, 0f);
-            var arrowImg = arrow.gameObject.AddComponent<Image>();
-            arrowImg.sprite = chevronDown;
-            arrowImg.color = Hex("#94A3B8");
-            arrowImg.preserveAspect = true;
+            var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+            le.preferredWidth = width;
+            le.minWidth = width - 10f;
+            le.preferredHeight = 36f;
+            le.minHeight = 36f;
+
+            var dd = go.GetComponent<TMP_Dropdown>();
+            if (dd != null)
+            {
+                dd.ClearOptions();
+                dd.AddOptions(options);
+                dd.value = 0;
+
+                if (dd.captionText is TextMeshProUGUI tmp)
+                {
+                    tmp.text = caption;
+                    tmp.font = fMedium;
+                    tmp.fontSize = 12f;
+                    tmp.color = Hex("#CBD5E1");
+                    tmp.alignment = TextAlignmentOptions.MidlineLeft;
+                }
+            }
+
+            var bg = go.transform.Find("Background")?.GetComponent<Image>();
+            if (bg != null)
+            {
+                bg.sprite = dropdownPillBg;
+                bg.type = Image.Type.Sliced;
+                bg.color = Color.white;
+            }
+
+            var outline = go.transform.Find("Outline")?.GetComponent<Image>();
+            if (outline != null)
+            {
+                outline.color = Hex("#222D42");
+            }
+
+            var arrow = go.transform.Find("Arrow")?.GetComponent<Image>();
+            if (arrow != null)
+            {
+                arrow.sprite = chevronDown;
+                arrow.color = Hex("#94A3B8");
+            }
+
+            return dd;
+        }
+
+        private static TMP_InputField CreateSearchInputField(Transform parent, string name, float width)
+        {
+            var searchGo = CreateExplicitRect(parent, name, 0f, 0.5f, 0f, 0.5f);
+            searchGo.pivot = new Vector2(0.5f, 0.5f);
+            searchGo.sizeDelta = new Vector2(width, 36f);
+
+            var le = searchGo.gameObject.AddComponent<LayoutElement>();
+            le.preferredWidth = width;
+            le.minWidth = 140f;
+            le.preferredHeight = 36f;
+            le.minHeight = 36f;
+
+            var bgImg = searchGo.gameObject.AddComponent<Image>();
+            bgImg.sprite = dropdownPillBg;
+            bgImg.type = Image.Type.Sliced;
+            bgImg.color = Color.white;
+
+            var inputField = searchGo.gameObject.AddComponent<TMP_InputField>();
+
+            // Search Icon on left
+            var iconGo = CreateExplicitRect(searchGo, "SearchIcon", 0f, 0.5f, 0f, 0.5f);
+            iconGo.pivot = new Vector2(0f, 0.5f);
+            iconGo.sizeDelta = new Vector2(16f, 16f);
+            iconGo.anchoredPosition = new Vector2(10f, 0f);
+            var iconImg = iconGo.gameObject.AddComponent<Image>();
+            iconImg.sprite = searchIcon;
+            iconImg.color = Hex("#8E9CAE");
+            iconImg.preserveAspect = true;
+            iconImg.raycastTarget = false;
+
+            // Text Area
+            var textAreaGo = CreateExplicitRect(searchGo, "Text Area", 0f, 0f, 1f, 1f);
+            textAreaGo.offsetMin = new Vector2(30f, 2f);
+            textAreaGo.offsetMax = new Vector2(-10f, -2f);
+            textAreaGo.gameObject.AddComponent<RectMask2D>();
+
+            // Placeholder Text
+            var phGo = CreateExplicitRect(textAreaGo, "Placeholder", 0f, 0f, 1f, 1f);
+            var phTmp = phGo.gameObject.AddComponent<TextMeshProUGUI>();
+            phTmp.text = "Search achievements...";
+            phTmp.font = fRegular;
+            phTmp.fontSize = 11.5f;
+            phTmp.color = Hex("#64748B");
+            phTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            // Input Text
+            var textGo = CreateExplicitRect(textAreaGo, "Text", 0f, 0f, 1f, 1f);
+            var textTmp = textGo.gameObject.AddComponent<TextMeshProUGUI>();
+            textTmp.text = "";
+            textTmp.font = fRegular;
+            textTmp.fontSize = 12f;
+            textTmp.color = Color.white;
+            textTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            inputField.textViewport = (RectTransform)textAreaGo;
+            inputField.textComponent = textTmp;
+            inputField.placeholder = phTmp;
+            inputField.fontAsset = fRegular;
+
+            return inputField;
         }
 
         private static TMP_Text CreateHeaderCol(Transform parent, string name, string title, float xMin, float xMax, TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft)
@@ -888,6 +1081,102 @@ namespace ProDomino.Dashboard.Editor
         // -------------------------------------------------------------------------------------------------------------
         // PROCEDURAL SPRITE GENERATORS
         // -------------------------------------------------------------------------------------------------------------
+        private static Sprite ExtractClassCBadge()
+        {
+            string outPath = $"{GeneratedDir}/Achiev_ClassC_Badge.png";
+            if (File.Exists(outPath))
+            {
+                var existing = AssetDatabase.LoadAssetAtPath<Sprite>(outPath);
+                if (existing != null) return existing;
+            }
+
+            string srcPath = $"{ArtDashboardDir}/Header_ClassBadge.png";
+            var ti = AssetImporter.GetAtPath(srcPath) as TextureImporter;
+            if (ti != null)
+            {
+                if (!ti.isReadable || ti.maxTextureSize < 2048)
+                {
+                    ti.isReadable = true;
+                    ti.maxTextureSize = 2048;
+                    ti.textureCompression = TextureImporterCompression.Uncompressed;
+                    ti.SaveAndReimport();
+                }
+            }
+
+            var srcTex = AssetDatabase.LoadAssetAtPath<Texture2D>(srcPath);
+            if (srcTex == null) return null;
+
+            // Class C badge is the leftmost badge (~first 17% of width)
+            int scanW = (int)(srcTex.width * 0.175f);
+            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+
+            for (int y = 0; y < srcTex.height; y++)
+            for (int x = 0; x < scanW; x++)
+            {
+                var p = srcTex.GetPixel(x, y);
+                bool isBg = (p.r > 0.94f && p.g > 0.94f && p.b > 0.94f) || p.a < 0.1f;
+                if (!isBg)
+                {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (minX >= maxX || minY >= maxY) return null;
+
+            int pad = 2;
+            minX = Mathf.Max(0, minX - pad);
+            maxX = Mathf.Min(srcTex.width - 1, maxX + pad);
+            minY = Mathf.Max(0, minY - pad);
+            maxY = Mathf.Min(srcTex.height - 1, maxY + pad);
+
+            int w = maxX - minX + 1;
+            int h = maxY - minY + 1;
+
+            var cropTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var p = srcTex.GetPixel(minX + x, minY + y);
+                if (p.r > 0.94f && p.g > 0.94f && p.b > 0.94f)
+                {
+                    cropTex.SetPixel(x, y, Color.clear);
+                }
+                else if (p.r > 0.88f && p.g > 0.88f && p.b > 0.88f)
+                {
+                    float maxC = Mathf.Max(p.r, Mathf.Max(p.g, p.b));
+                    float alpha = Mathf.Clamp01((0.94f - maxC) / 0.06f);
+                    cropTex.SetPixel(x, y, new Color(p.r, p.g, p.b, alpha));
+                }
+                else
+                {
+                    cropTex.SetPixel(x, y, p);
+                }
+            }
+            cropTex.Apply();
+
+            if (!AssetDatabase.IsValidFolder(GeneratedDir))
+                AssetDatabase.CreateFolder("Assets/_ProDomino/Dashboard", "Generated");
+
+            string fullDiskPath = Path.Combine(Directory.GetCurrentDirectory(), outPath);
+            File.WriteAllBytes(fullDiskPath, cropTex.EncodeToPNG());
+            AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceUpdate);
+
+            var tiOut = AssetImporter.GetAtPath(outPath) as TextureImporter;
+            if (tiOut != null)
+            {
+                tiOut.textureType = TextureImporterType.Sprite;
+                tiOut.spriteImportMode = SpriteImportMode.Single;
+                tiOut.alphaIsTransparency = true;
+                tiOut.textureCompression = TextureImporterCompression.Uncompressed;
+                tiOut.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(outPath);
+        }
+
         private static Sprite MakeStarSprite(string name, int size, Color color)
         {
             var path = $"{GeneratedDir}/{name}.png";
@@ -900,7 +1189,7 @@ namespace ProDomino.Dashboard.Editor
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
             float rOuter = size * 0.44f;
-            float rInner = rOuter * 0.42f;
+            float rInner = rOuter * 0.40f;
 
             Vector2[] pts = new Vector2[10];
             for (int i = 0; i < 10; i++)
@@ -910,14 +1199,29 @@ namespace ProDomino.Dashboard.Editor
                 pts[i] = center + new Vector2(Mathf.Cos(angle), -Mathf.Sin(angle)) * r;
             }
 
+            // 4x supersampling for crisp, anti-aliased edges
             for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
             {
-                Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
-                if (IsPointInPolygon(p, pts))
-                    tex.SetPixel(x, y, color);
+                int insideCount = 0;
+                for (int sy = 0; sy < 4; sy++)
+                for (int sx = 0; sx < 4; sx++)
+                {
+                    Vector2 sp = new Vector2(x + (sx + 0.5f) / 4f, y + (sy + 0.5f) / 4f);
+                    if (IsPointInPolygon(sp, pts)) insideCount++;
+                }
+
+                if (insideCount > 0)
+                {
+                    float alpha = insideCount / 16f;
+                    float t = Mathf.Clamp01((float)y / size);
+                    Color grad = Color.Lerp(Hex("#D97706"), Hex("#FDE047"), t);
+                    tex.SetPixel(x, y, new Color(grad.r, grad.g, grad.b, alpha));
+                }
                 else
+                {
                     tex.SetPixel(x, y, Color.clear);
+                }
             }
             tex.Apply();
             return SaveSprite(path, tex);

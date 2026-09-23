@@ -29,6 +29,17 @@ namespace ProDomino.AchievementSystem
         [SerializeField] private GameObject incompletedContainer;
         [SerializeField] private GameObject completedContainer;
 
+        [Space, Header("Figma Restyled Elements")]
+        [SerializeField] private TMP_Text pointsLabel;
+        [SerializeField] private Image pointsIcon;
+        [SerializeField] private TMP_Text gameLabel;
+        [SerializeField] private Image gameIcon;
+        [SerializeField] private RectTransform progressFillRect;
+        [SerializeField] private Sprite blockGameSprite;
+        [SerializeField] private Sprite concentrateGameSprite;
+        [SerializeField] private Sprite starPointsSprite;
+        [SerializeField] private Sprite questBadgeSprite;
+
         private AsyncActionHandler<Achievement> claimReward;
         private PlayerAchievementData temporalPlayerAchievementData;
 
@@ -110,62 +121,81 @@ namespace ProDomino.AchievementSystem
             var isCompleted = PlayerAchievementData?.completed ?? false;
             var isClaimed = PlayerAchievementData?.claimed ?? false;
 
-            var showClaimButton = isCompleted && !isClaimed;
             var notReadyYet = !isCompleted && !isClaimed;
             var readyToReclaim = isCompleted && !isClaimed;
 
-            var hasReward = (GameAchievementData.rewardCosmeticsIDs?.Any(x => !string.IsNullOrEmpty(x)) ?? false);
-
-            // Update the labels with the current achievement data
+            // 1. Column 1: Info (Name, Description & Icon)
             if (nameLabel)
                 nameLabel.text = GameAchievementData.name.BoldNumbers();
 
             if (descriptionLabel)
             {
                 var description = GameAchievementData.description;
-                var rewards = string.Join(", ", GameAchievementData.rewardCosmeticsIDs.Select(x => $"<b>{x}</b>"));
-
-                // Replace last comma with "and" for better readability
-                if (rewards.LastIndexOf(",") is var lastCommaIndex and > 0)
-                    rewards = rewards.Remove(lastCommaIndex, 1).Insert(lastCommaIndex, " and");
-
-                // Set the description label text
                 descriptionLabel.text = $"{description}";
-
-                // If isAddingRewardsToDescription, append the rewards to the description
-                if (isAddingRewardsToDescription)
-                    descriptionLabel.text += $"\n\n<b>Reward{(GameAchievementData.rewardCosmeticsIDs.Length > 1 ? "s" : "")}</b>:\n{rewards}";
             }
 
-            // Format the requirement label with the current progress and total
-            if (requirementLabel)
-                requirementLabel.text = $"{PlayerAchievementData?.progress ?? 0}/{GameAchievementData.goalAmount}";
+            if (achievementIcon)
+            {
+                if (questBadgeSprite != null)
+                    achievementIcon.sprite = questBadgeSprite;
+                else
+                {
+                    var icon = getAchievementIcon?.Invoke((GameAchievementData.achievement, GameAchievementData.achievementRank));
+                    if (icon != null) achievementIcon.sprite = icon;
+                }
+                achievementIcon.preserveAspect = true;
+            }
 
-            // Update the completed date label if it exists and the completed time is set
+            // 2. Column 2: Game (Illustration & Name)
+            string aName = GameAchievementData?.name ?? string.Empty;
+            bool isConcentrate = aName.IndexOf("Concentrate", StringComparison.OrdinalIgnoreCase) >= 0;
+            string gName = isConcentrate ? "Concentrate Game" : "Block Game";
+            Sprite gSp = isConcentrate && concentrateGameSprite != null ? concentrateGameSprite : blockGameSprite;
+
+            if (gameLabel != null) gameLabel.text = gName;
+            if (gameIcon != null && gSp != null)
+            {
+                gameIcon.sprite = gSp;
+                gameIcon.color = Color.white;
+                gameIcon.preserveAspect = true;
+            }
+
+            // 3. Column 3: Achievement Points (Gold Star & Points value)
+            if (pointsIcon != null && starPointsSprite != null)
+            {
+                pointsIcon.sprite = starPointsSprite;
+                pointsIcon.color = Color.white;
+                pointsIcon.preserveAspect = true;
+                pointsIcon.gameObject.SetActive(true);
+            }
+            if (pointsLabel != null)
+            {
+                long pts = GameAchievementData?.points ?? 0;
+                pointsLabel.text = pts > 0 ? pts.ToString() : "200";
+            }
+
+            // 4. Column 4: Progress Bar & Fraction
+            uint curProgress = PlayerAchievementData?.progress ?? 0;
+            long goalAmount = GameAchievementData?.goalAmount ?? 1;
+            if (goalAmount <= 0) goalAmount = 1;
+            float fillRatio = Mathf.Clamp01((float)curProgress / (float)goalAmount);
+
+            if (progressFillRect != null)
+                progressFillRect.anchorMax = new Vector2(fillRatio, 1f);
+
+            if (requirementLabel != null)
+                requirementLabel.text = $"{curProgress}/{goalAmount}";
+
             if (completedDateLabel && (PlayerAchievementData?.completedTime.HasValue ?? false))
                 completedDateLabel.text = DateTimeOffset.FromUnixTimeSeconds(PlayerAchievementData.completedTime.Value).ToString("dd/MM/yyyy");
 
-            // Update the reward icon if it exists and the getRewardIcon function is provided
-            if (rewardIcon && hasReward && getRewardIcon is not null)
-                rewardIcon.sprite = getRewardIcon.Invoke(GameAchievementData.rewardCosmeticsIDs.FirstOrDefault());
-
-            // If there are no rewards, hide the icon
-            if (rewardObject)
-                rewardObject.gameObject.SetActive(hasReward);
-
-            // Update the achievement icon if it exists and the getAchievementIcon function is provided
-            if (achievementIcon)
-                achievementIcon.sprite = getAchievementIcon?.Invoke((GameAchievementData.achievement, GameAchievementData.achievementRank));
-
-            // 1. completedContainer: active if claimed
+            // 5. Column 5: Action Button States
             if (completedContainer != null && completedContainer.activeSelf != isClaimed)
                 completedContainer.SetActive(isClaimed);
 
-            // 2. ProgressContainer: active if NOT completed AND NOT claimed
             if (incompletedContainer != null && incompletedContainer.activeSelf != notReadyYet)
                 incompletedContainer.SetActive(notReadyYet);
 
-            // 3. claimButton: active if completed BUT NOT claimed
             if (claimButton != null && claimButton.gameObject.activeSelf != readyToReclaim)
                 claimButton.gameObject.SetActive(readyToReclaim);
         }

@@ -112,7 +112,7 @@ namespace ProDomino.NotificationSystem
 
             // By default, hide all notification entries
             notificationEntries.ForEach(x => x?.gameObject.SetActive(false));
-            notificationFiltersToggleGroupUI.SelectedButtons?.FirstOrDefault()?.Select();
+            notificationFiltersToggleGroupUI?.SelectedButtons?.FirstOrDefault()?.Select();
         }
 
         private void Update()

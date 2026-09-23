@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -35,17 +35,23 @@ public static class TransformExtensions
     
     public static void RefreshContentSizeFitterImmediateAndRecursive(this Transform root, MonoBehaviour executer)
     {
+        if (executer == null || !executer.gameObject.activeInHierarchy || root == null || !root.gameObject.activeInHierarchy)
+            return;
+
         foreach (var contentSizeFitter in root.GetComponentsInChildren<ContentSizeFitter>())
             contentSizeFitter.enabled = false;
 
-        executer?.StartCoroutine(ReEnableContentSizeFitters());
+        executer.StartCoroutine(ReEnableContentSizeFitters());
 
         IEnumerator ReEnableContentSizeFitters()
         { 
             yield return new WaitForEndOfFrame();
 
-            foreach (var contentSizeFitter in root.GetComponentsInChildren<ContentSizeFitter>())
-                contentSizeFitter.enabled = true;
+            if (root != null)
+            {
+                foreach (var contentSizeFitter in root.GetComponentsInChildren<ContentSizeFitter>())
+                    if (contentSizeFitter != null) contentSizeFitter.enabled = true;
+            }
         }
     }
 

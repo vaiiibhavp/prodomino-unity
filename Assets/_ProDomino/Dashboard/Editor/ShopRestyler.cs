@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 using static ProDomino.Dashboard.Editor.PdUiKit;
@@ -36,6 +37,7 @@ namespace ProDomino.Dashboard.Editor
     /// </summary>
     internal static class ShopRestyler
     {
+        private const string ScenePath = "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
         private const string MainPrefabPath = "Assets/_ProDomino/Prefabs/UI/Shop_Screen.prefab";
         private const string ElementPrefabPath = "Assets/_ProDomino/Shop/Prefabs/Shop_Element.prefab";
         private const string DashboardIconsDir = "Assets/_ProDomino/_UI/Icons/Icons_Dashboard";
@@ -47,7 +49,7 @@ namespace ProDomino.Dashboard.Editor
         private static Sprite shopIcon, coinIcon, chevronDown;
         private static Sprite cardBg, cardFooterBg, tabActiveBg, tabInactiveBg, dropdownPillBg, btnBuyPill, screenCardBg;
         private static Sprite badgeCommon, badgeMythic, badgeLegendary, badgeSpecial;
-        private static Sprite popupPanelBg, btnGoldConfirm, btnDarkCancel;
+        private static Sprite popupPanelBg, popupPatternSprite, previewBorderRed, btnGoldConfirm, btnGoldCancel, btnClose;
 
         // Preview domino sprites for template items
         private static Sprite tileDefault, tileOrange, tilePink, tileBlack, tileRainbow;
@@ -60,6 +62,7 @@ namespace ProDomino.Dashboard.Editor
             BuildCleanShopScreenPrefab();
             EnsureHiddenInMiddleScreen();
             AssetDatabase.SaveAssets();
+            RenderPopups();
             Debug.Log("[ShopRestyler] SUCCESS: Shop screen completely restyled to Figma design and hidden by default!");
         }
 
@@ -111,9 +114,105 @@ namespace ProDomino.Dashboard.Editor
             badgeLegendary = MakePanelSprite("Shop_Badge_Legendary", 32, 18, 9, Hex("#FBBF24"), Hex("#FBBF24"), Color.clear, 0f);
             badgeSpecial = MakePanelSprite("Shop_Badge_Special", 32, 18, 9, Hex("#FB923C"), Hex("#FB923C"), Color.clear, 0f);
 
-            popupPanelBg = MakePanelSprite("Shop_PopupBg", 48, 48, 14, Hex("#0E1322"), Hex("#080C16"), Hex("#1E293B"), 1.2f);
-            btnGoldConfirm = MakePanelSprite("Shop_BtnGoldConfirm", 32, 32, 10, Hex("#FBBF24"), Hex("#F59E0B"), Color.clear, 0f);
-            btnDarkCancel = MakePanelSprite("Shop_BtnDarkCancel", 32, 32, 10, Hex("#1E2638"), Hex("#141A28"), Hex("#2E3C54"), 1f);
+            popupPanelBg = MakePanelSprite("Shop_PopupBg", 64, 64, 16, Hex("#0E1322"), Hex("#080C16"), Hex("#1E293B"), 1.2f);
+            popupPatternSprite = MakeWatermarkPatternSprite("Shop_Popup_Pattern", 180, 180);
+            previewBorderRed = MakePanelSprite("Shop_PreviewBorder_Red", 48, 48, 12, Hex("#080D1A"), Hex("#080D1A"), Hex("#EF4444"), 1.5f);
+            btnGoldConfirm = MakePanelSprite("Shop_BtnGoldConfirm", 32, 32, 8, Hex("#FFA000"), Hex("#FFBD1E"), Color.clear, 0f);
+            btnGoldCancel = MakePanelSprite("Shop_BtnGoldCancel", 32, 32, 8, Hex("#0D121F"), Hex("#0D121F"), Hex("#FFA000"), 1.2f);
+            btnClose = MakePanelSprite("Shop_Close_Btn", 32, 32, 8, Hex("#1E2538"), Hex("#151B2A"), Hex("#2D384E"), 1f);
+        }
+
+        private static Sprite MakeWatermarkPatternSprite(string name, int w, int h)
+        {
+            var path = $"{GeneratedDir}/{name}.png";
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                tex.SetPixel(x, y, Color.clear);
+
+            // Tiled diamonds (rotated squares) at 45 degrees
+            float step = 28f;
+            for (float gy = -step * 2; gy < h + step * 2; gy += step)
+            for (float gx = -step * 2; gx < w + step * 2; gx += step)
+            {
+                if ((int)(Mathf.Floor(gx / step) + Mathf.Floor(gy / step)) % 2 != 0) continue;
+
+                float cx = gx;
+                float cy = gy;
+                float r = step * 0.65f;
+                float distFromTopLeft = Vector2.Distance(new Vector2(cx, cy), new Vector2(0f, h));
+                if (distFromTopLeft > w * 1.15f) continue;
+                float fade = Mathf.Clamp01(1f - distFromTopLeft / (w * 1.1f));
+
+                // Outline of diamond
+                for (int y = Mathf.Max(0, (int)(cy - r - 2)); y <= Mathf.Min(h - 1, (int)(cy + r + 2)); y++)
+                for (int x = Mathf.Max(0, (int)(cx - r - 2)); x <= Mathf.Min(w - 1, (int)(cx + r + 2)); x++)
+                {
+                    float m = Mathf.Abs(x - cx) + Mathf.Abs(y - cy);
+                    float edgeDist = Mathf.Abs(m - r);
+                    if (edgeDist < 1.1f)
+                    {
+                        float a = 0.09f * fade * Mathf.Clamp01(1.1f - edgeDist);
+                        Color existing = tex.GetPixel(x, y);
+                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Max(existing.a, a)));
+                    }
+                }
+
+                // Add small dots inside select diamonds (domino pips)
+                int seed = Mathf.Abs((int)(cx * 7 + cy * 13));
+                if ((seed % 3) == 0 && fade > 0.15f)
+                {
+                    for (int y = (int)(cy - 3); y <= (int)(cy + 3); y++)
+                    for (int x = (int)(cx - 3); x <= (int)(cx + 3); x++)
+                    {
+                        if (x >= 0 && x < w && y >= 0 && y < h)
+                        {
+                            float d = Vector2.Distance(new Vector2(x, y), new Vector2(cx, cy));
+                            if (d <= 2.2f)
+                            {
+                                float a = 0.18f * fade * Mathf.Clamp01(2.2f - d);
+                                Color existing = tex.GetPixel(x, y);
+                                tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Max(existing.a, a)));
+                            }
+                        }
+                    }
+                }
+            }
+
+            tex.Apply();
+            return SaveSprite(path, tex);
+        }
+
+        private static Sprite MakeRedBoardPreviewSprite(string name, int w, int h)
+        {
+            var path = $"{GeneratedDir}/{name}.png";
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            Vector2 center = new Vector2(w * 0.5f, h * 0.5f);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x, y), center);
+                float radial = Mathf.Clamp01(1f - d / (w * 0.55f));
+                Color c = Color.Lerp(Hex("#130306"), Hex("#380B12"), radial);
+
+                // Ornate rings in center
+                float ring1 = Mathf.Abs(d - 22f);
+                float ring2 = Mathf.Abs(d - 27f);
+                float ring3 = Mathf.Abs(d - 30f);
+                if (ring1 < 1.2f) c = Color.Lerp(c, Hex("#EF4444"), 0.6f);
+                if (ring2 < 1.0f) c = Color.Lerp(c, Hex("#F87171"), 0.4f);
+                if (ring3 < 1.0f) c = Color.Lerp(c, Hex("#EF4444"), 0.5f);
+
+                // Horizontal ornament line
+                if (Mathf.Abs(y - center.y) < 1.2f && (x < center.x - 30f || x > center.x + 30f) && x > 15 && x < w - 15)
+                {
+                    c = Color.Lerp(c, Hex("#EF4444"), 0.45f);
+                }
+
+                tex.SetPixel(x, y, c);
+            }
+            tex.Apply();
+            return SaveSprite(path, tex);
         }
 
         private static Sprite EnsureSprite(string path)
@@ -360,6 +459,7 @@ namespace ProDomino.Dashboard.Editor
                 cbImg.sprite = dropdownPillBg;
                 cbImg.type = Image.Type.Sliced;
                 cbImg.color = Color.white;
+                var cbBtn = currencyBadge.gameObject.AddComponent<Button>();
 
                 var cbCoin = CreateExplicitRect(currencyBadge, "CoinIcon", 0f, 0.5f, 0f, 0.5f);
                 cbCoin.pivot = new Vector2(0f, 0.5f);
@@ -506,7 +606,7 @@ namespace ProDomino.Dashboard.Editor
                 }
 
                 // -----------------------------------------------------------------
-                // 4. Confirm Purchase Modal Pop-Up
+                // 4. Confirm Purchase Modal Pop-Up (Figma Reference: 560 x 390)
                 // -----------------------------------------------------------------
                 var popupGo = CreateExplicitRect(root.transform, "ConfirmPurchase_PopUp", 0f, 0f, 1f, 1f);
                 popupGo.offsetMin = Vector2.zero;
@@ -518,16 +618,17 @@ namespace ProDomino.Dashboard.Editor
                 popupCg.blocksRaycasts = false;
                 popupGo.gameObject.SetActive(false);
 
-                // Dark raycast blocker
+                // Dark backdrop with click-to-close button
                 var backdrop = CreateExplicitRect(popupGo, "Panel", 0f, 0f, 1f, 1f);
                 var bdImg = backdrop.gameObject.AddComponent<Image>();
-                bdImg.color = new Color(0f, 0f, 0f, 0.85f);
+                bdImg.color = new Color(0f, 0f, 0f, 0.75f);
                 bdImg.raycastTarget = true;
+                var bdBtn = backdrop.gameObject.AddComponent<Button>();
 
-                // Modal Card Container
+                // Modal Card Container (560 x 390)
                 var modal = CreateExplicitRect(popupGo, "ConfirmPurchase_Container", 0.5f, 0.5f, 0.5f, 0.5f);
                 modal.pivot = new Vector2(0.5f, 0.5f);
-                modal.sizeDelta = new Vector2(380f, 440f);
+                modal.sizeDelta = new Vector2(560f, 390f);
                 modal.anchoredPosition = Vector2.zero;
 
                 var modalImg = modal.gameObject.AddComponent<Image>();
@@ -535,94 +636,96 @@ namespace ProDomino.Dashboard.Editor
                 modalImg.type = Image.Type.Sliced;
                 modalImg.color = Color.white;
 
-                // Title / Header Text
-                var popupHeaderTmp = CreateExplicitText(modal, "ConfirmPurchase_HeaderText", "Purchase Cosmetic", fBold, 18f, Color.white, TextAlignmentOptions.Center);
-                var pHeaderRt = popupHeaderTmp.GetComponent<RectTransform>();
-                pHeaderRt.anchorMin = new Vector2(0f, 1f);
-                pHeaderRt.anchorMax = new Vector2(1f, 1f);
-                pHeaderRt.pivot = new Vector2(0.5f, 1f);
-                pHeaderRt.anchoredPosition = new Vector2(0f, -20f);
-                pHeaderRt.sizeDelta = new Vector2(-40f, 32f);
+                // Top-left Watermark Motif Pattern
+                var watermark = CreateExplicitRect(modal, "Watermark_Pattern", 0f, 1f, 0f, 1f);
+                watermark.pivot = new Vector2(0f, 1f);
+                watermark.sizeDelta = new Vector2(180f, 180f);
+                watermark.anchoredPosition = Vector2.zero;
+                var wmImg = watermark.gameObject.AddComponent<Image>();
+                wmImg.sprite = popupPatternSprite;
+                wmImg.raycastTarget = false;
 
-                // Preview Box
+                // Top-right Close Button
+                var closeBtnGo = CreateExplicitRect(modal, "Close_Button", 1f, 1f, 1f, 1f);
+                closeBtnGo.pivot = new Vector2(1f, 1f);
+                closeBtnGo.sizeDelta = new Vector2(32f, 32f);
+                closeBtnGo.anchoredPosition = new Vector2(-20f, -20f);
+                var closeImg = closeBtnGo.gameObject.AddComponent<Image>();
+                closeImg.sprite = btnClose;
+                closeImg.type = Image.Type.Sliced;
+                var closeBtn = closeBtnGo.gameObject.AddComponent<Button>();
+                var closeTxt = CreateExplicitText(closeBtnGo, "Close_Icon", "X", fBold, 14f, Hex("#94A3B8"), TextAlignmentOptions.Center);
+                closeTxt.raycastTarget = false;
+
+                // Title / Header Text: "You will purchase tokens" (or "You will purchase {item}\nfor {tokens} tokens")
+                var popupHeaderTmp = CreateExplicitText(modal, "ConfirmPurchase_HeaderText", "You will purchase tokens", fBold, 19f, Color.white, TextAlignmentOptions.Center);
+                var pHeaderRt = popupHeaderTmp.GetComponent<RectTransform>();
+                pHeaderRt.anchorMin = new Vector2(0.5f, 1f);
+                pHeaderRt.anchorMax = new Vector2(0.5f, 1f);
+                pHeaderRt.pivot = new Vector2(0.5f, 1f);
+                pHeaderRt.anchoredPosition = new Vector2(0f, -34f);
+                pHeaderRt.sizeDelta = new Vector2(480f, 56f);
+
+                // Preview Box (170 x 110, Red Outline Border)
                 var previewBox = CreateExplicitRect(modal, "PreviewBox", 0.5f, 0.5f, 0.5f, 0.5f);
                 previewBox.pivot = new Vector2(0.5f, 0.5f);
-                previewBox.anchoredPosition = new Vector2(0f, 36f);
-                previewBox.sizeDelta = new Vector2(160f, 180f);
+                previewBox.anchoredPosition = new Vector2(0f, 14f);
+                previewBox.sizeDelta = new Vector2(170f, 110f);
 
                 var previewBoxImg = previewBox.gameObject.AddComponent<Image>();
-                previewBoxImg.sprite = cardBg;
+                previewBoxImg.sprite = previewBorderRed;
                 previewBoxImg.type = Image.Type.Sliced;
 
                 var previewImgGo = CreateExplicitRect(previewBox, "ConfirmPurchase_ImagePreview", 0.5f, 0.5f, 0.5f, 0.5f);
                 previewImgGo.pivot = new Vector2(0.5f, 0.5f);
-                previewImgGo.sizeDelta = new Vector2(130f, 130f);
+                previewImgGo.sizeDelta = new Vector2(90f, 90f);
                 var previewImg = previewImgGo.gameObject.AddComponent<Image>();
-                previewImg.sprite = tileDefault;
+                previewImg.sprite = coinIcon;
                 previewImg.preserveAspect = true;
 
-                // Description Label
-                var descTmp = CreateExplicitText(modal, "ConfirmPurchase_DescriptionText", "Equip this stylish custom domino tile in all games!", fRegular, 12f, Hex("#8E9CAE"), TextAlignmentOptions.Center);
-                var descRt = descTmp.GetComponent<RectTransform>();
-                descRt.anchorMin = new Vector2(0f, 0.5f);
-                descRt.anchorMax = new Vector2(1f, 0.5f);
-                descRt.pivot = new Vector2(0.5f, 0.5f);
-                descRt.anchoredPosition = new Vector2(0f, -74f);
-                descRt.sizeDelta = new Vector2(-48f, 36f);
+                // Hidden Description & Cost text components to cleanly satisfy ShopUI serialized references
+                var descTmp = CreateExplicitText(modal, "ConfirmPurchase_DescriptionText", "", fRegular, 11f, Hex("#8E9CAE"), TextAlignmentOptions.Center);
+                descTmp.gameObject.SetActive(false);
 
-                // Cost Row: [Coin] [CostText]
-                var costRow = CreateExplicitRect(modal, "CostRow", 0.5f, 0f, 0.5f, 0f);
-                costRow.pivot = new Vector2(0.5f, 0f);
-                costRow.anchoredPosition = new Vector2(0f, 78f);
-                costRow.sizeDelta = new Vector2(120f, 28f);
+                var popupCostTmp = CreateExplicitText(modal, "ConfirmPurchase_CostText", "", fBold, 14f, Hex("#FDC553"), TextAlignmentOptions.Center);
+                popupCostTmp.gameObject.SetActive(false);
 
-                var cCoin = CreateExplicitRect(costRow, "Coin", 0f, 0.5f, 0f, 0.5f);
-                cCoin.pivot = new Vector2(0f, 0.5f);
-                cCoin.anchoredPosition = new Vector2(10f, 0f);
-                cCoin.sizeDelta = new Vector2(22f, 22f);
-                var cCoinImg = cCoin.gameObject.AddComponent<Image>();
-                cCoinImg.sprite = coinIcon;
-                cCoinImg.preserveAspect = true;
-
-                var popupCostTmp = CreateExplicitText(costRow, "ConfirmPurchase_CostText", "100", fBold, 16f, Hex("#FDC553"), TextAlignmentOptions.MidlineLeft);
-                var pcRt = popupCostTmp.GetComponent<RectTransform>();
-                pcRt.anchorMin = new Vector2(0f, 0f);
-                pcRt.anchorMax = new Vector2(1f, 1f);
-                pcRt.offsetMin = new Vector2(40f, 0f);
-                pcRt.offsetMax = Vector2.zero;
-
-                // Action Buttons Row (Cancel / Confirm)
-                var btnCancelGo = CreateExplicitRect(modal, "Cancel_CustomButton", 0f, 0f, 0.5f, 0f);
-                btnCancelGo.pivot = new Vector2(0.5f, 0f);
-                btnCancelGo.anchoredPosition = new Vector2(18f, 20f);
-                btnCancelGo.sizeDelta = new Vector2(-28f, 42f);
-
-                var cancelImg = btnCancelGo.gameObject.AddComponent<Image>();
-                cancelImg.sprite = btnDarkCancel;
-                cancelImg.type = Image.Type.Sliced;
-
-                var cancelTmp = CreateExplicitText(btnCancelGo, "Text", "Cancel", fSemiBold, 14f, Color.white, TextAlignmentOptions.Center);
-                var cancelBtn = btnCancelGo.gameObject.AddComponent<Button>();
-                var cancelCustomBtn = btnCancelGo.gameObject.AddComponent<CustomButtonUI>();
-                var cSo = new SerializedObject(cancelCustomBtn);
-                cSo.FindProperty("isToggleable").boolValue = false;
-                cSo.ApplyModifiedPropertiesWithoutUndo();
-
-                var btnConfirmGo = CreateExplicitRect(modal, "Purchase_CustomButton", 0.5f, 0f, 1f, 0f);
+                // Action Buttons Row:
+                // Left: Golden Purchase Button
+                var btnConfirmGo = CreateExplicitRect(modal, "Purchase_CustomButton", 0.5f, 0f, 0.5f, 0f);
                 btnConfirmGo.pivot = new Vector2(0.5f, 0f);
-                btnConfirmGo.anchoredPosition = new Vector2(-18f, 20f);
-                btnConfirmGo.sizeDelta = new Vector2(-28f, 42f);
+                btnConfirmGo.anchoredPosition = new Vector2(-98f, 26f);
+                btnConfirmGo.sizeDelta = new Vector2(180f, 44f);
 
                 var confirmImg = btnConfirmGo.gameObject.AddComponent<Image>();
                 confirmImg.sprite = btnGoldConfirm;
                 confirmImg.type = Image.Type.Sliced;
 
-                var confirmTmp = CreateExplicitText(btnConfirmGo, "Text", "Confirm", fBold, 14f, Hex("#01010C"), TextAlignmentOptions.Center);
+                var confirmTmp = CreateExplicitText(btnConfirmGo, "Text", "Purchase", fBold, 14.5f, Hex("#050811"), TextAlignmentOptions.Center);
                 var confirmBtn = btnConfirmGo.gameObject.AddComponent<Button>();
                 var confirmCustomBtn = btnConfirmGo.gameObject.AddComponent<CustomButtonUI>();
                 var confSo = new SerializedObject(confirmCustomBtn);
                 confSo.FindProperty("isToggleable").boolValue = false;
+                confSo.FindProperty("isInteractable").boolValue = true;
                 confSo.ApplyModifiedPropertiesWithoutUndo();
+
+                // Right: Dark Cancel Button with Golden Border
+                var btnCancelGo = CreateExplicitRect(modal, "Cancel_CustomButton", 0.5f, 0f, 0.5f, 0f);
+                btnCancelGo.pivot = new Vector2(0.5f, 0f);
+                btnCancelGo.anchoredPosition = new Vector2(98f, 26f);
+                btnCancelGo.sizeDelta = new Vector2(180f, 44f);
+
+                var cancelImg = btnCancelGo.gameObject.AddComponent<Image>();
+                cancelImg.sprite = btnGoldCancel;
+                cancelImg.type = Image.Type.Sliced;
+
+                var cancelTmp = CreateExplicitText(btnCancelGo, "Text", "Cancel", fBold, 14.5f, Hex("#FFA000"), TextAlignmentOptions.Center);
+                var cancelBtn = btnCancelGo.gameObject.AddComponent<Button>();
+                var cancelCustomBtn = btnCancelGo.gameObject.AddComponent<CustomButtonUI>();
+                var cSo = new SerializedObject(cancelCustomBtn);
+                cSo.FindProperty("isToggleable").boolValue = false;
+                cSo.FindProperty("isInteractable").boolValue = true;
+                cSo.ApplyModifiedPropertiesWithoutUndo();
 
                 // -----------------------------------------------------------------
                 // 5. Wire Serialized Properties on ShopUI
@@ -649,6 +752,22 @@ namespace ProDomino.Dashboard.Editor
                 uiSo.FindProperty("confirmPurchasePreviewCostLabel").objectReferenceValue = popupCostTmp;
                 uiSo.FindProperty("confirmPurchaseButton").objectReferenceValue = confirmCustomBtn;
                 uiSo.FindProperty("cancelPurchaseButton").objectReferenceValue = cancelCustomBtn;
+
+                // New serialized properties on ShopUI
+                var closeBtnProp = uiSo.FindProperty("closePopUpButton");
+                if (closeBtnProp != null) closeBtnProp.objectReferenceValue = closeBtn;
+
+                var bdBtnProp = uiSo.FindProperty("backdropCloseButton");
+                if (bdBtnProp != null) bdBtnProp.objectReferenceValue = bdBtn;
+
+                var ptBtnProp = uiSo.FindProperty("purchaseTokensButton");
+                if (ptBtnProp != null) ptBtnProp.objectReferenceValue = cbBtn;
+
+                var confTxtProp = uiSo.FindProperty("confirmPurchaseButtonText");
+                if (confTxtProp != null) confTxtProp.objectReferenceValue = confirmTmp;
+
+                var defTokenProp = uiSo.FindProperty("defaultTokenPreviewSprite");
+                if (defTokenProp != null) defTokenProp.objectReferenceValue = coinIcon;
 
                 uiSo.ApplyModifiedPropertiesWithoutUndo();
 
@@ -899,6 +1018,135 @@ namespace ProDomino.Dashboard.Editor
             tmp.alignment = align;
             tmp.raycastTarget = false;
             return tmp;
+        }
+
+        [MenuItem("ProDomino/Dashboard/Render Shop Popups")]
+        public static void RenderPopups()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var mainCam = GameObject.Find("PD_Main_Camera")?.GetComponent<Camera>();
+            if (!mainCam)
+            {
+                Debug.LogWarning("[ShopRestyler] PD_Main_Camera not found in scene!");
+                return;
+            }
+
+            var shopUI = GameObject.FindFirstObjectByType<ShopUI>(FindObjectsInactive.Include);
+            if (!shopUI)
+            {
+                var canvas = GameObject.Find("Canvas");
+                if (canvas)
+                {
+                    var allShop = canvas.GetComponentsInChildren<ShopUI>(true);
+                    if (allShop.Length > 0) shopUI = allShop[0];
+                }
+            }
+            if (!shopUI)
+            {
+                Debug.LogWarning("[ShopRestyler] ShopUI not found in scene!");
+                return;
+            }
+
+            shopUI.gameObject.SetActive(true);
+
+            // Ensure parent MiddleScreen CanvasGroup is visible
+            Transform parentT = shopUI.transform.parent;
+            while (parentT != null)
+            {
+                parentT.gameObject.SetActive(true);
+                if (parentT.TryGetComponent<CanvasGroup>(out var pCg))
+                {
+                    pCg.alpha = 1f;
+                }
+                parentT = parentT.parent;
+            }
+
+            // Ensure shop root canvas group is visible for capture
+            CanvasGroup shopCg = null;
+            if (shopUI.TryGetComponent<CanvasGroup>(out shopCg))
+            {
+                shopCg.alpha = 1f;
+                shopCg.interactable = true;
+                shopCg.blocksRaycasts = true;
+            }
+
+            var uiSo = new SerializedObject(shopUI);
+            var popupProp = uiSo.FindProperty("confirmPurchasePopUp");
+            var popupCg = popupProp?.objectReferenceValue as CanvasGroup;
+            var headerProp = uiSo.FindProperty("confirmPurchasePreviewHeaderLabel");
+            var headerTmp = headerProp?.objectReferenceValue as TMP_Text;
+            var btnTxtProp = uiSo.FindProperty("confirmPurchaseButtonText");
+            var btnTmp = btnTxtProp?.objectReferenceValue as TMP_Text;
+            var prevImgProp = uiSo.FindProperty("confirmPurchasePreviewImage");
+            var prevImg = prevImgProp?.objectReferenceValue as Image;
+
+            // 1. Render Token Purchase Confirmation Popup ("You will purchase tokens")
+            shopUI.OpenTokenPurchasePopUp();
+            if (popupCg)
+            {
+                popupCg.alpha = 1f;
+                popupCg.interactable = true;
+                popupCg.blocksRaycasts = true;
+                popupCg.gameObject.SetActive(true);
+            }
+            if (headerTmp) headerTmp.text = "You will purchase tokens";
+            if (btnTmp) btnTmp.text = "Purchase";
+            if (prevImg && coinIcon) prevImg.sprite = coinIcon;
+
+            Canvas.ForceUpdateCanvases();
+            RenderCameraToPng(mainCam, "C:/Users/Admin/.gemini/antigravity/brain/ca407b30-6a21-4bdd-a191-1ba20fc87220/screen_shop_popup_tokens.png");
+
+            // 2. Render Board Cosmetic Confirmation Popup matching media_1790158039214.png
+            if (headerTmp) headerTmp.text = "You will purchase Red Board\nfor 35 tokens";
+            if (btnTmp) btnTmp.text = "Purchase 35";
+            var boardSprite = MakeRedBoardPreviewSprite("Shop_Preview_RedBoard", 160, 100);
+            if (prevImg && boardSprite) prevImg.sprite = boardSprite;
+
+            Canvas.ForceUpdateCanvases();
+            RenderCameraToPng(mainCam, "C:/Users/Admin/.gemini/antigravity/brain/ca407b30-6a21-4bdd-a191-1ba20fc87220/screen_shop_popup_board.png");
+
+            // Reset popup and shop panel visibility so scene stays pristine
+            if (popupCg)
+            {
+                popupCg.alpha = 0f;
+                popupCg.interactable = false;
+                popupCg.blocksRaycasts = false;
+                popupCg.gameObject.SetActive(false);
+            }
+            if (shopCg)
+            {
+                shopCg.alpha = 0f;
+                shopCg.interactable = false;
+                shopCg.blocksRaycasts = false;
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[ShopRestyler] Rendered shop popup screenshots successfully!");
+        }
+
+        private static void RenderCameraToPng(Camera cam, string outputPath)
+        {
+            int w = 1920;
+            int h = 1080;
+            var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGB32);
+            var prevRt = cam.targetTexture;
+            cam.targetTexture = rt;
+            cam.Render();
+
+            RenderTexture.active = rt;
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+
+            cam.targetTexture = prevRt;
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+
+            var bytes = tex.EncodeToPNG();
+            UnityEngine.Object.DestroyImmediate(tex);
+            File.WriteAllBytes(outputPath, bytes);
+            Debug.Log($"[ShopRestyler] Rendered screenshot to: {outputPath}");
         }
     }
 }

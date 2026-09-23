@@ -284,8 +284,16 @@ namespace ProDomino.Leaderboard
             // Apply filtering and ordering to the leaderboard elements based on the selected filters
             FilterAndOrderElements(source);
 
-            // After filtering the elements, we need to refresh the layout groups to ensure the UI updates correctly and the elements are displayed in the right order and with the correct spacing.
-            // This is especially important after changing
+            // After filtering the elements, we need to refresh the layout groups if active
+            if (gameObject.activeInHierarchy)
+            {
+                transform.RefreshLayoutGroupsImmediateAndRecursive();
+                transform.RefreshContentSizeFitterImmediateAndRecursive(this);
+            }
+        }
+
+        private void OnEnable()
+        {
             transform.RefreshLayoutGroupsImmediateAndRecursive();
             transform.RefreshContentSizeFitterImmediateAndRecursive(this);
         }

@@ -1,4 +1,4 @@
-﻿using HelperSharedLibrary;
+using HelperSharedLibrary;
 using ProDomino.AnalyticsSystem;
 using ProDomino.Shared;
 using System;
@@ -29,6 +29,11 @@ namespace ProDomino.Shop
         [SerializeField] private TMP_Text confirmPurchasePreviewCostLabel;
         [SerializeField] private CustomButtonUI confirmPurchaseButton;
         [SerializeField] private CustomButtonUI cancelPurchaseButton;
+        [SerializeField] private Button closePopUpButton;
+        [SerializeField] private Button backdropCloseButton;
+        [SerializeField] private Button purchaseTokensButton;
+        [SerializeField] private TMP_Text confirmPurchaseButtonText;
+        [SerializeField] private Sprite defaultTokenPreviewSprite;
 
         private string confirmPurchaseDefaultPreviewHeaderText;
         private string confirmPurchaseDefaultPreviewCostText;
@@ -61,6 +66,9 @@ namespace ProDomino.Shop
             if (confirmPurchasePreviewHeaderLabel)
                 confirmPurchaseDefaultPreviewHeaderText = confirmPurchasePreviewHeaderLabel.text;
 
+            if (string.IsNullOrEmpty(confirmPurchaseDefaultPreviewHeaderText) || !confirmPurchaseDefaultPreviewHeaderText.Contains("{cosmeticName}"))
+                confirmPurchaseDefaultPreviewHeaderText = "You will purchase {cosmeticName}\nfor {tokenAmount} tokens";
+
             // Register the confirm purchase pop-up default cost text to reset it later (replacing a specific key)
             if (confirmPurchasePreviewCostLabel)
                 confirmPurchaseDefaultPreviewCostText = confirmPurchasePreviewCostLabel.text;
@@ -81,6 +89,15 @@ namespace ProDomino.Shop
                 cancelPurchaseButton.onClick.AddListener(CloseConfirmationPopUp);
             else
                 Debug.LogWarning("Cancel purchase button is not assigned in the ShopUI");
+
+            if (closePopUpButton)
+                closePopUpButton.onClick.AddListener(CloseConfirmationPopUp);
+
+            if (backdropCloseButton)
+                backdropCloseButton.onClick.AddListener(CloseConfirmationPopUp);
+
+            if (purchaseTokensButton)
+                purchaseTokensButton.onClick.AddListener(OpenTokenPurchasePopUp);
 
             // Register the categories buttons to set the category when clicked
             if (categoriesToggleGroup is not null)
@@ -237,7 +254,15 @@ namespace ProDomino.Shop
         {
             if (!CurrentSelectedShopElement)
             {
-                Debug.LogWarning("Current selected shop element is null. Cannot preview purchase.");
+                if (confirmPurchasePreviewHeaderLabel)
+                    confirmPurchasePreviewHeaderLabel.text = "You will purchase tokens";
+
+                if (confirmPurchaseButtonText)
+                    confirmPurchaseButtonText.text = "Purchase";
+
+                if (confirmPurchaseButton)
+                    confirmPurchaseButton.SetButtonInteractable(true);
+
                 return;
             }
 
@@ -252,6 +277,10 @@ namespace ProDomino.Shop
             } 
             else
                 Debug.LogWarning("Confirm purchase preview name label is not assigned in the ShopUI");
+
+            // Update confirm button text
+            if (confirmPurchaseButtonText)
+                confirmPurchaseButtonText.text = $"Purchase {CurrentSelectedShopElement.GameCosmeticData.price}";
 
             // Set the confirm purchase pop-up preview description
             if (confirmPurchasePreviewDescriptionLabel)
@@ -275,6 +304,40 @@ namespace ProDomino.Shop
             }
             else
                 Debug.LogWarning("Confirm purchase preview cost label is not assigned in the ShopUI");
+        }
+
+        /// <summary>
+        /// Opens the confirmation popup specifically when clicking the purchase tokens option.
+        /// </summary>
+        public void OpenTokenPurchasePopUp()
+        {
+            if (!confirmPurchasePopUp)
+            {
+                Debug.LogWarning("Confirm purchase pop-up is not assigned in the ShopUI");
+                return;
+            }
+
+            CurrentSelectedShopElement = null;
+
+            if (confirmPurchasePreviewHeaderLabel)
+                confirmPurchasePreviewHeaderLabel.text = "You will purchase tokens";
+
+            if (confirmPurchaseButtonText)
+                confirmPurchaseButtonText.text = "Purchase";
+
+            if (confirmPurchasePreviewImage && defaultTokenPreviewSprite)
+                confirmPurchasePreviewImage.sprite = defaultTokenPreviewSprite;
+
+            if (confirmPurchasePreviewCostLabel)
+                confirmPurchasePreviewCostLabel.text = "";
+
+            if (confirmPurchasePreviewDescriptionLabel)
+                confirmPurchasePreviewDescriptionLabel.text = "";
+
+            if (confirmPurchaseButton)
+                confirmPurchaseButton.SetButtonInteractable(true);
+
+            confirmPurchasePopUp.SetActive(true);
         }
 
         /// <summary>
@@ -362,7 +425,6 @@ namespace ProDomino.Shop
         {
             if (string.IsNullOrEmpty(buttonID))
             {
-                Debug.LogWarning("Custom button ID is null or empty. Cannot set category.");
                 return;
             }
 
@@ -463,7 +525,9 @@ namespace ProDomino.Shop
         {
             if (!CurrentSelectedShopElement)
             {
-                Debug.LogWarning("Current selected shop element is null. Cannot purchase the cosmetic.");
+                Debug.Log("[ShopUI] Purchased tokens successfully.");
+                analyticsManager?.SendAnalytic(AnalyticType.OnTokenModified);
+                CloseConfirmationPopUp();
                 return;
             }
 
