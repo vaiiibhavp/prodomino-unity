@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +7,7 @@ namespace ProDomino.Shared
 {
     public class SettingsController : MonoBehaviour
     {
+        [Header("Root & Legacy References")]
         [SerializeField] private CanvasGroup rootCanvasGroup;
         [SerializeField] private Sprite bgmOn, bgmOff;
         [SerializeField] private Sprite sfxOn, sfxOff;
@@ -14,6 +16,19 @@ namespace ProDomino.Shared
         [SerializeField] private Slider bgmSlider, sfxSlider;
         [SerializeField] private TMP_Text gameVersionLabel;
 
+        [Header("New Figma UI Elements")]
+        [SerializeField] private Slider masterSlider;
+        [SerializeField] private TMP_Text volumePercentLabel;
+        [SerializeField] private Button speakerButton;
+        [SerializeField] private Image speakerIcon;
+        [SerializeField] private Sprite speakerOnSprite;
+        [SerializeField] private Sprite speakerMuteSprite;
+        [SerializeField] private Button learningToPlayButton;
+        [SerializeField] private Button eulaAgreementButton;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Button backgroundCloseButton;
+
+        private const string MasterVolumeKey = "MasterVolume";
         private const string SfxVolumeKey = "SFXVolume";
         private const string BgmVolumeKey = "BGMVolume";
 
@@ -21,44 +36,80 @@ namespace ProDomino.Shared
 
         private void Awake()
         {
-            if (gameVersionLabel)
-                gameVersionLabel.text = $"Version {Application.version}";
-            else
-                Debug.LogWarning($"Missing reference: {nameof(gameVersionLabel)}");
+            UpdateVersionLabel();
 
+            // Setup new Master Slider & controls
+            if (masterSlider)
+            {
+                masterSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            }
+
+            if (speakerButton)
+            {
+                speakerButton.onClick.AddListener(ToggleMasterMute);
+            }
+
+            if (learningToPlayButton)
+            {
+                learningToPlayButton.onClick.AddListener(OnLearningToPlayClicked);
+            }
+
+            if (eulaAgreementButton)
+            {
+                eulaAgreementButton.onClick.AddListener(OnEulaAgreementClicked);
+            }
+
+            if (closeButton)
+            {
+                closeButton.onClick.AddListener(Hide);
+            }
+
+            if (backgroundCloseButton)
+            {
+                backgroundCloseButton.onClick.AddListener(Hide);
+            }
+
+            // Legacy slider listeners
             if (sfxSlider)
                 sfxSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
-            else
-                Debug.LogWarning($"Missing reference: {nameof(sfxSlider)}");
 
             if (bgmSlider)
                 bgmSlider.onValueChanged.AddListener(OnBGMVolumeChanged);
-            else
-                Debug.LogWarning($"Missing reference: {nameof(bgmSlider)}");
 
             if (sfxButton)
                 sfxButton.onClick.AddListener(() => ToggleMuteStatus(true));
-            else
-                Debug.LogWarning($"Missing reference: {nameof(sfxButton)}");
 
             if (bgmButton)
                 bgmButton.onClick.AddListener(() => ToggleMuteStatus(false));
-            else
-                Debug.LogWarning($"Missing reference: {nameof(bgmButton)}");
 
             LoadValues();
+        }
+
+        private void UpdateVersionLabel()
+        {
+            if (gameVersionLabel)
+            {
+                string v = Application.version;
+                if (string.IsNullOrEmpty(v))
+                    v = "0.7015";
+                gameVersionLabel.text = $"VERSION {v.ToUpper()}";
+            }
         }
 
         /// <summary>
         /// Loads the saved volume values from PlayerPrefs
         /// </summary>
-        internal void LoadValues()
+        public void LoadValues()
         {
-            var registeredSfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, .75f);
-            var registeredBgmVolume = PlayerPrefs.GetFloat(BgmVolumeKey, .5f);
+            var registeredMaster = PlayerPrefs.GetFloat(MasterVolumeKey, 0.3f);
+            var registeredSfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, registeredMaster);
+            var registeredBgmVolume = PlayerPrefs.GetFloat(BgmVolumeKey, registeredMaster);
 
-            var isSameSFX = registeredSfxVolume == sfxSlider?.normalizedValue;
-            var isSameBGM = registeredBgmVolume == bgmSlider?.normalizedValue;
+            if (masterSlider)
+            {
+                masterSlider.normalizedValue = registeredMaster;
+                UpdateMasterDisplay(registeredMaster);
+            }
 
             if (sfxSlider)
                 sfxSlider.normalizedValue = registeredSfxVolume;
@@ -66,26 +117,24 @@ namespace ProDomino.Shared
             if (bgmSlider)
                 bgmSlider.normalizedValue = registeredBgmVolume;
 
-            // If the values are the same, manually invoke the events to ensure the sfx volumen updates accordingly
-            if (sfxSlider && isSameSFX)
-                sfxSlider.onValueChanged?.Invoke(registeredSfxVolume);
-
-            // If the values are the same, manually invoke the events to ensure the bgm volumen updates accordingly
-            if (bgmSlider && isSameBGM)
-                bgmSlider.onValueChanged?.Invoke(registeredBgmVolume);
+            ApplySoundManagerVolumes(registeredMaster);
+            CheckMuteIcons();
         }
 
         /// <summary>
         /// Saves the current volume values to PlayerPrefs
         /// </summary>
-        internal void SaveValues()
+        public void SaveValues()
         {
+            if (masterSlider)
+                PlayerPrefs.SetFloat(MasterVolumeKey, masterSlider.normalizedValue);
+
             if (sfxSlider)
                 PlayerPrefs.SetFloat(SfxVolumeKey, sfxSlider.normalizedValue);
 
             if (bgmSlider)
                 PlayerPrefs.SetFloat(BgmVolumeKey, bgmSlider.normalizedValue);
-            
+
             PlayerPrefs.Save();
         }
 
@@ -95,12 +144,13 @@ namespace ProDomino.Shared
         internal void Show()
         {
             if (!rootCanvasGroup)
-            { 
+            {
                 Debug.LogWarning($"Missing reference: {nameof(rootCanvasGroup)}");
                 return;
             }
 
             LoadValues();
+            UpdateVersionLabel();
             rootCanvasGroup.SetActive(true);
         }
 
@@ -117,6 +167,96 @@ namespace ProDomino.Shared
 
             SaveValues();
             rootCanvasGroup.SetActive(false);
+        }
+
+        private void OnMasterVolumeChanged(float value)
+        {
+            UpdateMasterDisplay(value);
+            ApplySoundManagerVolumes(value);
+
+            if (sfxSlider && !Mathf.Approximately(sfxSlider.normalizedValue, value))
+                sfxSlider.normalizedValue = value;
+
+            if (bgmSlider && !Mathf.Approximately(bgmSlider.normalizedValue, value))
+                bgmSlider.normalizedValue = value;
+
+            CheckMuteIcons();
+        }
+
+        private void UpdateMasterDisplay(float value)
+        {
+            if (volumePercentLabel)
+            {
+                int percent = Mathf.RoundToInt(value * 100f);
+                volumePercentLabel.text = $"{percent}%";
+            }
+
+            if (speakerIcon && speakerOnSprite && speakerMuteSprite)
+            {
+                speakerIcon.sprite = value <= 0.001f ? speakerMuteSprite : speakerOnSprite;
+            }
+        }
+
+        private void ApplySoundManagerVolumes(float value)
+        {
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.SetSFXVolume(value);
+                SoundManager.Instance.SetMusicVolume(value);
+            }
+        }
+
+        private void ToggleMasterMute()
+        {
+            if (!masterSlider) return;
+
+            if (masterSlider.normalizedValue <= 0.001f)
+            {
+                float prev = PlayerPrefs.GetFloat(MasterVolumeKey, 0.3f);
+                if (prev <= 0.001f) prev = 0.3f;
+                masterSlider.normalizedValue = prev;
+            }
+            else
+            {
+                PlayerPrefs.SetFloat(MasterVolumeKey, masterSlider.normalizedValue);
+                masterSlider.normalizedValue = 0f;
+            }
+
+            CheckMuteIcons();
+        }
+
+        private void OnLearningToPlayClicked()
+        {
+            TriggerNavigation(NavigationPanelType.Learn);
+        }
+
+        private void OnEulaAgreementClicked()
+        {
+            TriggerNavigation(NavigationPanelType.HelpScreen);
+        }
+
+        private void TriggerNavigation(NavigationPanelType panelType)
+        {
+            Hide();
+            try
+            {
+                foreach (var mb in UnityEngine.Object.FindObjectsByType<MonoBehaviour>())
+                {
+                    if (mb != null && mb.GetType().Name == "NavigationPanelController")
+                    {
+                        var method = mb.GetType().GetMethod("ExternalActivateNavigationPanel", new[] { typeof(NavigationPanelType) });
+                        if (method != null)
+                        {
+                            method.Invoke(mb, new object[] { panelType });
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SettingsController] Error navigating to {panelType}: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -142,48 +282,38 @@ namespace ProDomino.Shared
             CheckMuteIcons();
         }
 
-
         /// <summary>
         /// Checks and updates the mute icons based on the slider values
         /// </summary>
         private void CheckMuteIcons()
         {
+            if (masterSlider)
+            {
+                UpdateMasterDisplay(masterSlider.normalizedValue);
+            }
+
             if (sfxImage && sfxSlider && sfxOn && sfxOff)
                 UpdateIcon(sfxImage, sfxOn, sfxOff, sfxSlider.normalizedValue);
-            else
-                Debug.LogWarning($"Missing sprite or image reference for {sfxImage?.name ?? "unknown"}");
 
             if (bgmImage && bgmSlider && bgmOn && bgmOff)
                 UpdateIcon(bgmImage, bgmOn, bgmOff, bgmSlider.normalizedValue);
-            else
-                Debug.LogWarning($"Missing sprite or image reference for {bgmImage?.name ?? "unknown"}");
 
             void UpdateIcon(Image image, Sprite on, Sprite off, float value)
             {
                 if (image && on && off)
                     image.sprite = value <= 0 ? off : on;
-                else
-                    Debug.LogWarning($"Missing sprite or image reference for {image?.name ?? "unknown"}");
             }
         }
 
-        /// <summary>
-        /// Called when the SFX volume slider value changes
-        /// </summary>
         private void OnSFXVolumeChanged(float normalizedValue)
         {
             SoundManager.Instance.SetSFXVolume(normalizedValue);
-
             CheckMuteIcons();
         }
 
-        /// <summary>
-        /// Called when the BGM volume slider value changes
-        /// </summary>
         private void OnBGMVolumeChanged(float normalizedValue)
         {
             SoundManager.Instance.SetMusicVolume(normalizedValue);
-
             CheckMuteIcons();
         }
     }
