@@ -796,9 +796,12 @@ namespace ProDomino.GameModes
 
             // Override the board image if the board skin searched from the GameManager is available
             if (boardImage)
+            {
                 boardImage.sprite = gameManager?.Board ?? defaultBoardImage;
+                boardImage.color = Color.white;
+            }
             else
-                Debug.LogWarning("BoardImage is not assigned in the inspector.");
+                Debug.LogWarning("BoardImage is not assigned in the inspector." + transform.gameObject.name );
 
             // Override the tile sprites if the tiles skin searched from the GameManager is available
             var tiles = gameManager?.Tiles;
