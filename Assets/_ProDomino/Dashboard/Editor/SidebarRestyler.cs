@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
@@ -240,6 +241,54 @@ namespace ProDomino.Dashboard.Editor
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
+        // Games and Dashboard both route to NavigationPanelType.Play (Games forwards to it from
+        // QuickMatchController.SetActiveNavigationPanel), reusing GameModeConfig's existing
+        // match-start wiring instead of duplicating a second selector. This wires each button's
+        // own onClick (not the panel-activation lifecycle, which would race -- see
+        // QuickMatchController) to toggle DashboardController's lobby-banner-suppression flag, so
+        // Games shows GameModeConfig's raw mode/type/players/difficulty selector while Dashboard
+        // keeps showing its lobby banner on top of it. Idempotent: skips if already wired.
+        private static void WireLobbyOverlaySuppression(Transform gamesBtn, Transform layout)
+        {
+            var dashboardType = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType("ProDomino.Dashboard.DashboardController")).FirstOrDefault(t => t != null);
+            if (dashboardType == null) { Debug.LogWarning("SIDEBAR: DashboardController type not found; skipping lobby-overlay suppression wiring."); return; }
+
+            // Search within this same loaded prefab's hierarchy (layout.root), not the active
+            // scene -- this runs against prefab contents via LoadPrefabContents, which is its own
+            // temporary object graph.
+            var dashboardController = layout.root.GetComponentInChildren(dashboardType, true) as MonoBehaviour;
+            if (dashboardController == null)
+            {
+                // Not present in every prefab this method runs against (e.g. isolated preview
+                // prefabs) -- only ProDomino_MainCanvas has one, which is fine, just skip there.
+                return;
+            }
+
+            var suppressMethod = dashboardType.GetMethod("SetLobbyOverlaySuppressed");
+            if (suppressMethod == null) { Debug.LogWarning("SIDEBAR: DashboardController.SetLobbyOverlaySuppressed not found."); return; }
+
+            var playBtn = FindDeep(layout, "NavegationPanel_Play_Button");
+
+            WireBoolClick(gamesBtn, dashboardController, suppressMethod, true);
+            WireBoolClick(playBtn, dashboardController, suppressMethod, false);
+        }
+
+        private static void WireBoolClick(Transform button, MonoBehaviour target, MethodInfo method, bool value)
+        {
+            if (button == null) return;
+            var cb = button.GetComponent<CustomButtonUI>();
+            if (cb == null) return;
+
+            var action = (UnityEngine.Events.UnityAction<bool>)Delegate.CreateDelegate(typeof(UnityEngine.Events.UnityAction<bool>), target, method);
+
+            for (int i = cb.onClick.GetPersistentEventCount() - 1; i >= 0; i--)
+                if (cb.onClick.GetPersistentTarget(i) == target && cb.onClick.GetPersistentMethodName(i) == method.Name)
+                    UnityEventTools.RemovePersistentListener(cb.onClick, i);
+
+            UnityEventTools.AddBoolPersistentListener(cb.onClick, action, value);
+        }
+
         internal static TextMeshProUGUI StyleLabel(Transform textT, TMP_FontAsset font, float size, Color color, float left)
         {
             var rt = (RectTransform)textT;
@@ -396,6 +445,7 @@ namespace ProDomino.Dashboard.Editor
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
             }
+            WireLobbyOverlaySuppression(gamesBtn, layout);
 
             // Ensure Friends List button exists
             var friendsBtn = FindDeep(layout, "NavegationPanel_FriendsList_Button");

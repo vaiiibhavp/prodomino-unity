@@ -51,6 +51,7 @@ namespace ProDomino.Dashboard
         private PromptFadeController promptFadeController;
 
         private bool isVisible = true;
+        private bool suppressLobbyOverlay;
         private float? launchRequestedAt;
         private float? searchStartedAt;
         private bool isCancelling;
@@ -83,7 +84,7 @@ namespace ProDomino.Dashboard
             // While searching the selection UI is dimmed to 0.5, which still counts as lobby.
             bool playPanelOpen = gameModeConfig.RootCanvasGroup && gameModeConfig.RootCanvasGroup.alpha > 0.5f;
             bool gameOnScreen = gameModeConfig.IsInMatch || (lobbySelectionCanvasGroup && lobbySelectionCanvasGroup.alpha < 0.25f);
-            SetVisible(playPanelOpen && !gameOnScreen);
+            SetVisible(playPanelOpen && !gameOnScreen && !suppressLobbyOverlay);
 
             // GameModeConfig re-enables its lobby background whenever it returns to the menu.
             if (legacyLobbyBackground && legacyLobbyBackground.enabled)
@@ -249,6 +250,15 @@ namespace ProDomino.Dashboard
             dashboardCanvasGroup.interactable = visible;
             dashboardCanvasGroup.blocksRaycasts = visible;
         }
+
+        /// <summary>
+        /// Wired to the sidebar's Games/Dashboard buttons (both route to NavigationPanelType.Play,
+        /// reusing GameModeConfig's existing match-start wiring rather than duplicating it). When
+        /// suppressed, the lobby banner stays out of the way so GameModeConfig's raw mode/type/
+        /// players/difficulty selector shows through underneath -- the "Games" entry point.
+        /// Cleared again when the dashboard's own tab is opened.
+        /// </summary>
+        public void SetLobbyOverlaySuppressed(bool suppress) => suppressLobbyOverlay = suppress;
 
         // ------------------------------------------------------------------ helpers
 

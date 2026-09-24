@@ -80,6 +80,16 @@ namespace ProDomino.QuickMatchSystem
             UpdateUI();
 
             RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+
+            // The Games sidebar entry forwards into the Play panel so it reuses
+            // GameModeConfig's existing mode/type/players/difficulty selector and match-start
+            // wiring instead of duplicating it here. The dashboard lobby banner that normally
+            // covers that selector is suppressed via a direct button-click hook (see
+            // SidebarRestyler.RestyleNavList), not from this activation callback -- wiring it here
+            // would race against NavigationPanelController's own deactivate-all-then-activate-one
+            // pass, which calls this same method with isActive=false a moment later.
+            if (isActive)
+                navigationPanelController?.ExternalActivateNavigationPanel(NavigationPanelType.Play);
         }
 
         /// <summary>
