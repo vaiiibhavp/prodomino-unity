@@ -386,7 +386,12 @@ namespace ProDomino.Dashboard.Editor
                 if (cb != null)
                 {
                     var so = new SerializedObject(cb);
-                    so.FindProperty("toggleID").stringValue = "Games";
+                    // Must match NavigationPanelType.QuickMatch.ToString(), not the "Games" label --
+                    // NavigationPanelController resolves buttons by looking up this ID against the
+                    // enum name (CustomButtonToggleGroupUI.GetButtonUI(NavigationPanelType.X.ToString())),
+                    // so a mismatched ID here makes the button un-clickable at the navigation layer
+                    // silently (toggles visually, panel never switches).
+                    so.FindProperty("toggleID").stringValue = "QuickMatch";
                     so.FindProperty("isToggleable").boolValue = true;
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
