@@ -110,7 +110,7 @@ namespace ProDomino.NavigationSystem
             // Set the default active navigation panel
             if (NavigationPanelType is NavigationPanelType.None)
             {
-                var defaultPanelType = NavigationPanelType.QuickMatch.ToString();
+                var defaultPanelType = NavigationPanelType.Play.ToString();
                 var customButtonUI = customButtonToggleGroupUI.GetButtonUI(defaultPanelType)
                     ?? externalNavigationButtons?.FirstOrDefault(x => x.CustomButtonID == defaultPanelType) 
                     ?? customButtonToggleGroupUI.GetFirstButtonUI();

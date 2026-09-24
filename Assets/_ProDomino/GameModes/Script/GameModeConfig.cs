@@ -92,6 +92,16 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     public bool IsLocaPlayerHost => checkIfLocalPlayerIsHost?.Invoke() ?? false;
     public bool IsPartyRelay => checkIfIsPartyRelay?.Invoke() ?? false;
 
+    private bool selectionUIHiddenForMatch;
+    /// <summary>
+    /// True once <see cref="SetSelectionUIVisibility"/>(false) has hidden the selector for an
+    /// actual match transition (set by MenuControllerGameMode/MatchManager), as opposed to
+    /// <see cref="SetSelectionUIForceHidden"/>, which only hides it because the dashboard lobby is
+    /// drawn over it. Dashboard's own visibility check needs this distinction -- reading the
+    /// selector's raw alpha there instead would create a feedback loop with ForceHidden.
+    /// </summary>
+    public bool IsSelectionUIHiddenForMatch => selectionUIHiddenForMatch;
+
     private void Awake()
     {
         authManager = ServiceLocator.Instance.GetService<AuthManager>();
@@ -277,7 +287,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 4. Update Game Type buttons ---
         SetGameTypeInteractable(GameType.casual, !isConcentrateMode);
-        SetGameTypeInteractable(GameType.competitive, canShowMultiplayer);
+        SetGameTypeInteractable(GameType.competitive, false); // hidden in the raw selector; started from Dashboard's own Competitive card instead
         SetGameTypeInteractable(GameType.singlePlayerIA, true); // always reset; may change later for party conditions
 
         // --- 5. Update VS Player buttons ---
@@ -635,6 +645,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     /// <param name="isVisible">True to show the selection UI; false to hide it.</param>
     public void SetSelectionUIVisibility(bool isVisible)
     {
+        selectionUIHiddenForMatch = !isVisible;
         selectionUICanvasGroup.SetActive(isVisible);
         if (isVisible)
             selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
@@ -648,6 +659,31 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     public void SetSelectionUIInteractivity(bool isInteractable)
     {
         selectionUICanvasGroup.SetActive(isInteractable, isSettingAlpha: false, optionalForcedAlpha: isInteractable ? 1 : .5f);
+    }
+
+    /// <summary>
+    /// Forces the selector fully hidden because the dashboard lobby is drawn over it right now.
+    /// Meant to be called every frame while covered (cheap CanvasGroup writes) -- nothing else
+    /// legitimately wants the selector visible in that state, so there's nothing for this to fight.
+    /// </summary>
+    public void SetSelectionUIForceHidden()
+    {
+        selectionUICanvasGroup.alpha = 0f;
+        selectionUICanvasGroup.interactable = false;
+        selectionUICanvasGroup.blocksRaycasts = false;
+    }
+
+    /// <summary>
+    /// Restores the selector to its own normal visibility once the dashboard stops covering it
+    /// (Games tab opened, or a match starting) and rebuilds its layout -- switching it back on
+    /// without a refresh leaves stale positions from being force-hidden (missing/overlapping rows).
+    /// Meant to be called once, on that transition; GameModeConfig's own interactivity/visibility
+    /// calls own the selector's state afterward (e.g. the mid-search dim).
+    /// </summary>
+    public void SetSelectionUIRestoreAfterCover()
+    {
+        selectionUICanvasGroup.SetActive(true, isSettingAlpha: false, optionalForcedAlpha: IsMatchMaking ? 0.5f : 1f);
+        selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
     }
 
     /// <summary>

@@ -21,9 +21,6 @@ namespace ProDomino.Dashboard
         [Header("Visibility")]
         [SerializeField] private CanvasGroup dashboardCanvasGroup;
         [SerializeField] private GameModeConfig gameModeConfig;
-        [Tooltip("Lobby selection UI of the Play panel (GameModeConfig.selectionUICanvasGroup). The match flow hides it " +
-                 "when a match starts and shows it again on return to the menu, so the dashboard follows it.")]
-        [SerializeField] private CanvasGroup lobbySelectionCanvasGroup;
         [Tooltip("Old lobby background of the Play panel, replaced by the dashboard.")]
         [SerializeField] private Image legacyLobbyBackground;
 
@@ -81,10 +78,24 @@ namespace ProDomino.Dashboard
 
             // Lobby = Play panel open and its selection UI not hidden by a running match. (The game
             // view itself stays "visible" in the lobby, it is just empty, so it can't be used here.)
-            // While searching the selection UI is dimmed to 0.5, which still counts as lobby.
+            // While searching the selection UI is only dimmed to 0.5 by GameModeConfig, which still
+            // counts as lobby -- IsSelectionUIHiddenForMatch only flips once the selector is fully
+            // hidden for an actual match transition (deliberately NOT the selector's raw alpha,
+            // which SetSelectionUIForceHidden below also drives -- reading that here would loop).
             bool playPanelOpen = gameModeConfig.RootCanvasGroup && gameModeConfig.RootCanvasGroup.alpha > 0.5f;
-            bool gameOnScreen = gameModeConfig.IsInMatch || (lobbySelectionCanvasGroup && lobbySelectionCanvasGroup.alpha < 0.25f);
-            SetVisible(playPanelOpen && !gameOnScreen && !suppressLobbyOverlay);
+            bool gameOnScreen = gameModeConfig.IsInMatch || gameModeConfig.IsSelectionUIHiddenForMatch;
+            bool dashboardVisible = playPanelOpen && !gameOnScreen && !suppressLobbyOverlay;
+            SetVisible(dashboardVisible);
+
+            // The dashboard's cards/banner are drawn over GameModeConfig's raw selector but don't
+            // fully cover the screen region (gaps in the card grid), so the selector -- opaque by
+            // default, or only dimmed to 0.5 mid-search -- bleeds through underneath. Force it
+            // fully hidden every frame while covered; that's cheap and can't fight anything, since
+            // nothing else wants the selector visible while the dashboard covers it. The reveal
+            // path runs once, on the transition, in SetVisible -- doing it here every frame would
+            // fight GameModeConfig's own dim while a search started from the Games tab is running.
+            if (dashboardVisible)
+                gameModeConfig.SetSelectionUIForceHidden();
 
             // GameModeConfig re-enables its lobby background whenever it returns to the menu.
             if (legacyLobbyBackground && legacyLobbyBackground.enabled)
@@ -249,6 +260,11 @@ namespace ProDomino.Dashboard
             dashboardCanvasGroup.alpha = visible ? 1f : 0f;
             dashboardCanvasGroup.interactable = visible;
             dashboardCanvasGroup.blocksRaycasts = visible;
+
+            // Dashboard stopped covering the selector (Games tab opened, or a match starting) --
+            // restore it once here; see SetSelectionUIForceHidden/RestoreAfterCover in LateUpdate.
+            if (!visible && gameModeConfig)
+                gameModeConfig.SetSelectionUIRestoreAfterCover();
         }
 
         /// <summary>

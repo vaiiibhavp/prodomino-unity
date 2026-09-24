@@ -76,7 +76,11 @@ namespace ProDomino.QuickMatchSystem
 
         void INavigationPanel.SetActiveNavigationPanel(bool isActive)
         {
-            RootCanvasGroup?.SetActive(isActive);
+            // Stays hidden regardless of isActive: the Games sidebar entry forwards into
+            // GameModeConfig's own selector below instead of showing this panel's own
+            // AI/Casual/Competitive quick-match cards (QuickMatch_Scalable), which duplicate it
+            // and were rendering on top of it.
+            RootCanvasGroup?.SetActive(false);
             UpdateUI();
 
             RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
@@ -88,8 +92,14 @@ namespace ProDomino.QuickMatchSystem
             // SidebarRestyler.RestyleNavList), not from this activation callback -- wiring it here
             // would race against NavigationPanelController's own deactivate-all-then-activate-one
             // pass, which calls this same method with isActive=false a moment later.
+            //
+            // GameModeConfig's canvas group is re-enabled directly (not via
+            // NavigationPanelController.ExternalActivateNavigationPanel), because that call selects
+            // the Play/Dashboard sidebar button, which re-runs the whole toggle-group selection
+            // cascade and ends up deselecting the Games button that was just clicked -- the sidebar
+            // highlight would jump back to Dashboard and the Games panel would immediately close.
             if (isActive)
-                navigationPanelController?.ExternalActivateNavigationPanel(NavigationPanelType.Play);
+                ((INavigationPanel)gameModeConfig)?.SetActiveNavigationPanel(true);
         }
 
         /// <summary>
