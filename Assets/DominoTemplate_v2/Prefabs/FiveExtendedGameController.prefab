@@ -2466,6 +2466,7 @@ GameObject:
   - component: {fileID: 2509868922772865563}
   - component: {fileID: 8080842542342203472}
   - component: {fileID: 2629955434169280636}
+  - component: {fileID: 5390903150727782689}
   m_Layer: 0
   m_Name: FiveExtendedGameController
   m_TagString: Untagged
@@ -2695,6 +2696,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_AspectMode: 3
   m_AspectRatio: 1.6680223
+--- !u!223 &5390903150727782689
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7503514830072853003}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 1
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 4
+  m_TargetDisplay: 0
 --- !u!1 &7503514830425941855
 GameObject:
   m_ObjectHideFlags: 0
@@ -7520,6 +7545,10 @@ PrefabInstance:
     - target: {fileID: 4351715359665239633, guid: 4c6d2dcda55cd2542978dfb123c0038d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4597471421172787534, guid: 4c6d2dcda55cd2542978dfb123c0038d, type: 3}
+      propertyPath: m_SortingOrder
+      value: -17
       objectReference: {fileID: 0}
     - target: {fileID: 4910494455608666953, guid: 4c6d2dcda55cd2542978dfb123c0038d, type: 3}
       propertyPath: m_Sprite
