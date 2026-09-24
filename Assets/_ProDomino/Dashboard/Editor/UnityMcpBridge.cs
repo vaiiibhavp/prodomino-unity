@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace ProDomino.Dashboard.Editor
 {
@@ -285,12 +287,97 @@ namespace ProDomino.Dashboard.Editor
                         });
                         break;
 
+                    case "/click":
+                        jsonResponse = await RunOnMainThread(() =>
+                        {
+                            string targetName = ExtractJsonString(body, "target");
+                            if (string.IsNullOrEmpty(targetName))
+                                return "{\"success\":false,\"error\":\"Missing target\"}";
+
+                            var go = GameObject.Find(targetName);
+                            if (go == null)
+                            {
+                                var all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                                go = all.FirstOrDefault(g => g.name == targetName);
+                            }
+                            if (go == null)
+                                return $"{{\"success\":false,\"error\":\"GameObject '{EscapeJson(targetName)}' not found\"}}";
+
+                            var cb = go.GetComponent("CustomButtonUI");
+                            if (cb != null)
+                            {
+                                var hc = cb.GetType().GetMethod("HandleClick", BindingFlags.Instance | BindingFlags.Public);
+                                if (hc != null)
+                                {
+                                    hc.Invoke(cb, null);
+                                    return $"{{\"success\":true,\"clicked\":\"CustomButtonUI.HandleClick\",\"target\":\"{EscapeJson(go.name)}\"}}";
+                                }
+                                var sel = cb.GetType().GetMethod("Select", new[] { typeof(bool) });
+                                sel?.Invoke(cb, new object[] { true });
+                                return $"{{\"success\":true,\"clicked\":\"CustomButtonUI.Select\",\"target\":\"{EscapeJson(go.name)}\"}}";
+                            }
+
+                            var btn = go.GetComponent<Button>();
+                            if (btn != null)
+                            {
+                                btn.onClick.Invoke();
+                                return $"{{\"success\":true,\"clicked\":\"Button\",\"target\":\"{EscapeJson(go.name)}\"}}";
+                            }
+
+                            return $"{{\"success\":false,\"error\":\"No Button or CustomButtonUI on '{EscapeJson(go.name)}'\"}}";
+                        });
+                        break;
+
+                    case "/debug-modal":
+                        jsonResponse = await RunOnMainThread(() =>
+                        {
+                            var gmc = UnityEngine.Object.FindAnyObjectByType<MonoBehaviour>(FindObjectsInactive.Include);
+                            var allMb = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                            var gameModeConfig = allMb.FirstOrDefault(m => m.GetType().Name == "GameModeConfig");
+                            if (gameModeConfig == null)
+                                return "{\"error\":\"GameModeConfig not found\"}";
+
+                            var openMethod = gameModeConfig.GetType().GetMethod("OpenGameModal", BindingFlags.Public | BindingFlags.Instance);
+                            openMethod?.Invoke(gameModeConfig, new object[] { "block" });
+
+                            var playBtnProp = gameModeConfig.GetType().GetField("playGameModeButton", BindingFlags.NonPublic | BindingFlags.Instance);
+                            var playBtn = playBtnProp?.GetValue(gameModeConfig) as Component;
+
+                            string playInfo = "null";
+                            if (playBtn != null)
+                            {
+                                var cb = playBtn.GetComponent("CustomButtonUI");
+                                var btn = playBtn.GetComponent<Button>();
+                                var cg = playBtn.GetComponent<CanvasGroup>();
+                                bool cbInter = cb != null && (bool)cb.GetType().GetProperty("IsInteractable").GetValue(cb);
+                                bool btnInter = btn != null && btn.interactable;
+                                float cgAlpha = cg != null ? cg.alpha : -1f;
+                                bool cgBlocks = cg != null && cg.blocksRaycasts;
+                                playInfo = $"{{\"name\":\"{playBtn.gameObject.name}\",\"activeSelf\":{playBtn.gameObject.activeSelf},\"activeInHierarchy\":{playBtn.gameObject.activeInHierarchy},\"cbInteractable\":{cbInter.ToString().ToLower()},\"btnInteractable\":{btnInter.ToString().ToLower()},\"cgAlpha\":{cgAlpha},\"cgBlocksRaycasts\":{cgBlocks.ToString().ToLower()}}}";
+                            }
+
+                            var modalRootProp = gameModeConfig.GetType().GetField("gamesModalRoot", BindingFlags.NonPublic | BindingFlags.Instance);
+                            var modalRoot = modalRootProp?.GetValue(gameModeConfig) as GameObject;
+                            bool modalActive = modalRoot != null && modalRoot.activeInHierarchy;
+
+                            return $"{{\"success\":true,\"modalActive\":{modalActive.ToString().ToLower()},\"playButton\":{playInfo}}}";
+                        });
+                        break;
+
                     case "/play-mode":
                         jsonResponse = await RunOnMainThread(() =>
                         {
                             string action = ExtractJsonString(body, "action").ToLowerInvariant();
-                            if (action == "play") EditorApplication.isPlaying = true;
-                            else if (action == "stop") EditorApplication.isPlaying = false;
+                            if (action == "play")
+                            {
+                                EditorApplication.isPlaying = true;
+                                try { EditorApplication.EnterPlaymode(); } catch { }
+                            }
+                            else if (action == "stop")
+                            {
+                                EditorApplication.isPlaying = false;
+                                try { EditorApplication.ExitPlaymode(); } catch { }
+                            }
                             else if (action == "pause") EditorApplication.isPaused = !EditorApplication.isPaused;
 
                             return $"{{\"success\":true,\"isPlaying\":{(EditorApplication.isPlaying ? "true" : "false")},\"isPaused\":{(EditorApplication.isPaused ? "true" : "false")}}}";

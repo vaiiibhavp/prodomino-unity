@@ -16,8 +16,23 @@ namespace ProDomino.Dashboard
     /// open and no match is on screen, and its cards start matches through <see cref="GameModeConfig"/>
     /// exactly like the old game-mode screen and QuickMatch panel did.
     /// </summary>
-    public class DashboardController : MonoBehaviour
+    public class DashboardController : MonoBehaviour, INavigationPanel
     {
+        public NavigationPanelType NavigationPanelType => NavigationPanelType.Dashboard;
+        public CanvasGroup RootCanvasGroup => dashboardCanvasGroup;
+        public bool RequiresAuthentication => false;
+
+        public void SetActiveNavigationPanel(bool isActive)
+        {
+            isVisible = isActive;
+            gameObject.SetActive(isActive);
+            SetVisible(isActive);
+            if (isActive && gameModeConfig && !gameModeConfig.IsInMatch && !gameModeConfig.IsMatchMaking)
+            {
+                gameModeConfig.gameObject.SetActive(false);
+            }
+        }
+
         [Header("Visibility")]
         [SerializeField] private CanvasGroup dashboardCanvasGroup;
         [SerializeField] private GameModeConfig gameModeConfig;
@@ -76,28 +91,36 @@ namespace ProDomino.Dashboard
             if (!gameModeConfig)
                 return;
 
-            // Lobby = Play panel open and its selection UI not hidden by a running match. (The game
-            // view itself stays "visible" in the lobby, it is just empty, so it can't be used here.)
-            // While searching the selection UI is only dimmed to 0.5 by GameModeConfig, which still
-            // counts as lobby -- IsSelectionUIHiddenForMatch only flips once the selector is fully
-            // hidden for an actual match transition (deliberately NOT the selector's raw alpha,
-            // which SetSelectionUIForceHidden below also drives -- reading that here would loop).
-            bool playPanelOpen = gameModeConfig.RootCanvasGroup && gameModeConfig.RootCanvasGroup.alpha > 0.5f;
             bool gameOnScreen = gameModeConfig.IsInMatch || gameModeConfig.IsSelectionUIHiddenForMatch;
-            bool dashboardVisible = playPanelOpen && !gameOnScreen && !suppressLobbyOverlay;
-            SetVisible(dashboardVisible);
 
-            // The dashboard's cards/banner are drawn over GameModeConfig's raw selector but don't
-            // fully cover the screen region (gaps in the card grid), so the selector -- opaque by
-            // default, or only dimmed to 0.5 mid-search -- bleeds through underneath. Force it
-            // fully hidden every frame while covered; that's cheap and can't fight anything, since
-            // nothing else wants the selector visible while the dashboard covers it. The reveal
-            // path runs once, on the transition, in SetVisible -- doing it here every frame would
-            // fight GameModeConfig's own dim while a search started from the Games tab is running.
-            if (dashboardVisible)
-                gameModeConfig.SetSelectionUIForceHidden();
+            if (isVisible)
+            {
+                if (gameOnScreen)
+                {
+                    if (dashboardCanvasGroup && dashboardCanvasGroup.alpha > 0f)
+                    {
+                        dashboardCanvasGroup.alpha = 0f;
+                        dashboardCanvasGroup.interactable = false;
+                        dashboardCanvasGroup.blocksRaycasts = false;
+                    }
+                }
+                else
+                {
+                    if (dashboardCanvasGroup && dashboardCanvasGroup.alpha < 1f)
+                    {
+                        dashboardCanvasGroup.alpha = 1f;
+                        dashboardCanvasGroup.interactable = true;
+                        dashboardCanvasGroup.blocksRaycasts = true;
+                    }
 
-            // GameModeConfig re-enables its lobby background whenever it returns to the menu.
+                    // Keep GameModeSelectUI_NavPanel hidden in hierarchy while on the Dashboard tab
+                    if (!gameModeConfig.IsMatchMaking && !launchRequestedAt.HasValue && gameModeConfig.gameObject.activeSelf)
+                    {
+                        gameModeConfig.gameObject.SetActive(false);
+                    }
+                }
+            }
+
             if (legacyLobbyBackground && legacyLobbyBackground.enabled)
                 legacyLobbyBackground.enabled = false;
 
@@ -177,6 +200,13 @@ namespace ProDomino.Dashboard
 
         private void Launch(GameMode mode, GameType type, NumberPlayers players, DifficultyLevel? difficulty, ConcentrateNumberOfTiles? tiles, string details)
         {
+            if (gameModeConfig)
+            {
+                gameModeConfig.gameObject.SetActive(true);
+                if (gameModeConfig.RootCanvasGroup)
+                    gameModeConfig.RootCanvasGroup.alpha = 1f;
+            }
+
             gameModeConfig.SetExternalGameData(mode, type, players, difficulty, tiles);
             gameModeConfig.RunGameMode();
 
@@ -201,6 +231,11 @@ namespace ProDomino.Dashboard
             else
             {
                 launchRequestedAt = null;
+            }
+
+            if (isVisible && gameModeConfig.gameObject.activeSelf)
+            {
+                gameModeConfig.gameObject.SetActive(false);
             }
         }
 

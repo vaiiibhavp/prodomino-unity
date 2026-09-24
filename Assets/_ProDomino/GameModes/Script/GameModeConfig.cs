@@ -49,6 +49,13 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
     [SerializeField] private Transform numberOfTilesPanelUI;
 
+    [Header("Games Grid Modal")]
+    [Tooltip("Dim background + centered panel wrapping the selector, shown when a Games grid card is opened.")]
+    [SerializeField] private GameObject gamesModalRoot;
+    [SerializeField] private TMPro.TMP_Text gamesModalTitle;
+    [Tooltip("The Games tab's card grid. Covered/restored alongside the raw selector -- see SetSelectionUIForceHidden.")]
+    [SerializeField] private CanvasGroup gamesGridCanvasGroup;
+
     [SerializeField] private GameModeDataEvent runCreateOrJoinMatchSessionEvent;
     [SerializeField] private GameModeDataEvent runSingleVsIAEvent;
 
@@ -107,6 +114,39 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         authManager = ServiceLocator.Instance.GetService<AuthManager>();
         adManager = ServiceLocator.Instance.GetService<AdManager>();
         promptFadeController = ServiceLocator.Instance.GetService<PromptFadeController>();
+
+        // Ensure any stray duplicate GamesGrid_Root or GamesModal_Root are removed, and references assigned
+        int gridFound = 0;
+        int modalFound = 0;
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child.name == "GamesGrid_Root")
+            {
+                gridFound++;
+                if (gridFound > 1)
+                {
+                    Destroy(child.gameObject);
+                    continue;
+                }
+                if (!gamesGridCanvasGroup)
+                    gamesGridCanvasGroup = child.GetComponent<CanvasGroup>();
+            }
+            else if (child.name == "GamesModal_Root")
+            {
+                modalFound++;
+                if (modalFound > 1)
+                {
+                    Destroy(child.gameObject);
+                    continue;
+                }
+                if (!gamesModalRoot)
+                    gamesModalRoot = child.gameObject;
+            }
+        }
+
+        if (playGameModeButton)
+            playGameModeButton.SetIsInteractableByDefault(true);
     }
 
     private async void Start()
@@ -121,18 +161,18 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         if (playNavigationButton)
             playNavigationDefaultText = playNavigationButton.GetMainText();
 
+        playGameModeButton.SetIsInteractableByDefault(true);
         // By default, disable play button
         playGameModeButton.SetButtonInteractable(false);
 
         // Subscribe run main method
         playGameModeButton.onClick.AddListener(RunGameMode);
+        playGameModeButton.onClick.AddListener(CloseGameModal);
 
-        // Wait until the AuthManager is initialized
-        await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true });
-
+        // Register all UI selector callbacks immediately so buttons respond to user clicks from frame 1
         gameModeSelector.SetOnCustomButtonSelectedCallback((id) =>
         {
-            if (!Enum.TryParse(id, out _gameModeSelectedID))
+            if (!Enum.TryParse(id, true, out _gameModeSelectedID))
                 _gameModeSelectedID = GameMode.none;
             
             ValidateGameModeFullData();
@@ -140,7 +180,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         gameTypeSelector.SetOnCustomButtonSelectedCallback((id) =>
         {
-            if (!Enum.TryParse(id, out _gameTypeSelectedID))
+            if (!Enum.TryParse(id, true, out _gameTypeSelectedID))
                 _gameTypeSelectedID = GameType.none;
 
             ValidateGameModeFullData();
@@ -148,7 +188,9 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         vsPlayerSelector.SetOnCustomButtonSelectedCallback((id) =>
         {
-            if (!Enum.TryParse(id, out _vsPlayerSelectedID))
+            if (string.Equals(id, "oneVsTree", StringComparison.OrdinalIgnoreCase))
+                _vsPlayerSelectedID = NumberPlayers.oneVsThree;
+            else if (!Enum.TryParse(id, true, out _vsPlayerSelectedID))
                 _vsPlayerSelectedID = NumberPlayers.none;
 
             ValidateGameModeFullData();
@@ -156,7 +198,9 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         difficultySelector.SetOnCustomButtonSelectedCallback((id) =>
         {
-            if (!Enum.TryParse(id, out _difficultySelector))
+            if (string.Equals(id, "Normal", StringComparison.OrdinalIgnoreCase))
+                _difficultySelector = DifficultyLevel.Medium;
+            else if (!Enum.TryParse(id, true, out _difficultySelector))
                 _difficultySelector = DifficultyLevel.None;
 
             ValidateGameModeFullData();
@@ -164,15 +208,32 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         numberOfTilesSelector.SetOnCustomButtonSelectedCallback((id) =>
         {
-            if (!Enum.TryParse(id, out _numberOfTilesSelector))
+            if (!Enum.TryParse(id, true, out _numberOfTilesSelector))
                 _numberOfTilesSelector = ConcentrateNumberOfTiles.none;
 
             ValidateGameModeFullData();
         });
+
+        // Wait until the AuthManager is initialized
+        await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true });
     }
 
     private void Update()
     {
+        if (IsInMatch || IsInOnlineMatch || selectionUIHiddenForMatch)
+        {
+            if (gamesGridCanvasGroup && gamesGridCanvasGroup.alpha > 0f)
+            {
+                gamesGridCanvasGroup.alpha = 0f;
+                gamesGridCanvasGroup.interactable = false;
+                gamesGridCanvasGroup.blocksRaycasts = false;
+            }
+            if (gamesModalRoot && gamesModalRoot.activeSelf)
+            {
+                gamesModalRoot.SetActive(false);
+            }
+        }
+
         if (playNavigationButton)
         {
             // Check if we are in matchmaking or in a match
@@ -206,26 +267,17 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     /// <param name="isActive">True to activate the navigation panel; false to deactivate it.</param>
     void INavigationPanel.SetActiveNavigationPanel(bool isActive)
     {
+        gameObject.SetActive(isActive);
         RootCanvasGroup?.SetActive(isActive);
-        RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
-
-        ValidateGameModeFullData();
-        // TODO: Uncomment if you want to avoid interactions when not logged in
-        //var isLogged = authManager != null && authManager.IsUGSAuthenticated && authManager.IsUserAuthenticatedWithProvider;
-
-        //// Block the canvas group from being interactable until selections are made
-        //playGameModeButton?.SetButtonInteractable(isLogged);
-        //RootCanvasGroup?.SetActive(isLogged);
-
-        //// Don't hide completely if not logged in, just reduce the alpha
-        //if (!isLogged)
-        //    RootCanvasGroup.alpha = .4f;
-
-        // If there is a part session reference, disable some options
-
-        // Show an interstitial ad when opening the menu each X minutes
         if (isActive)
+        {
+            SetSelectionUIRestoreAfterCover();
+            RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+            ValidateGameModeFullData();
+
+            // Show an interstitial ad when opening the menu each X minutes
             adManager?.ShowInterstitialAd(isConsideringIntervals: true);
+        }
     }
 
     /// <summary>
@@ -269,7 +321,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
                                     );
 
         
-        playGameModeButton.SetButtonInteractable(isPlayButtonValid);
+        playGameModeButton.SetButtonInteractable(isPlayButtonValid, ignoreDefault: true);
 
         // The tooltip container is optional (the Play button has none assigned); without this check
         // the exception aborts NavigationPanelController.SetActiveNavigationPanel and no panel opens.
@@ -281,7 +333,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             return;
 
         // --- 3. Calculate base conditions ---
-        bool isAuthenticated = (authManager.IsUserAuthenticatedWithCredentials && authManager.IsEmailVerified) || authManager.IsUserAuthenticatedWithProvider;
+        bool isAuthenticated = authManager != null && ((authManager.IsUserAuthenticatedWithCredentials && authManager.IsEmailVerified) || authManager.IsUserAuthenticatedWithProvider);
         bool isConcentrateMode = GameModeSelectedID == GameMode.concentrate;
         bool canShowMultiplayer = isAuthenticated && !isConcentrateMode;
 
@@ -292,7 +344,9 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 5. Update VS Player buttons ---
         SetVsPlayerInteractable(NumberPlayers.solo, isConcentrateMode);
-        SetVsPlayerInteractable(NumberPlayers.oneVsOne, true);
+        SetVsPlayerInteractable(NumberPlayers.oneVsOne, !isConcentrateMode);
+        SetVsPlayerInteractable(NumberPlayers.oneVsThree, !isConcentrateMode);
+        SetVsPlayerInteractable(NumberPlayers.twoVsTwo, !isConcentrateMode);
 
         // --- 6. Update Difficulty panel and buttons ---
         SetDifficultyUI(!isConcentrateMode && GameTypeSelectedID == GameType.singlePlayerIA);
@@ -302,6 +356,10 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 8. Deselect invalid selections ---
         if (vsPlayerSelector.CheckIfSelected(NumberPlayers.solo.ToString()) && !isConcentrateMode)
+            vsPlayerSelector.DeselectAll(true);
+        else if (isConcentrateMode && (vsPlayerSelector.CheckIfSelected(NumberPlayers.oneVsOne.ToString()) ||
+                                       vsPlayerSelector.CheckIfSelected("oneVsTree") ||
+                                       vsPlayerSelector.CheckIfSelected(NumberPlayers.twoVsTwo.ToString())))
             vsPlayerSelector.DeselectAll(true);
 
         if ((gameTypeSelector.CheckIfSelected(GameType.casual.ToString()) && isConcentrateMode) ||
@@ -396,8 +454,16 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             return;
         }
 
-        if (GameModeSelectedID == GameMode.none || GameTypeSelectedID == GameType.none || VSPlayerSelectedID == NumberPlayers.none
-            && ((GameModeSelectedID != GameMode.concentrate && DifficultySelector != DifficultyLevel.None) || (GameModeSelectedID == GameMode.concentrate && NumberOfTilesSelector != ConcentrateNumberOfTiles.none)))
+        bool isValidOption = GameModeSelectedID != GameMode.none 
+                             && GameTypeSelectedID != GameType.none 
+                             && VSPlayerSelectedID != NumberPlayers.none 
+                             && (
+                                    (GameModeSelectedID != GameMode.concentrate && DifficultySelector != DifficultyLevel.None) 
+                                    || (GameModeSelectedID == GameMode.concentrate && NumberOfTilesSelector != ConcentrateNumberOfTiles.none)
+                                    || GameTypeSelectedID != GameType.singlePlayerIA
+                                );
+
+        if (!isValidOption)
         {
             Debug.LogWarning("Please select valid options before running the game mode.");
             return;
@@ -416,6 +482,14 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         {
             // Disabled the forced block after starting the match when playing vs IA
             isForcingBlockPlayButtonInteraction = false;
+
+            CloseGameModal();
+            if (gamesGridCanvasGroup)
+            {
+                gamesGridCanvasGroup.alpha = 0f;
+                gamesGridCanvasGroup.interactable = false;
+                gamesGridCanvasGroup.blocksRaycasts = false;
+            }
 
             // Directly start the match vs IA
             TryToStartMatch();
@@ -649,6 +723,16 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         selectionUICanvasGroup.SetActive(isVisible);
         if (isVisible)
             selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+
+        if (gamesGridCanvasGroup)
+        {
+            gamesGridCanvasGroup.alpha = isVisible ? 1f : 0f;
+            gamesGridCanvasGroup.interactable = isVisible;
+            gamesGridCanvasGroup.blocksRaycasts = isVisible;
+        }
+
+        if (!isVisible)
+            CloseGameModal();
     }
     
     /// <summary>
@@ -662,28 +746,135 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     }
 
     /// <summary>
-    /// Forces the selector fully hidden because the dashboard lobby is drawn over it right now.
-    /// Meant to be called every frame while covered (cheap CanvasGroup writes) -- nothing else
-    /// legitimately wants the selector visible in that state, so there's nothing for this to fight.
+    /// Forces the selector AND the Games grid fully hidden because the dashboard lobby is drawn
+    /// over this whole panel right now. Meant to be called every frame while covered (cheap
+    /// CanvasGroup writes) -- nothing else legitimately wants either visible in that state, so
+    /// there's nothing for this to fight.
     /// </summary>
     public void SetSelectionUIForceHidden()
     {
         selectionUICanvasGroup.alpha = 0f;
         selectionUICanvasGroup.interactable = false;
         selectionUICanvasGroup.blocksRaycasts = false;
+
+        if (gamesGridCanvasGroup)
+        {
+            gamesGridCanvasGroup.alpha = 0f;
+            gamesGridCanvasGroup.interactable = false;
+            gamesGridCanvasGroup.blocksRaycasts = false;
+        }
     }
 
     /// <summary>
-    /// Restores the selector to its own normal visibility once the dashboard stops covering it
-    /// (Games tab opened, or a match starting) and rebuilds its layout -- switching it back on
-    /// without a refresh leaves stale positions from being force-hidden (missing/overlapping rows).
-    /// Meant to be called once, on that transition; GameModeConfig's own interactivity/visibility
-    /// calls own the selector's state afterward (e.g. the mid-search dim).
+    /// Restores the selector and the Games grid to their own normal visibility once the dashboard
+    /// stops covering this panel (Games tab opened, or a match starting), and rebuilds the
+    /// selector's layout -- switching it back on without a refresh leaves stale positions from
+    /// being force-hidden (missing/overlapping rows). Meant to be called once, on that transition;
+    /// GameModeConfig's own interactivity/visibility calls own the selector's state afterward
+    /// (e.g. the mid-search dim). The grid has no such follow-up state, so a plain SetActive covers it.
     /// </summary>
     public void SetSelectionUIRestoreAfterCover()
     {
         selectionUICanvasGroup.SetActive(true, isSettingAlpha: false, optionalForcedAlpha: IsMatchMaking ? 0.5f : 1f);
         selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+
+        if (gamesGridCanvasGroup && !IsInMatch && !IsInOnlineMatch && !selectionUIHiddenForMatch)
+        {
+            gamesGridCanvasGroup.alpha = 1f;
+            gamesGridCanvasGroup.interactable = true;
+            gamesGridCanvasGroup.blocksRaycasts = true;
+        }
+    }
+
+    /// <summary>
+    /// Opens the Games grid's mode-select popup for one specific game (a card's "Play" button),
+    /// pre-selecting that mode on <see cref="gameModeSelector"/> so the popup's type/players/
+    /// difficulty fields resolve against it exactly like picking it from the old inline row did.
+    /// </summary>
+    /// <param name="gameModeName">A <see cref="GameMode"/> member name (matches CustomButtonUI's
+    /// string-based toggle IDs, so this can be wired directly from a persistent UnityEvent call).</param>
+    public void OpenGameModal(string gameModeName)
+    {
+        isForcingBlockPlayButtonInteraction = false;
+
+        if (Enum.TryParse<GameMode>(gameModeName, true, out var mode) && mode != GameMode.none)
+        {
+            _gameModeSelectedID = mode;
+            gameModeSelector?.GetButtonUI(mode.ToString())?.Select();
+        }
+        else
+        {
+            Debug.LogWarning($"[{nameof(GameModeConfig)}] OpenGameModal: '{gameModeName}' is not a valid {nameof(GameMode)}.");
+        }
+
+        if (gamesModalTitle && !string.IsNullOrEmpty(gameModeName))
+            gamesModalTitle.text = $"{char.ToUpperInvariant(gameModeName[0])}{gameModeName[1..]} Game";
+
+        bool isConcentrate = _gameModeSelectedID == GameMode.concentrate;
+
+        // Auto-select defaults so user can immediately click Play
+        if (isConcentrate || GameTypeSelectedID == GameType.none)
+            _gameTypeSelectedID = GameType.singlePlayerIA;
+
+        var typeBtn = gameTypeSelector?.GetButtonUI(_gameTypeSelectedID.ToString()) ?? gameTypeSelector?.GetFirstButtonUI();
+        typeBtn?.Select();
+
+        if (isConcentrate)
+        {
+            _vsPlayerSelectedID = NumberPlayers.solo;
+            var vsSoloBtn = vsPlayerSelector?.GetButtonUI(NumberPlayers.solo.ToString()) ?? vsPlayerSelector?.GetFirstButtonUI();
+            vsSoloBtn?.Select();
+
+            if (NumberOfTilesSelector == ConcentrateNumberOfTiles.none)
+                _numberOfTilesSelector = ConcentrateNumberOfTiles.tiles_28;
+
+            var tilesBtn = numberOfTilesSelector?.GetButtonUI(_numberOfTilesSelector.ToString()) ?? numberOfTilesSelector?.GetFirstButtonUI();
+            tilesBtn?.Select();
+        }
+        else
+        {
+            if (VSPlayerSelectedID == NumberPlayers.none || VSPlayerSelectedID == NumberPlayers.solo)
+                _vsPlayerSelectedID = NumberPlayers.oneVsOne;
+
+            var vsBtn = vsPlayerSelector?.GetButtonUI(_vsPlayerSelectedID.ToString()) ?? vsPlayerSelector?.GetFirstButtonUI();
+            vsBtn?.Select();
+
+            if (DifficultySelector == DifficultyLevel.None)
+                _difficultySelector = DifficultyLevel.Easy;
+
+            var diffId = _difficultySelector == DifficultyLevel.Medium ? "Normal" : _difficultySelector.ToString();
+            var diffBtn = difficultySelector?.GetButtonUI(diffId) ?? difficultySelector?.GetFirstButtonUI();
+            diffBtn?.Select();
+        }
+
+        ValidateGameModeFullData();
+
+        // Ensure play button is fully interactable and ready to click
+        if (playGameModeButton)
+        {
+            playGameModeButton.SetButtonInteractable(true);
+            if (playGameModeButton.Button != null)
+                playGameModeButton.Button.interactable = true;
+            if (playGameModeButton.GetComponent<CanvasGroup>() is CanvasGroup cg)
+            {
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+                cg.alpha = 1f;
+            }
+        }
+
+        if (gamesModalRoot)
+            gamesModalRoot.SetActive(true);
+    }
+
+    /// <summary>
+    /// Closes the Games grid popup opened by <see cref="OpenGameModal"/>. Wired to the popup's
+    /// close button, the dim background, and the Play Now button (so starting a match dismisses it).
+    /// </summary>
+    public void CloseGameModal()
+    {
+        if (gamesModalRoot)
+            gamesModalRoot.SetActive(false);
     }
 
     /// <summary>
@@ -697,6 +888,16 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             gameViewCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
 
         SetUIBackgroundVisibility(!isVisible);
+
+        if (gamesGridCanvasGroup)
+        {
+            gamesGridCanvasGroup.alpha = isVisible ? 0f : 1f;
+            gamesGridCanvasGroup.interactable = !isVisible;
+            gamesGridCanvasGroup.blocksRaycasts = !isVisible;
+        }
+
+        if (isVisible)
+            CloseGameModal();
     }
 
     /// <summary>
@@ -750,7 +951,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             return;
         }
 
-        playGameModeButton.SetButtonInteractable(interactivity);
+        playGameModeButton.SetButtonInteractable(interactivity, ignoreDefault: true);
     }
 
     /// <summary>

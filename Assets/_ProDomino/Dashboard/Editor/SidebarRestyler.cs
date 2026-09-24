@@ -100,6 +100,80 @@ namespace ProDomino.Dashboard.Editor
             {
                 if (FindDeep(root.transform, "Matchmaking_Overlay")?.GetComponent<CanvasGroup>() is CanvasGroup cg) cg.alpha = 1f;
             });
+            RenderCanvas(Path.Combine(outDir, "games.png"), 1920, 1080, true, root =>
+            {
+                var dash = FindDeep(root.transform, "Dashboard_Content");
+                if (dash) dash.gameObject.SetActive(false);
+                var gm = FindDeep(root.transform, "GameModeSelectUI_NavPanel");
+                if (gm)
+                {
+                    gm.gameObject.SetActive(true);
+                    var cg = gm.GetComponent<CanvasGroup>();
+                    if (cg)
+                    {
+                        cg.alpha = 1f;
+                        cg.interactable = true;
+                        cg.blocksRaycasts = true;
+                    }
+                }
+            });
+            RenderCanvas(Path.Combine(outDir, "modal.png"), 1920, 1080, true, root =>
+            {
+                var dash = FindDeep(root.transform, "Dashboard_Content");
+                if (dash) dash.gameObject.SetActive(false);
+                var gm = FindDeep(root.transform, "GameModeSelectUI_NavPanel");
+                if (gm)
+                {
+                    gm.gameObject.SetActive(true);
+                    var cg = gm.GetComponent<CanvasGroup>();
+                    if (cg)
+                    {
+                        cg.alpha = 1f;
+                        cg.interactable = true;
+                        cg.blocksRaycasts = true;
+                    }
+                    var gmc = gm.GetComponent("GameModeConfig");
+                    if (gmc != null)
+                    {
+                        var open = gmc.GetType().GetMethod("OpenGameModal", BindingFlags.Public | BindingFlags.Instance);
+                        open?.Invoke(gmc, new object[] { "block" });
+                    }
+                    else
+                    {
+                        var modal = gm.Find("GamesModal_Root");
+                        if (modal) modal.gameObject.SetActive(true);
+                    }
+                }
+            });
+
+            RenderCanvas(Path.Combine(outDir, "modal_concentrate.png"), 1920, 1080, true, root =>
+            {
+                var dash = FindDeep(root.transform, "Dashboard_Content");
+                if (dash) dash.gameObject.SetActive(false);
+                var gm = FindDeep(root.transform, "GameModeSelectUI_NavPanel");
+                if (gm)
+                {
+                    gm.gameObject.SetActive(true);
+                    var cg = gm.GetComponent<CanvasGroup>();
+                    if (cg)
+                    {
+                        cg.alpha = 1f;
+                        cg.interactable = true;
+                        cg.blocksRaycasts = true;
+                    }
+                    var gmc = gm.GetComponent("GameModeConfig");
+                    if (gmc != null)
+                    {
+                        var open = gmc.GetType().GetMethod("OpenGameModal", BindingFlags.Public | BindingFlags.Instance);
+                        open?.Invoke(gmc, new object[] { "concentrate" });
+                    }
+                    else
+                    {
+                        var modal = gm.Find("GamesModal_Root");
+                        if (modal) modal.gameObject.SetActive(true);
+                    }
+                }
+            });
             Debug.Log("RENDER_DONE");
         }
 
@@ -247,46 +321,25 @@ namespace ProDomino.Dashboard.Editor
         // own onClick (not the panel-activation lifecycle, which would race -- see
         // QuickMatchController) to toggle DashboardController's lobby-banner-suppression flag, so
         // Games shows GameModeConfig's raw mode/type/players/difficulty selector while Dashboard
-        // keeps showing its lobby banner on top of it. Idempotent: skips if already wired.
+        // Idempotent: clears any legacy SetLobbyOverlaySuppressed persistent listeners.
         private static void WireLobbyOverlaySuppression(Transform gamesBtn, Transform layout)
         {
-            var dashboardType = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetType("ProDomino.Dashboard.DashboardController")).FirstOrDefault(t => t != null);
-            if (dashboardType == null) { Debug.LogWarning("SIDEBAR: DashboardController type not found; skipping lobby-overlay suppression wiring."); return; }
-
-            // Search within this same loaded prefab's hierarchy (layout.root), not the active
-            // scene -- this runs against prefab contents via LoadPrefabContents, which is its own
-            // temporary object graph.
-            var dashboardController = layout.root.GetComponentInChildren(dashboardType, true) as MonoBehaviour;
-            if (dashboardController == null)
-            {
-                // Not present in every prefab this method runs against (e.g. isolated preview
-                // prefabs) -- only ProDomino_MainCanvas has one, which is fine, just skip there.
-                return;
-            }
-
-            var suppressMethod = dashboardType.GetMethod("SetLobbyOverlaySuppressed");
-            if (suppressMethod == null) { Debug.LogWarning("SIDEBAR: DashboardController.SetLobbyOverlaySuppressed not found."); return; }
-
             var playBtn = FindDeep(layout, "NavegationPanel_Play_Button");
-
-            WireBoolClick(gamesBtn, dashboardController, suppressMethod, true);
-            WireBoolClick(playBtn, dashboardController, suppressMethod, false);
+            RemoveLobbySuppression(gamesBtn);
+            RemoveLobbySuppression(playBtn);
         }
 
-        private static void WireBoolClick(Transform button, MonoBehaviour target, MethodInfo method, bool value)
+        private static void RemoveLobbySuppression(Transform button)
         {
             if (button == null) return;
             var cb = button.GetComponent<CustomButtonUI>();
             if (cb == null) return;
 
-            var action = (UnityEngine.Events.UnityAction<bool>)Delegate.CreateDelegate(typeof(UnityEngine.Events.UnityAction<bool>), target, method);
-
             for (int i = cb.onClick.GetPersistentEventCount() - 1; i >= 0; i--)
-                if (cb.onClick.GetPersistentTarget(i) == target && cb.onClick.GetPersistentMethodName(i) == method.Name)
+            {
+                if (cb.onClick.GetPersistentMethodName(i) == "SetLobbyOverlaySuppressed")
                     UnityEventTools.RemovePersistentListener(cb.onClick, i);
-
-            UnityEventTools.AddBoolPersistentListener(cb.onClick, action, value);
+            }
         }
 
         internal static TextMeshProUGUI StyleLabel(Transform textT, TMP_FontAsset font, float size, Color color, float left)
@@ -435,12 +488,21 @@ namespace ProDomino.Dashboard.Editor
                 if (cb != null)
                 {
                     var so = new SerializedObject(cb);
-                    // Must match NavigationPanelType.QuickMatch.ToString(), not the "Games" label --
-                    // NavigationPanelController resolves buttons by looking up this ID against the
-                    // enum name (CustomButtonToggleGroupUI.GetButtonUI(NavigationPanelType.X.ToString())),
-                    // so a mismatched ID here makes the button un-clickable at the navigation layer
-                    // silently (toggles visually, panel never switches).
-                    so.FindProperty("toggleID").stringValue = "QuickMatch";
+                    so.FindProperty("toggleID").stringValue = "Play";
+                    so.FindProperty("isToggleable").boolValue = true;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            // Ensure Dashboard (Play button) has Dashboard ID
+            var dashBtn = FindDeep(layout, "NavegationPanel_Play_Button");
+            if (dashBtn != null)
+            {
+                var cb = dashBtn.GetComponent<CustomButtonUI>();
+                if (cb != null)
+                {
+                    var so = new SerializedObject(cb);
+                    so.FindProperty("toggleID").stringValue = "Dashboard";
                     so.FindProperty("isToggleable").boolValue = true;
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
@@ -884,9 +946,9 @@ namespace ProDomino.Dashboard.Editor
                 catch (Exception e) { Debug.LogWarning($"RENDER: Awake failed on {b.name}: {e.InnerException?.Message}"); }
             }
             foreach (var b in root.GetComponentsInChildren(type, true))
-                if ((string)idProp.GetValue(b) == "Play") preview.Invoke(b, new object[] { true });
+                if ((string)idProp.GetValue(b) == "Dashboard") preview.Invoke(b, new object[] { true });
 
-            // Navigation opens the Play panel (dashboard) and hides every other panel.
+            // Navigation opens the Dashboard panel and hides every other panel.
             foreach (var mb in root.GetComponentsInChildren<MonoBehaviour>(true))
             {
                 if (mb == null) continue;
@@ -894,7 +956,9 @@ namespace ProDomino.Dashboard.Editor
                 if (panelType == null) continue;
                 var kind = panelType.GetProperty("NavigationPanelType")?.GetValue(mb)?.ToString();
                 if (panelType.GetProperty("RootCanvasGroup")?.GetValue(mb) is CanvasGroup cg && cg)
-                    cg.alpha = kind == "Play" ? 1f : 0f;
+                    cg.alpha = kind == "Dashboard" ? 1f : 0f;
+                if (kind == "Play")
+                    mb.gameObject.SetActive(false);
             }
 
             // Run the dashboard's own show/hide rule once, as it would on the first frame.

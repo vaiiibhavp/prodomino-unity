@@ -312,10 +312,16 @@ public class CustomButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         }
     }
 
-    public void SetButtonInteractable(bool interactable, float auxAlpha = 0.5f)
+    public void SetIsInteractableByDefault(bool value)
     {
-        // If the button is not interactable by default, do nothing.
-        if (!IsInteractableByDefault)
+        IsInteractableByDefault = value;
+    }
+
+    public void SetButtonInteractable(bool interactable, float auxAlpha = 0.5f, bool ignoreDefault = false)
+    {
+        if (ignoreDefault)
+            IsInteractableByDefault = interactable;
+        else if (!IsInteractableByDefault)
             interactable = false;
 
         isInteractable = interactable;
@@ -327,8 +333,17 @@ public class CustomButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         if (canvasGroup != null)
         {
             canvasGroup.interactable = isInteractable;
+            canvasGroup.blocksRaycasts = isInteractable;
             canvasGroup.alpha = isInteractable ? 1f : auxAlpha;
         }
+    }
+
+    public void SetColors(Color selected, Color deselected, Color hover)
+    {
+        selectedColor = selected;
+        deselectedColor = deselected;
+        hoverColor = hover;
+        UpdateVisuals(IsSelected ? selectedColor : deselectedColor);
     }
 
     public void SetButtonActive(bool isActive)

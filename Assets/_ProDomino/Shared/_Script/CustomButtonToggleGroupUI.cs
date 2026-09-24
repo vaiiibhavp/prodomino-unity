@@ -143,7 +143,16 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
     /// </summary>
     public CustomButtonUI GetButtonUI(string buttonID)
     {
-        var button = buttons.FirstOrDefault(b => b.CustomButtonID == buttonID);
+        if (buttons.Count == 0)
+            Configure();
+
+        var button = buttons.FirstOrDefault(b => string.Equals(b.CustomButtonID, buttonID, StringComparison.OrdinalIgnoreCase));
+        if (button == null && string.Equals(buttonID, "oneVsThree", StringComparison.OrdinalIgnoreCase))
+            button = buttons.FirstOrDefault(b => string.Equals(b.CustomButtonID, "oneVsTree", StringComparison.OrdinalIgnoreCase));
+        if (button == null && string.Equals(buttonID, "Medium", StringComparison.OrdinalIgnoreCase))
+            button = buttons.FirstOrDefault(b => string.Equals(b.CustomButtonID, "Normal", StringComparison.OrdinalIgnoreCase));
+        if (button == null && string.Equals(buttonID, "Normal", StringComparison.OrdinalIgnoreCase))
+            button = buttons.FirstOrDefault(b => string.Equals(b.CustomButtonID, "Medium", StringComparison.OrdinalIgnoreCase));
         if (button == null)
             Debug.LogWarning($"Button with ID '{buttonID}' not found.");
 
@@ -155,6 +164,9 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
     /// </summary>
     public CustomButtonUI GetFirstButtonUI()
     {
+        if (buttons.Count == 0)
+            Configure();
+
         var button = buttons.FirstOrDefault();
         if (button == null)
             Debug.LogWarning("First button not found.");
