@@ -216,7 +216,16 @@ namespace ProDomino.GameSystem
             if (gameDataResponse is null or { Length: 0 })
             {
                 areBundlesLoadadedSuccessfully = false;
-                throw new Exception("Failed to deserialize Protected Game data response.");
+                // DeserializeAndDecryptData can return null for four different reasons (Unity
+                // Services not initialized, player not signed in, a decrypt/JSON exception, or -
+                // most commonly here - the Cloud Code call itself came back empty), and it already
+                // logs which one via Debug.LogWarning/LogError. Naming the case here too means the
+                // thrown exception alone tells you where to look instead of always reading the same
+                // generic message regardless of cause.
+                string reason = string.IsNullOrEmpty(dataResponseEncrypted)
+                    ? "the Cloud Code call to LoadProtectedGameData returned an empty response (network issue, or the backend/cloud-code function itself failed)"
+                    : "decrypting/parsing the response failed - see the '[DeserializeAndDecryptData]' warning or error logged just above this for the exact reason (not signed in, Unity Services not initialized, or a decrypt exception)";
+                throw new Exception($"Failed to deserialize Protected Game data response: {reason}.");
             }
 
             // Get the game backend config data
