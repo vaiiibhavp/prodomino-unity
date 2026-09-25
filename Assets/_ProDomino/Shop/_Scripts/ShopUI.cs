@@ -337,6 +337,7 @@ namespace ProDomino.Shop
             if (confirmPurchaseButton)
                 confirmPurchaseButton.SetButtonInteractable(true);
 
+            confirmPurchasePopUp.gameObject.SetActive(true);
             confirmPurchasePopUp.SetActive(true);
         }
 
@@ -355,6 +356,7 @@ namespace ProDomino.Shop
             // Register the current selected shop element
             CurrentSelectedShopElement = element;
 
+            confirmPurchasePopUp.gameObject.SetActive(true);
             confirmPurchasePopUp.SetActive(true);
             PreviewPurchase();
         }
@@ -373,6 +375,7 @@ namespace ProDomino.Shop
             // Remove the current selected shop element
             CurrentSelectedShopElement = null;
             confirmPurchasePopUp.SetActive(false);
+            confirmPurchasePopUp.gameObject.SetActive(false);
         }
 
         /// <summary>
