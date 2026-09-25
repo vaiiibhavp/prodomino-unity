@@ -359,6 +359,14 @@ namespace ProDomino.Shop
             confirmPurchasePopUp.gameObject.SetActive(true);
             confirmPurchasePopUp.SetActive(true);
             PreviewPurchase();
+
+            if (confirmPurchaseButton && element)
+            {
+                var canPurchase = element.GameCosmeticData is not null
+                    && !element.IsAlreadyPurchased
+                    && element.GameCosmeticData.price <= PlayerTokenCurrencyAmount;
+                confirmPurchaseButton.SetButtonInteractable(canPurchase);
+            }
         }
 
         /// <summary>
