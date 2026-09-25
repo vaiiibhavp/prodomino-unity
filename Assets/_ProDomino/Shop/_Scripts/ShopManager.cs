@@ -196,8 +196,16 @@ namespace ProDomino.Shop
             var currenciesCollection = gameManager.PlayerCurrencyCollection;
             if (currenciesCollection is not null && currenciesCollection.TryGetValue(Currency.Token, out var tokens))
                 PlayerTokenCurrencyAmount = tokens;
+#if UNITY_EDITOR
+            else
+            {
+                PlayerTokenCurrencyAmount = 9999;
+                Debug.Log("[ShopManager] Currency data unavailable in Editor — using fallback 9999 tokens");
+            }
+#else
             else
                 Debug.LogWarning("Currency data is null or empty.");
+#endif
 
             // Update the ShopUI with the cosmetic data collection
             if (ShopUI)
