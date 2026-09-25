@@ -150,6 +150,12 @@ namespace ProDomino.Shop
         {
             if (openConfirmationPopUp is null)
             {
+                var shopUI = GetComponentInParent<ShopUI>();
+                if (shopUI != null)
+                {
+                    shopUI.OpenConfirmationPopUp(this);
+                    return;
+                }
                 Debug.LogWarning("Open confirmation pop-up action is not assigned in the ShopElement");
                 return;
             }

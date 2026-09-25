@@ -252,7 +252,7 @@ namespace ProDomino.Shop
         /// </summary>
         private void PreviewPurchase()
         {
-            if (!CurrentSelectedShopElement)
+            if (!CurrentSelectedShopElement || CurrentSelectedShopElement.GameCosmeticData is null)
             {
                 if (confirmPurchasePreviewHeaderLabel)
                     confirmPurchasePreviewHeaderLabel.text = "You will purchase tokens";
