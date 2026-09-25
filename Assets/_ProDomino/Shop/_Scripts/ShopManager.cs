@@ -85,8 +85,24 @@ namespace ProDomino.Shop
             ShopUI?.Start_ShopUI();
 
             // Wait until the AuthManager and GameManager are initialized and the player is authenticated
+#if UNITY_EDITOR
+            // DEBUG: timeout after 3s in Editor so shop UI initializes even without backend auth
+            var cts = new System.Threading.CancellationTokenSource();
+            cts.CancelAfter(3000);
+            try
+            {
+                await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true } && IsAuthenticated
+                    && gameManager is not null and { IsAlreadyInitialized: true }, cancellationToken: cts.Token);
+            }
+            catch (System.OperationCanceledException)
+            {
+                Debug.Log("[ShopManager] Auth wait timed out in Editor — initializing with fallback data");
+            }
+            cts.Dispose();
+#else
             await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true } && IsAuthenticated
                 && gameManager is not null and { IsAlreadyInitialized: true });
+#endif
 
             // Initialize the ShopUI with the cosmetic data collection and purchase function
             ShopUI?.Initialize
@@ -104,8 +120,11 @@ namespace ProDomino.Shop
 
         private void Update()
         {
-            // Only update if the player is authenticated or the ShopUI is not null
+#if !UNITY_EDITOR
             if (authManager is null or { IsAlreadyInitialized: false } || !IsAuthenticated || ShopUI == null)
+#else
+            if (ShopUI == null)
+#endif
                 return;
 
             ShopUI.Update_ShopUI();
