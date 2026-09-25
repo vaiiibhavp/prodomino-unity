@@ -60,7 +60,7 @@ namespace ProDomino.Dashboard.Editor
 
             var bg = CreateImage(banner.transform, "BackgroundImage", Color.white, LoadArtSprite("ChallengeBanner_Background"));
             StretchFull(bg);
-            var overlay = CreateImage(banner.transform, "Overlay", Color.white, GenerateGradient("Grad_BannerOverlay", Hex("#000051", 0.85f), Hex("#000000", 0.95f), false, 8, 128));
+            var overlay = CreateImage(banner.transform, "Overlay", Color.white, GenerateGradient("Grad_BannerOverlay", Hex("#000051", 0.35f), Hex("#000033", 0.15f), false, 8, 128));
             StretchFull(overlay);
 
             var content = CreatePlain(banner.transform, "ContentColumn");
@@ -161,10 +161,10 @@ namespace ProDomino.Dashboard.Editor
             SetRect(competitive, 583, 0, 567, 418);
             var compBg = CreateImage(competitive.transform, "Background", Color.white, LoadArtSprite("QuickMatch_Competitive_Background"));
             StretchFull(compBg);
-            var compOverlay = CreateImage(competitive.transform, "Overlay", Color.white, GenerateGradient("Grad_Competitive_Card", Hex("#DB2743", 0.6f), Hex("#DB2743", 0.6f), false, 8, 8));
+            var compOverlay = CreateImage(competitive.transform, "Overlay", Color.white, GenerateGradient("Grad_Competitive_Card_v2", Hex("#DB2743", 0.15f), Hex("#DB2743", 0.05f), false, 8, 8));
             StretchFull(compOverlay);
-            CreateImage(competitive.transform, "Trophy", Color.white, LoadArtSprite("QuickMatch_Competitive_Trophy")).SetRect(190, 102, 250, 225);
-            CreateText(competitive.transform, "Title", "Competitive", extraBold, 60, Hex("#FFFFFF"), 25, 20, 400, 73);
+            CreateImage(competitive.transform, "Trophy", Color.white, LoadArtSprite("QuickMatch_Competitive_Trophy")).SetRect(220, 120, 300, 270);
+            CreateText(competitive.transform, "Title", "Competitive", extraBold, 60, Hex("#FFFFFF"), 25, 24, 400, 73);
             CreateText(competitive.transform, "Subtitle", "Quick Matches", semiBold, 24, Hex("#FFFFFF"), 25, 99, 200, 29);
         }
 
