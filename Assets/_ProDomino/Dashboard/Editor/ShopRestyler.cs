@@ -503,8 +503,8 @@ namespace ProDomino.Dashboard.Editor
                 // Build 5 tabs: Tiles, Icons, Frames (Fund), Boards, Badges
                 var tabTiles = CreateCategoryTab(tabsContainer, "Tiles_CustomButton", "Tiles", "Tiles", true);
                 var tabIcons = CreateCategoryTab(tabsContainer, "Icons_CustomButton", "Icons", "Icons", false);
-                var tabFrames = CreateCategoryTab(tabsContainer, "Board_Fund_CustomButton", "Fund", "Frames", false);
-                var tabBoards = CreateCategoryTab(tabsContainer, "Board_CustomButton", "Boards", "Boards", false);
+                var tabFrames = CreateCategoryTab(tabsContainer, "Board_Fund_CustomButton", "Fund", "Boards", false);
+                var tabBoards = CreateCategoryTab(tabsContainer, "Board_CustomButton", "Boards", "Frames", false);
                 var tabBadges = CreateCategoryTab(tabsContainer, "Badges_CustomButton", "Badges", "Badges", false);
 
                 // 2b. Right: "All" Rarity Dropdown Pill

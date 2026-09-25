@@ -356,6 +356,10 @@ namespace ProDomino.GameSystem
             if (PlayerCurrencyCollection is null or { Count: 0 })
                 Debug.LogWarning("No player currency data found in the response. Cannot validate currency collection.");
 
+            // DEBUG: temporary test coins — remove before release
+            PlayerCurrencyCollection ??= new Dictionary<Currency, uint>();
+            PlayerCurrencyCollection[Currency.Token] = 9999;
+
             PlayerProfileData = playerDataResponse.FirstOrDefault(x => x.key is Consts.CollectionKeys.Profile)?.value?.ToObject<PlayerProfileData>();
             if (PlayerProfileData is null)
             {
