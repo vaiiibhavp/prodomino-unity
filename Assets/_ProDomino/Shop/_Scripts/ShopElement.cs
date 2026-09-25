@@ -178,6 +178,22 @@ namespace ProDomino.Shop
                 return default;
             }
 
+
+#if UNITY_EDITOR
+            var mockCosmetic = new PlayerCosmeticData(GameCosmeticData.id, 0, GameCosmeticData.price, GameCosmeticData.currency, Enums.CosmeticPurchaseMethod.Shop);
+            var mockResponse = new PurchaseCosmeticResponse { cosmeticPurchased = mockCosmetic };
+            PlayerCosmeticData = mockCosmetic;
+            var gameManager = Timba.Patterns.ServiceLocator.Instance.GetService<ProDomino.GameSystem.GameManager>();
+            gameManager?.AddMockPurchasedCosmetic(mockCosmetic);
+            if (gameManager?.PlayerCurrencyCollection != null && gameManager.PlayerCurrencyCollection.ContainsKey(GameCosmeticData.currency))
+            {
+                var current = gameManager.PlayerCurrencyCollection[GameCosmeticData.currency];
+                gameManager.PlayerCurrencyCollection[GameCosmeticData.currency] = current >= GameCosmeticData.price ? current - GameCosmeticData.price : 0;
+            }
+            SetPurchaseBlockability(true);
+            Debug.Log($"[Editor] Mock purchase successful for {GameCosmeticData.id}");
+            return mockResponse;
+#else
             if (purchaseShopElement is not null)
             {
                 var purchaseResponse = await (purchaseShopElement?.Invoke(GameCosmeticData.id) ?? default);
@@ -187,13 +203,14 @@ namespace ProDomino.Shop
                     Debug.Log($"Purchase successful for {GameCosmeticData.id}:\n\nReceipt:\n{JsonConvert.SerializeObject(purchaseResponse.cosmeticPurchased, Formatting.Indented)}");
 
                     return purchaseResponse;
-                } 
+                }
                 else
                     Debug.LogWarning($"Purchase failed for {GameCosmeticData.id}");
             }
 
             SetPurchaseBlockability(false);
             return default;
+#endif
         }
 
         internal void SetActive(bool isActive)

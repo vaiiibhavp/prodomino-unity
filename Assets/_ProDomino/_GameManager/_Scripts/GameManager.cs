@@ -356,9 +356,10 @@ namespace ProDomino.GameSystem
             if (PlayerCurrencyCollection is null or { Count: 0 })
                 Debug.LogWarning("No player currency data found in the response. Cannot validate currency collection.");
 
-            // DEBUG: temporary test coins — remove before release
+#if UNITY_EDITOR
             PlayerCurrencyCollection ??= new Dictionary<Currency, uint>();
             PlayerCurrencyCollection[Currency.Token] = 9999;
+#endif
 
             PlayerProfileData = playerDataResponse.FirstOrDefault(x => x.key is Consts.CollectionKeys.Profile)?.value?.ToObject<PlayerProfileData>();
             if (PlayerProfileData is null)
@@ -813,6 +814,17 @@ namespace ProDomino.GameSystem
 
             onSignedOut?.Invoke();
         }
+
+#if UNITY_EDITOR
+        public void AddMockPurchasedCosmetic(PlayerCosmeticData cosmeticData)
+        {
+            if (cosmeticData is null) return;
+            var list = PlayerCosmeticDatas?.ToList() ?? new System.Collections.Generic.List<PlayerCosmeticData>();
+            if (!list.Any(x => x.id == cosmeticData.id))
+                list.Add(cosmeticData);
+            PlayerCosmeticDatas = list.ToArray();
+        }
+#endif
 
         // Get the profile picture based on the player's tile skin ID or default to the provider icon or default profile icon
         // The priority is: player's profile icon -> provider icon (useful for webgl where we can use the provider icon as profile picture) -> default profile icon

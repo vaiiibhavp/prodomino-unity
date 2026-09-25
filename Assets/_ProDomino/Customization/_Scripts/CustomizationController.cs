@@ -146,8 +146,21 @@ namespace ProDomino.CustomizationSystem
             else
                 Debug.LogWarning("ResetCosmeticButton is not assigned. Please assign it in the CustomizationController.");
 
-            // Wait until the AuthManager is initialized
+#if UNITY_EDITOR
+            var cts = new System.Threading.CancellationTokenSource();
+            cts.CancelAfter(3000);
+            try
+            {
+                await UniTask.WaitUntil(() => gameManager is not null and { IsAlreadyInitialized: true } && IsAuthenticated, cancellationToken: cts.Token);
+            }
+            catch (System.OperationCanceledException)
+            {
+                Debug.Log("[CustomizationController] Auth wait timed out in Editor");
+            }
+            cts.Dispose();
+#else
             await UniTask.WaitUntil(() => gameManager is not null and { IsAlreadyInitialized: true } && IsAuthenticated);
+#endif
 
             analyticsManager.Subscribe(UpdatePlayerCosmeticData);
 

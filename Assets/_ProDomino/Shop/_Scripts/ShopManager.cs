@@ -140,9 +140,18 @@ namespace ProDomino.Shop
 
         private async UniTask RefreshData(bool shouldRefreshdata = true)
         {
+#if UNITY_EDITOR
+            var savedMockPurchases = gameManager.PlayerCosmeticDatas?.ToArray();
+#endif
             // Refresh player data from the backend
             if (shouldRefreshdata)
                 await gameManager.RefreshProtectedPlayerData();
+
+#if UNITY_EDITOR
+            if (savedMockPurchases is not null and { Length: > 0 })
+                foreach (var mock in savedMockPurchases)
+                    gameManager.AddMockPurchasedCosmetic(mock);
+#endif
 
             // Initalize the cosmetic data collection with default values (null for each player cosmetic data)
             CosmeticDataCollection = gameManager.GameCosmeticData?.ToDictionary(x => x, x => default(PlayerCosmeticData));

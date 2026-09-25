@@ -365,7 +365,10 @@ namespace ProDomino.Shop
                 var canPurchase = element.GameCosmeticData is not null
                     && !element.IsAlreadyPurchased
                     && element.GameCosmeticData.price <= PlayerTokenCurrencyAmount;
-                confirmPurchaseButton.SetButtonInteractable(canPurchase);
+                confirmPurchaseButton.SetButtonInteractable(canPurchase, ignoreDefault: true);
+#if UNITY_EDITOR
+                Debug.Log($"[ShopUI] OpenConfirmationPopUp: canPurchase={canPurchase}, price={element.GameCosmeticData?.price}, tokens={PlayerTokenCurrencyAmount}, alreadyPurchased={element.IsAlreadyPurchased}, buttonInteractable={confirmPurchaseButton.Button?.interactable}");
+#endif
             }
         }
 
@@ -534,6 +537,9 @@ namespace ProDomino.Shop
         /// </summary>
         private async void OnPurchaseCosmetic()
         {
+#if UNITY_EDITOR
+            Debug.Log($"[ShopUI] OnPurchaseCosmetic called! CurrentSelectedShopElement={(CurrentSelectedShopElement != null ? CurrentSelectedShopElement.name : "null")}");
+#endif
             if (!CurrentSelectedShopElement)
             {
                 Debug.Log("[ShopUI] Purchased tokens successfully.");
@@ -552,7 +558,13 @@ namespace ProDomino.Shop
             // Send analytic for the token modification
             analyticsManager?.SendAnalytic(AnalyticType.OnTokenModified);
 
-            // If the purchase was successful, close the confirmation pop-up and update the UI
+#if UNITY_EDITOR
+            if (purchaseResponse.cosmeticPurchased is not null)
+            {
+                ValidatePurchasedCosmetic(purchaseResponse.cosmeticPurchased);
+                CloseConfirmationPopUp();
+            }
+#endif
         }
 
         /// <summary>
