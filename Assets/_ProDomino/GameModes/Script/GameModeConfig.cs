@@ -233,6 +233,15 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
                 gamesModalRoot.SetActive(false);
             }
         }
+        else
+        {
+            if (gamesGridCanvasGroup && gamesGridCanvasGroup.alpha < 1f)
+            {
+                gamesGridCanvasGroup.alpha = 1f;
+                gamesGridCanvasGroup.interactable = true;
+                gamesGridCanvasGroup.blocksRaycasts = true;
+            }
+        }
 
         if (playNavigationButton)
         {
@@ -272,6 +281,10 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         if (isActive)
         {
             SetSelectionUIRestoreAfterCover();
+            if (selectionUICanvasGroup)
+                selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
+            if (gamesGridCanvasGroup)
+                gamesGridCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
             RootCanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
             ValidateGameModeFullData();
 
@@ -778,11 +791,12 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         selectionUICanvasGroup.SetActive(true, isSettingAlpha: false, optionalForcedAlpha: IsMatchMaking ? 0.5f : 1f);
         selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
 
-        if (gamesGridCanvasGroup && !IsInMatch && !IsInOnlineMatch && !selectionUIHiddenForMatch)
+        if (gamesGridCanvasGroup)
         {
-            gamesGridCanvasGroup.alpha = 1f;
-            gamesGridCanvasGroup.interactable = true;
-            gamesGridCanvasGroup.blocksRaycasts = true;
+            bool shouldShowGrid = !IsInMatch && !IsInOnlineMatch && !selectionUIHiddenForMatch;
+            gamesGridCanvasGroup.alpha = shouldShowGrid ? 1f : 0f;
+            gamesGridCanvasGroup.interactable = shouldShowGrid;
+            gamesGridCanvasGroup.blocksRaycasts = shouldShowGrid;
         }
     }
 

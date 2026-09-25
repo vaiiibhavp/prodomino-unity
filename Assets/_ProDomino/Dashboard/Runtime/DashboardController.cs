@@ -25,6 +25,7 @@ namespace ProDomino.Dashboard
         public void SetActiveNavigationPanel(bool isActive)
         {
             isVisible = isActive;
+            suppressLobbyOverlay = !isActive;
             gameObject.SetActive(isActive);
             SetVisible(isActive);
             if (isActive && gameModeConfig && !gameModeConfig.IsInMatch && !gameModeConfig.IsMatchMaking)
@@ -95,7 +96,7 @@ namespace ProDomino.Dashboard
 
             if (isVisible)
             {
-                if (gameOnScreen)
+                if (gameOnScreen || suppressLobbyOverlay)
                 {
                     if (dashboardCanvasGroup && dashboardCanvasGroup.alpha > 0f)
                     {
