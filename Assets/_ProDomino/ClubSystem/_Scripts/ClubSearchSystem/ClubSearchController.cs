@@ -151,6 +151,12 @@ namespace ProDomino.ClubSystem
         /// <param name="leaderboardClubDatas">Array of club data to configure the leaderboard entries with.</param>
         internal void ConfigureLeaderboardEntries(FirestoreClubData[] leaderboardClubDatas)
         {
+            if (getConfigData is null)
+            {
+                Debug.LogWarning("ConfigureLeaderboardEntries called before Initialize. Skipping.", this);
+                return;
+            }
+
             // Configure leaderboard entries
             if (leaderboardClubDatas != null && leaderboardClubDatas.Length > 0)
             {

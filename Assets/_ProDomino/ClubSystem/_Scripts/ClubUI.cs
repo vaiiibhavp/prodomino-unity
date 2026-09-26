@@ -45,6 +45,7 @@ namespace ProDomino.ClubSystem
         private CanvasGroup[] allUIScreens;
         private CanvasGroup[] allHomeScreenTabs;
 
+        private bool isInitialized;
         private PromptFadeController promptFadeController;
 
         // Data retrieval functions
@@ -265,6 +266,8 @@ namespace ProDomino.ClubSystem
                 );
             else
                 Debug.LogError("clubChatController is not assigned in the inspector.", this);
+
+            isInitialized = true;
         }
 
         /// <summary>
@@ -291,8 +294,8 @@ namespace ProDomino.ClubSystem
                 {
                     UpdateScreen(ClubUIScreen.ClubSearch);
 
-                    if (tryToGetLeaderboardEntries is not null)
-                    { 
+                    if (tryToGetLeaderboardEntries is not null && isInitialized)
+                    {
                         Debug.Log("User is not in a club, trying to get leaderboard entries...");
 
                         // Get the leaderboard entries and configure the club search controller

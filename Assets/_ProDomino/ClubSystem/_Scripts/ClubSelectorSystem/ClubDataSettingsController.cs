@@ -127,9 +127,12 @@ namespace ProDomino.ClubSystem
             Preview.Initialize(dictionaryService);
 
             // Initialize the club icon selector controller
-            clubSelectorController.Initialize
-                (ConfirmClubDataSelection, 
-                OnGoToDataSettingsScreen);
+            if (clubSelectorController)
+                clubSelectorController.Initialize
+                    (ConfirmClubDataSelection,
+                    OnGoToDataSettingsScreen);
+            else
+                Debug.LogWarning("ClubIconDataSelectorController is not assigned. Club icon creation will not work.", this);
         }
 
         /// <summary>
