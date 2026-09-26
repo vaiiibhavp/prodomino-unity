@@ -268,7 +268,7 @@ namespace ProDomino.ClubSystem
                         Debug.LogWarning($"Failed to update club data");
 
                     // Show an error prompt in the UI
-                    ClubUI.ShowPrompt(tryToUpdateClubDataResponse.message ?? $"Failed to <b>{(isCreatingClub ? "create" : "update")}</b> club data.");
+                    ClubUI.ShowPrompt(tryToUpdateClubDataResponse?.message ?? $"Failed to <b>{(isCreatingClub ? "create" : "update")}</b> club data.");
                 }
             } 
             else

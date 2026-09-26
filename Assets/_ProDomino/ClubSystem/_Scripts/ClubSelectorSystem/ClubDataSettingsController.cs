@@ -262,10 +262,12 @@ namespace ProDomino.ClubSystem
              1. try to get the temporal icon data from the club selector controller
              2. Try to get the player's current club icon data
             */
-            var iconData = ClubIconDataSelectorController?.TemporalIconData ?? gameManager.PlayerClubData?.iconData;
+            var iconData = clubSelectorController ? ClubIconDataSelectorController.TemporalIconData : null;
+            iconData ??= gameManager.PlayerClubData?.iconData;
 
             // Override the preview in the club selector controller to keep it in sync
-            ClubIconDataSelectorController.OverridePreview(iconData);
+            if (clubSelectorController)
+                ClubIconDataSelectorController.OverridePreview(iconData);
 
             // Set the preview with the current club icon data or default values if not set
             preview.SetPreviewData(ClubDataSelectableType.BaseShield, iconData?.shieldId, iconData?.shieldColorId, Preview.byDefaultShieldSprite, Preview.byDefaultShieldColor);
@@ -308,6 +310,9 @@ namespace ProDomino.ClubSystem
 
             var hasValidIcon = false;
 
+            if (!clubSelectorController)
+                return hasValidName && hasValidSlogan;
+
             var isTemporalIconNull = new Func<bool>(() => ClubIconDataSelectorController.TemporalIconData is null);
 
             // If the user is already in a club, only the slogan and icon need to be valid
@@ -316,7 +321,7 @@ namespace ProDomino.ClubSystem
                 // Check if the icon data is valid (not null and not the same as the current icon data)
                 hasValidIcon = currentIconData != ClubIconDataSelectorController.TemporalIconData;
                 if (!hasValidIcon)
-                { 
+                {
                     ClubIconDataSelectorController.FillEmptyIconData();
                     hasValidIcon = !isTemporalIconNull();
                 }
@@ -375,7 +380,8 @@ namespace ProDomino.ClubSystem
         /// </summary>
         public void CleanData()
         {
-            ClubIconDataSelectorController.ClearSelection();
+            if (clubSelectorController)
+                ClubIconDataSelectorController.ClearSelection();
             ResfreshPreview();
 
             if (clubNameInputField)
@@ -390,7 +396,7 @@ namespace ProDomino.ClubSystem
         /// </summary>
         public void OnOpenController()
         {
-            if (ClubIconDataSelectorController.TemporalIconData is null)
+            if (clubSelectorController && ClubIconDataSelectorController.TemporalIconData is null)
                 ClubIconDataSelectorController.OverridePreview(gameManager.PlayerClubData?.iconData);
 
             DetermineSetClubNameVisibility();
@@ -418,7 +424,8 @@ namespace ProDomino.ClubSystem
                 return;
             }
 
-            clubSelectorController.OnOpen();
+            if (clubSelectorController)
+                clubSelectorController.OnOpen();
             goToIconCreation.Invoke();
         }
 
@@ -448,7 +455,8 @@ namespace ProDomino.ClubSystem
             }
 
             tryToGoToHomeScreen();
-            ClubIconDataSelectorController.ClearSelection();
+            if (clubSelectorController)
+                ClubIconDataSelectorController.ClearSelection();
         }
     }
 }
