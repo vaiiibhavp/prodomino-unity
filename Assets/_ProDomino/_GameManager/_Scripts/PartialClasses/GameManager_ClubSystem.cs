@@ -360,7 +360,14 @@ namespace ProDomino.GameSystem
 
                     PlayerClubChatData = clubChatDataResponse.clubChatData;
                     if (PlayerClubChatData is not null)
+                    {
                         Debug.Log($"Successfully retrieved club chat data for club: {PlayerClubChatData.clubName} with {PlayerClubChatData.messages?.Count ?? 0 } messages in total.");
+
+                        // The WebGL path notifies the listeners from OnGetClubChatData, so this
+                        // branch has to raise the event itself or the chat UI never refreshes
+                        PlayerClubChatData.messages?.Sort((a, b) => a.timestamp.CompareTo(b.timestamp));
+                        onGetClubChatData?.InvokeAllAtTimeAsync(PlayerClubChatData);
+                    }
                     else
                         Debug.LogWarning("Failed to deserialize club chat data from Firestore.");
                 }

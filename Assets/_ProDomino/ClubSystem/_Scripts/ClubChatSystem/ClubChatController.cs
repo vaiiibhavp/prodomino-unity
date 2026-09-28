@@ -71,6 +71,13 @@ namespace ProDomino.ClubSystem
                 sendMessageButton.onClick.AddListener(TryToSendMessage);
             else
                 Debug.LogError("Edit Icon Button is not assigned in the inspector.", this);
+
+            // The input field reports the submit itself, which is more reliable than polling the
+            // action in Update, where the field can already have lost the EventSystem selection
+            if (chatBoxInputfield)
+                chatBoxInputfield.onSubmit.AddListener(_ => RequestSendMessage());
+            else
+                Debug.LogError($"{nameof(chatBoxInputfield)} is not assigned in the inspector.", this);
         }
 
         private void Start()
@@ -115,14 +122,27 @@ namespace ProDomino.ClubSystem
             bool hasFocus = EventSystem.current.currentSelectedGameObject == chatBoxInputfield.gameObject;
             bool isTextNotEmpty = !string.IsNullOrEmpty(chatBoxInputfield.text);
 
-            if (isTextNotEmpty && isEnterPressed && hasFocus && Time.time - lastSendTime > SendCooldown)
-            {
-                sendMessageButton.onClick.Invoke();
-                lastSendTime = Time.time;
+            if (isTextNotEmpty && isEnterPressed && hasFocus)
+                RequestSendMessage();
+        }
 
-                // Keep focus visually and logically
-                chatBoxInputfield.ActivateInputField();
-            }
+        /// <summary>
+        /// Sends the current message respecting the cooldown and keeps the input field focused.
+        /// Shared by the send button, the submit event of the input field and the send input action.
+        /// </summary>
+        private void RequestSendMessage()
+        {
+            if (!chatBoxInputfield || string.IsNullOrWhiteSpace(chatBoxInputfield.text))
+                return;
+
+            if (Time.time - lastSendTime <= SendCooldown)
+                return;
+
+            lastSendTime = Time.time;
+            TryToSendMessage();
+
+            // Keep focus visually and logically
+            chatBoxInputfield.ActivateInputField();
         }
 
         /// <summary>

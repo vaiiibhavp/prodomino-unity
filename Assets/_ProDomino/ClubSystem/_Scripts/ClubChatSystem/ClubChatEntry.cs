@@ -24,7 +24,14 @@ namespace ProDomino.ClubSystem
         [Header("Layout properties")]
         [SerializeField] private LayoutGroup rootLayout;
         [SerializeField] private LayoutGroup contentLayout;
-        
+
+        [Header("Bubble properties")]
+        [SerializeField] private GameObject avatarRoot;
+        [SerializeField] private Image bubbleImage;
+        [SerializeField] private Color ownBubbleColor = new Color(0.478f, 0.420f, 0.208f, 1f);
+        [SerializeField] private Color otherBubbleColor = new Color(0.220f, 0.239f, 0.271f, 1f);
+
+
         private DictionaryService dictionaryService;
         private Func<FirestoreClubData.MemberData> getCurrentPlayerMemberData;
 
@@ -105,7 +112,18 @@ namespace ProDomino.ClubSystem
                     layoutGroup.reverseArrangement = isTheCurrentPlayer ? true : false;
                 else
                     Debug.LogError($"{nameof(contentLayout)} is not assigned in the inspector");
-            } 
+
+                // The own messages are shown without an avatar, like in the reference design
+                if (avatarRoot)
+                    avatarRoot.SetActive(!isTheCurrentPlayer);
+                else
+                    Debug.LogError($"{nameof(avatarRoot)} is not assigned in the inspector");
+
+                if (bubbleImage)
+                    bubbleImage.color = isTheCurrentPlayer ? ownBubbleColor : otherBubbleColor;
+                else
+                    Debug.LogError($"{nameof(bubbleImage)} is not assigned in the inspector");
+            }
         }
 
         /// <summary>
@@ -174,9 +192,22 @@ namespace ProDomino.ClubSystem
             
             // For the content layout, determine if the content will be shown normal or reversed
             if (contentLayout && contentLayout is HorizontalOrVerticalLayoutGroup layoutGroup)
+            {
                 layoutGroup.reverseArrangement = false;
+                layoutGroup.childAlignment = TextAnchor.UpperLeft;
+            }
             else
                 Debug.LogError($"{nameof(contentLayout)} is not assigned in the inspector");
+
+            if (avatarRoot)
+                avatarRoot.SetActive(true);
+            else
+                Debug.LogError($"{nameof(avatarRoot)} is not assigned in the inspector");
+
+            if (bubbleImage)
+                bubbleImage.color = otherBubbleColor;
+            else
+                Debug.LogError($"{nameof(bubbleImage)} is not assigned in the inspector");
         }
     }
 }

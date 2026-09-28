@@ -936,15 +936,15 @@ namespace ProDomino.ClubSystem
 
             // Validate the input
             if (string.IsNullOrEmpty(input))
-            { 
-                Debug.LogError("Input string is null or empty. Cannot search clubs by name.", this);
+            {
+                Debug.LogError("Input string is null or empty. Cannot send chat message.", this);
                 return false;
             }
 
             // Validate the callback
-            if (tryToSearchClubsByName is null)
+            if (tryToSendClubChatMessage is null)
             {
-                Debug.LogError("tryToSearchClubsByName action is not assigned.", this);
+                Debug.LogError("tryToSendClubChatMessage action is not assigned.", this);
                 return false;
             }
 
@@ -960,7 +960,7 @@ namespace ProDomino.ClubSystem
             }
             catch (Exception ex)
             {
-                Debug.LogError($"An error occurred while searching for clubs: {ex.Message}", this);
+                Debug.LogError($"An error occurred while sending the chat message: {ex.Message}", this);
             }
             finally
             {

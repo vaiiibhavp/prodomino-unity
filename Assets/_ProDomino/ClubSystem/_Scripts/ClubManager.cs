@@ -946,6 +946,12 @@ namespace ProDomino.ClubSystem
                 Debug.LogWarning("The message couldn't been sent");
                 ClubUI.ShowPrompt("The message couldn't been sent");
             }
+            else if (!gameManager.WasSubscribeToClubChatProperly)
+            {
+                // The realtime snapshot listener only runs on WebGL, so outside of it the sent
+                // message would stay invisible until the chat is reopened. Pull the data instead.
+                await RefreshFirestoreClubChatData();
+            }
 
             return wasMessageSentProperly;
         }
