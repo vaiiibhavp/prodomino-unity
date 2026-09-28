@@ -117,6 +117,12 @@ namespace ProDomino.ClubSystem
                 clubHomeScreenTabsGroupUI.SetOnCustomButtonSelectedCallback(OnSelectHomeScreenToggle);
             else
                 Debug.LogWarning("ClubHomeScreenTabsGroupUI is null, cannot set the callback for tab selection");
+
+            // Wire the club header shortcuts to the screens they already open from the tab bar
+            if (clubHomeScreenDataUI)
+                clubHomeScreenDataUI.SetHeaderActions(GoToDataSettingsScreen, GoToRanksTab);
+            else
+                Debug.LogWarning("ClubHomeScreenDataUI is null, cannot set the club header actions");
         }
 
         private void Start()
@@ -463,6 +469,14 @@ namespace ProDomino.ClubSystem
         }
 
         /// <summary>
+        /// Opens the ranks (roles and permissions) tab of the club home screen
+        /// </summary>
+        internal void GoToRanksTab()
+        {
+            UpdateScreen(ClubUIScreen.ClubHomeScreen, ClubHomeScreenTab.ClubRanks);
+        }
+
+        /// <summary>
         /// Shows a prompt message using the PromptFadeController
         /// </summary>
         /// <param name="message">The message to display in the prompt.</param>
@@ -502,7 +516,10 @@ namespace ProDomino.ClubSystem
 
                 // Configure the club home screen data UI with the current club data
                 if (clubHomeScreenDataUI)
+                {
                     clubHomeScreenDataUI.Configure(clubName, clubSlogan, clubRank, iconData);
+                    clubHomeScreenDataUI.ConfigureStats(orderedMembers?.Length ?? 0, applicants?.Length ?? 0);
+                }
                 else
                     Debug.LogWarning("ClubHomeScreenDataUI is null, cannot configure the ClubHomeScreenDataUI");
 
@@ -544,7 +561,10 @@ namespace ProDomino.ClubSystem
 
             // Configure the club home screen data UI with the current club data
             if (clubHomeScreenDataUI)
+            {
                 clubHomeScreenDataUI.Configure(default, default, default, default);
+                clubHomeScreenDataUI.ConfigureStats(0, 0);
+            }
             else
                 Debug.LogWarning("ClubHomeScreenDataUI is null, cannot configure the ClubHomeScreenDataUI");
 
