@@ -86,10 +86,10 @@ namespace ProDomino.ClubSystem
             // Reset all rank entries
             if (removeDescriptionLabel)
             {
-                if (isRemovingSelf) 
-                    removeDescriptionLabel.text = "Are you sure you want to leave the club?";
+                if (isRemovingSelf)
+                    removeDescriptionLabel.text = "Are you sure you want to leave this club? You'll lose access to the club chat, member list, and club activities. You can request to join again later if the club accepts new members.";
                 else
-                    removeDescriptionLabel.text = $"Are you sure you want to expel {SelectedMemberEntry.MemberData.memberName} from the club?";
+                    removeDescriptionLabel.text = $"Are you sure you want to expel {SelectedMemberEntry.MemberData.memberName} from this club? They will lose access to the club chat, member list, and club activities. They can request to join again later if the club accepts new members.";
             }
             else
                 Debug.LogError("Remove Description Label is not assigned in the inspector.", this);
