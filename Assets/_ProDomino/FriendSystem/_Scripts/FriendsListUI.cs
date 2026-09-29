@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProDomino.GameSystem;
 using ProDomino.Shared;
 using TMPro;
@@ -68,21 +69,74 @@ namespace ProDomino.FriendSystem
             gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// Sidebar Friends List opens the FriendList_Popup (PartyController) over the current screen.
+        /// </summary>
+        public bool IsOverlay => true;
+
+        [Header("Friend List Popup")]
+        [SerializeField] private PartyController friendListPopup;
+
+        private const string FriendListPopupName = "FriendList_Popup";
+
+        private Action onOverlayClosed;
+
+        public void SetOverlayClosedCallback(Action onClosed)
+        {
+            onOverlayClosed = onClosed;
+
+            if (ResolvePopup())
+            {
+                friendListPopup.OnFriendListVisibilityChanged -= OnPopupVisibilityChanged;
+                friendListPopup.OnFriendListVisibilityChanged += OnPopupVisibilityChanged;
+            }
+        }
+
+        public bool IsOverlayOpen
+        {
+            get
+            {
+                if (!ResolvePopup())
+                    return false;
+                var canvasGroup = friendListPopup.GetComponent<CanvasGroup>();
+                return canvasGroup && canvasGroup.alpha > 0f;
+            }
+        }
+
+        private void OnPopupVisibilityChanged(bool isVisible)
+        {
+            if (!isVisible)
+                onOverlayClosed?.Invoke();
+        }
+
+        private bool ResolvePopup()
+        {
+            if (friendListPopup)
+                return true;
+
+            // PartyUI_NavPanel also carries a PartyController, so pick the FriendList_Popup instance by name
+            var controllers = FindObjectsByType<PartyController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            friendListPopup = controllers.FirstOrDefault(c => c.gameObject.name == FriendListPopupName);
+            if (!friendListPopup)
+                Debug.LogWarning($"[FriendsListUI] No PartyController on '{FriendListPopupName}'. Found: {string.Join(", ", controllers.Select(c => c.gameObject.name))}");
+            return friendListPopup;
+        }
+
+        private void OnDestroy()
+        {
+            if (friendListPopup)
+                friendListPopup.OnFriendListVisibilityChanged -= OnPopupVisibilityChanged;
+        }
+
         public void SetActiveNavigationPanel(bool isActive)
         {
-            gameObject.SetActive(isActive);
+            // Legacy full-screen panel stays hidden; route to the popup instead
+            HidePanel();
 
-            if (RootCanvasGroup != null)
-            {
-                RootCanvasGroup.alpha = isActive ? 1f : 0f;
-                RootCanvasGroup.interactable = isActive;
-                RootCanvasGroup.blocksRaycasts = isActive;
-            }
-
-            if (isActive)
-            {
-                RefreshUI();
-            }
+            if (ResolvePopup())
+                friendListPopup.SetVisibility(isActive);
+            else
+                Debug.LogWarning("[FriendsListUI] PartyController (FriendList_Popup) not found.");
         }
 
         public void RefreshUI()

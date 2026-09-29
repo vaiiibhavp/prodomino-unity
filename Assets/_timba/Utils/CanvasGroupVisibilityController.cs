@@ -84,9 +84,15 @@ public class CanvasGroupVisibilityController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Raised when the canvas group is hidden by an outside click.
+    /// </summary>
+    public event System.Action OnHiddenByClick;
+
     private void HideCanvasGroup()
     {
         canvasGroupToControl?.SetActive(false);
+        OnHiddenByClick?.Invoke();
     }
 
     public void ShowCanvasGroup()

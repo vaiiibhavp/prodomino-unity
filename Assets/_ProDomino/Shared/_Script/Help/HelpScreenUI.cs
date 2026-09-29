@@ -41,10 +41,15 @@ namespace ProDomino.Shared
 
         private readonly List<HelpAccordionItem> activeItems = new List<HelpAccordionItem>();
 
+        // True while ShowPanel is activating the GameObject. The root starts inactive in the scene,
+        // so the first SetActive(true) runs Awake synchronously inside ShowPanel; Awake must not hide it then.
+        private bool isShowing;
+
         private void Awake()
         {
             // By default, the Help screen must be completely hidden so Dashboard is shown
-            HidePanel();
+            if (!isShowing)
+                HidePanel();
         }
 
         private void HidePanel()
@@ -60,7 +65,10 @@ namespace ProDomino.Shared
 
         private void ShowPanel()
         {
-            gameObject.SetActive(true);
+            isShowing = true;
+            try { gameObject.SetActive(true); }
+            finally { isShowing = false; }
+
             if (RootCanvasGroup != null)
             {
                 RootCanvasGroup.alpha = 1f;

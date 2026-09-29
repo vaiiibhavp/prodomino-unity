@@ -2,6 +2,7 @@
 using FirebaseWebGL.Scripts.FirebaseBridge;
 using HelperSharedLibrary;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ProDomino.Shared;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace ProDomino.GameSystem
 {
@@ -22,6 +24,9 @@ namespace ProDomino.GameSystem
         public Dictionary<string, PlayerSearchCacheModel> SearchedPlayersCache { get; private set; }
 
         private string lastNormalizedPlayerSearch;
+
+        // Must match databaseURL in WebGLTemplates/WebGL_ProDomino_Template/index.html
+        private const string RtdbRestUrl = "https://playprodomino-default-rtdb.firebaseio.com";
 
         /// <summary>
         /// Cleans the user search cache to keep memory and relevance in check.
@@ -110,10 +115,23 @@ namespace ProDomino.GameSystem
             } 
             else
             {
-                Debug.LogWarning("RTDB JS search only works on WebGL — editor simulation");
+                Debug.Log($"Executing RTDB REST search for: {lastNormalizedPlayerSearch}");
 
-                waitingDictionary[Consts.CollectionKeys.SearchingUser] = false;
-                return default;
+                try
+                {
+                    // Same query as the jslib SearchPlayersByName, sent through the RTDB REST API
+                    var json = await SearchPlayersByNameRest(lastNormalizedPlayerSearch);
+                    OnSearchPlayersByNameReceived(json);
+                }
+                catch (Exception ex)
+                {
+                    OnSearchPlayersByNameFailed(ex.Message);
+                }
+                finally
+                {
+                    // Force a reset to avoid waiting loops
+                    waitingDictionary[Consts.CollectionKeys.SearchingUser] = false;
+                }
             }
 
             return SearchedPlayersCache.TryGetValue(lastNormalizedPlayerSearch, out var finalModel)
@@ -132,6 +150,41 @@ namespace ProDomino.GameSystem
                 n = Regex.Replace(n.Trim(), @"\s+", " ");
                 return n;
             }
+        }
+
+        /// <summary>
+        /// Non-WebGL fallback for the jslib SearchPlayersByName (Firebase JS SDK only exists in the WebGL page).
+        /// Runs the same prefix query on "users" through the RTDB REST API and returns the same
+        /// JSON array shape: [{userId, displayName, normalizedName, ...}].
+        /// </summary>
+        private async UniTask<string> SearchPlayersByNameRest(string normalizedSearch)
+        {
+            string Param(string value) => Uri.EscapeDataString(JsonConvert.SerializeObject(value));
+
+            var url = $"{RtdbRestUrl}/users.json" +
+                $"?orderBy={Param("normalizedName")}" +
+                $"&startAt={Param(normalizedSearch)}" +
+                $"&endAt={Param(normalizedSearch + "")}" +
+                "&limitToFirst=20";
+
+            using var request = UnityWebRequest.Get(url);
+            request.timeout = 10;
+
+            await request.SendWebRequest().ToUniTask();
+
+            // REST returns an object keyed by user ID (or "null" when nothing matches), convert it to the jslib array
+            var usersById = JsonConvert.DeserializeObject<Dictionary<string, JObject>>(request.downloadHandler.text);
+            if (usersById is null)
+                return "[]";
+
+            var users = new JArray();
+            foreach (var kv in usersById)
+            {
+                kv.Value["userId"] = kv.Key;
+                users.Add(kv.Value);
+            }
+
+            return users.ToString(Formatting.None);
         }
 
         /// <summary>

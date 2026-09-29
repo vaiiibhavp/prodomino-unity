@@ -72,6 +72,10 @@ namespace ProDomino.FriendSystem
             else
                 Debug.LogWarning("Close popUp reference is null. Make sure the reference is set in the inspector");
 
+            // Outside-click close bypasses SetVisibility; route it so listeners (sidebar highlight) get notified
+            if (TryGetComponent<CanvasGroupVisibilityController>(out var outsideClickCloser))
+                outsideClickCloser.OnHiddenByClick += () => SetVisibility(false);
+
             // By default, start viewing the friends list
             IsViewingFriendList = true;
 
@@ -347,7 +351,14 @@ namespace ProDomino.FriendSystem
 
             if (isVisible)
                 ConfigureUI();
+
+            OnFriendListVisibilityChanged?.Invoke(isVisible);
         }
+
+        /// <summary>
+        /// Raised when the friend list popup is shown or hidden.
+        /// </summary>
+        public event Action<bool> OnFriendListVisibilityChanged;
 
         /// <summary>
         /// Sets the block of the friends list UI by enabling or disabling the CanvasGroup component.

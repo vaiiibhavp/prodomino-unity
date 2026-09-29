@@ -22,6 +22,7 @@ namespace ProDomino.NavigationSystem
         private Dictionary<INavigationPanel, bool> panelsBlockedByDefault;
         private GameManager gameManager;
         private AuthManager authManager;
+        private bool isRestoringSelection;
 
         public CustomButtonToggleGroupUI CustomButtonToggleGroupUI => customButtonToggleGroupUI;
         public NavigationPanelType NavigationPanelType { get; private set; }
@@ -54,6 +55,18 @@ namespace ProDomino.NavigationSystem
                     return !customButtonUI?.IsInteractable ?? true;
                 }
             ) ?? new Dictionary<INavigationPanel, bool>();
+
+            // When an overlay popup closes itself, move the sidebar highlight back to the active panel
+            if (navigationPanels is not null)
+                foreach (var panel in navigationPanels.Where(p => p.IsOverlay))
+                {
+                    var overlayId = panel.NavigationPanelType.ToString();
+                    panel.SetOverlayClosedCallback(() =>
+                    {
+                        if (customButtonToggleGroupUI.CheckIfSelected(overlayId))
+                            RestorePreviousSelection();
+                    });
+                }
 
             // By default, block every navigation button that requires authentication
             SetBlockToRequiredNavigationButtons(false);
@@ -120,6 +133,26 @@ namespace ProDomino.NavigationSystem
             }
         }
 
+        private void LateUpdate()
+        {
+            // Popups can close through paths that raise no event (outside click, direct CanvasGroup hide).
+            // If an overlay's sidebar button is still highlighted but its popup is hidden, restore the previous selection.
+            if (navigationPanels is null)
+                return;
+
+            foreach (var panel in navigationPanels)
+            {
+                if (!panel.IsOverlay || panel.IsOverlayOpen)
+                    continue;
+
+                if (customButtonToggleGroupUI.CheckIfSelected(panel.NavigationPanelType.ToString()))
+                {
+                    RestorePreviousSelection();
+                    return;
+                }
+            }
+        }
+
         private void OnDestroy()
         {
             // Remove listeners to avoid memory leaks
@@ -137,6 +170,19 @@ namespace ProDomino.NavigationSystem
             if (navigationPanels is null or { Length: 0 })
             {
                 Debug.LogWarning("No INavigationPanels components found.");
+                return;
+            }
+
+            // Restoring sidebar selection after an overlay opened: current panel is already active
+            if (isRestoringSelection && panelType == NavigationPanelType)
+                return;
+
+            // Overlay panels (popups) open over the current screen. Their sidebar button stays highlighted
+            // while open; the previous panel's button is re-selected when the popup closes.
+            var overlayModule = navigationPanels.FirstOrDefault(x => x.NavigationPanelType == panelType && x.IsOverlay);
+            if (overlayModule != null)
+            {
+                overlayModule.SetActiveNavigationPanel(true);
                 return;
             }
 
@@ -161,6 +207,20 @@ namespace ProDomino.NavigationSystem
             }
             else
                 Debug.LogWarning($"No INavigationPanel found for type: {panelType}");
+        }
+
+        /// <summary>
+        /// Re-selects the sidebar button of the panel that was active before an overlay opened.
+        /// </summary>
+        private void RestorePreviousSelection()
+        {
+            var previousButton = customButtonToggleGroupUI.GetButtonUI(NavigationPanelType.ToString());
+            if (previousButton == null)
+                return;
+
+            isRestoringSelection = true;
+            try { previousButton.Select(); }
+            finally { isRestoringSelection = false; }
         }
 
         /// <summary>
