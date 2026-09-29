@@ -182,6 +182,8 @@ namespace ProDomino.NavigationSystem
             var overlayModule = navigationPanels.FirstOrDefault(x => x.NavigationPanelType == panelType && x.IsOverlay);
             if (overlayModule != null)
             {
+                // The overlay covers the screen alone: hide the current panel until it closes
+                SetPanelBehindOverlayVisible(false);
                 overlayModule.SetActiveNavigationPanel(true);
                 return;
             }
@@ -192,6 +194,7 @@ namespace ProDomino.NavigationSystem
                 try { panel.SetActiveNavigationPanel(false); }
                 catch (Exception e) { Debug.LogException(e); }
             }
+            isPanelHiddenByOverlay = false;
 
             // Find the selected INavigationPanel by ID. If not found, activate the inner screen
             var selectedModule = navigationPanels.FirstOrDefault(x => x.NavigationPanelType == panelType);
@@ -209,11 +212,34 @@ namespace ProDomino.NavigationSystem
                 Debug.LogWarning($"No INavigationPanel found for type: {panelType}");
         }
 
+        private bool isPanelHiddenByOverlay;
+
+        /// <summary>
+        /// Hides or shows the active panel behind an overlay popup.
+        /// </summary>
+        private void SetPanelBehindOverlayVisible(bool isVisible)
+        {
+            if (isPanelHiddenByOverlay != isVisible)
+                return;
+
+            var currentPanel = navigationPanels?.FirstOrDefault(x => x.NavigationPanelType == NavigationPanelType && !x.IsOverlay);
+            if (currentPanel == null)
+                return;
+
+            isPanelHiddenByOverlay = !isVisible;
+
+            try { currentPanel.SetActiveNavigationPanel(isVisible); }
+            catch (Exception e) { Debug.LogException(e); }
+        }
+
         /// <summary>
         /// Re-selects the sidebar button of the panel that was active before an overlay opened.
         /// </summary>
         private void RestorePreviousSelection()
         {
+            SetPanelBehindOverlayVisible(true);
+
+
             var previousButton = customButtonToggleGroupUI.GetButtonUI(NavigationPanelType.ToString());
             if (previousButton == null)
                 return;

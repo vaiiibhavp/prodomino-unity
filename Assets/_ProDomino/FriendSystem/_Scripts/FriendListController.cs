@@ -38,6 +38,22 @@ namespace ProDomino.FriendSystem
         [SerializeField] private Transform searchUserEntriesParent;
         [SerializeField] private SearchUserEntry searchUserEntryPrefab;
 
+        [Header("Screen States (optional)")]
+        [Tooltip("Shown when there are no friends and no recently played players to suggest.")]
+        [SerializeField] private GameObject firstMatchHint;
+        [Tooltip("Search bar row: centered with a fixed width while the friends list is empty, full width otherwise.")]
+        [SerializeField] private LayoutElement searchRowLayout;
+        [SerializeField] private float emptyStateSearchRowWidth = 607f;
+        [Tooltip("Grid holding the friend cards.")]
+        [SerializeField] private GameObject friendsSection;
+        [Tooltip("Section listing player cards: recently played players, or the search results.")]
+        [SerializeField] private GameObject playersSection;
+        [SerializeField] private TMP_Text playersSectionTitle;
+        [SerializeField] private string recentlyPlayedTitle = "Recently played players";
+        [SerializeField] private string searchResultsTitle = "Search results";
+        [Tooltip("Shown when a search returned no players.")]
+        [SerializeField] private GameObject playerNotFoundState;
+
 #if UNITY_EDITOR
         [Header("Editor Tests")]
         [SerializeField] private bool sendInvite;
@@ -47,6 +63,12 @@ namespace ProDomino.FriendSystem
 
         private List<FriendEntry> friendEntriesInstances;
         private List<SearchUserEntry> searchUserEntryInstances;
+        private bool isShowingSearchResults;
+        private bool hasSearchResults;
+        private bool hasRecentlyPlayedPlayers;
+        private bool isSearchFieldFocused;
+
+        private bool UsesScreenStates => playersSection;
         protected GameManager gameManager;
         protected FriendManager friendManager;
 
@@ -67,10 +89,9 @@ namespace ProDomino.FriendSystem
             if (!gameManager || !friendManager)
                 Debug.LogWarningFormat("Service {GameManager} or {FriendManager} is null and could be used.", nameof(GameManager), nameof(FriendManager));
 
+            // The full-screen layout has no close button; the sidebar and outside clicks close it
             if (closePopUp)
                 closePopUp.onClick.AddListener(() => SetVisibility(false));
-            else
-                Debug.LogWarning("Close popUp reference is null. Make sure the reference is set in the inspector");
 
             // Outside-click close bypasses SetVisibility; route it so listeners (sidebar highlight) get notified
             if (TryGetComponent<CanvasGroupVisibilityController>(out var outsideClickCloser))
@@ -90,6 +111,15 @@ namespace ProDomino.FriendSystem
             // Assign the request friendship button callback
             if (requestFriendshipButton)
                 requestFriendshipButton.onClick.AddListener(OnRequestFriendship);
+
+            if (requestFriendshipInputfield)
+            {
+                // Enter searches as well, and clearing the field leaves the search results
+                requestFriendshipInputfield.onSubmit.AddListener(_ => OnRequestFriendship());
+                requestFriendshipInputfield.onValueChanged.AddListener(OnSearchTextChanged);
+                requestFriendshipInputfield.onSelect.AddListener(OnSearchFieldSelected);
+                requestFriendshipInputfield.onDeselect.AddListener(OnSearchFieldDeselected);
+            }
 
             // By default, hide the search users canvas group
             if (searchUsersCanvasGroup)
@@ -200,55 +230,310 @@ namespace ProDomino.FriendSystem
                     return;
                 }
 
+                // Let a running avatar lookup finish, the search system rejects overlapping requests
+                RtdbUserData[] rawResults;
+                isUserSearchPending = true;
+                try
+                {
+                    await UniTask.WaitWhile(() => isResolvingProfileIcons);
+                    rawResults = await gameManager.TryToSearchPlayersByName(requestFriendshipInputfield.text);
+                }
+                finally
+                {
+                    isUserSearchPending = false;
+                }
+
+                CacheProfileIcons(rawResults);
+
                 // Search for users matching the input
-                var searchResults = (await gameManager.TryToSearchPlayersByName(requestFriendshipInputfield.text))
+                var searchResults = rawResults
                     ?.Where(x =>
                         x.userId != authManager.UUID // Ignore self
-                        && (!FriendsEntryDatas?.Any(y => y.UUID == x.userId) ?? true)) // Ignore already friends
+                        && (!FriendsEntryDatas?.Any(y => y.TargetID == x.userId) ?? true)) // Ignore already friends
                     ?.ToArray(); 
 
                 // Provide user feedback that the request was sent
                 if (promptFadeController)
                     promptFadeController.Fade($"Searching players with name <b>{requestFriendshipInputfield.text}</b>", 3f);
 
-                var leftingInstances = searchResults?.Length - (searchUserEntryInstances?.Count ?? 0) ?? 0;
-                if (leftingInstances > 0)
-                    for (var i = 0; i < leftingInstances; i++)
-                    {
-                        var newEntry = Instantiate(searchUserEntryPrefab, searchUserEntriesParent);
-                        newEntry.Initialize(OnInviteFriendToPlay);
+                await ShowPlayerEntries(searchResults);
 
-                        searchUserEntryInstances ??= new();
-                        searchUserEntryInstances.Add(newEntry);
-                    }
-                
-                // Clear previous search entries
-                searchUserEntryInstances?.ForEach(x => x.gameObject.SetActive(false));
-
-                // Create new search entries for each result
-                if (searchResults is not null and { Length: > 0 })
-                {
-                    var configureEntriesTasks = searchResults.Select((x, i) => UniTask.Create(async () =>
-                    {
-                        var result = searchResults[i];
-                        var entryInstance = searchUserEntryInstances[i];
-
-                        await entryInstance.Configure(result);
-                        entryInstance.gameObject.SetActive(true);
-
-                    }));
-
-                    // Wait until all entries are configured before allowing interactions, to ensure a smooth user experience without partial data shown
-                    if (configureEntriesTasks is not null)
-                        await UniTask.WhenAll(configureEntriesTasks);
-                }
-                else
+                if (searchResults is null or { Length: 0 })
                     Debug.LogWarning("No users found matching the search criteria.");
 
-                // Show or hide the search users canvas group based on results
-                if (searchUsersCanvasGroup)
-                    searchUsersCanvasGroup.SetActive(searchResults is not null and { Length: > 0 });
+                isShowingSearchResults = true;
+                hasSearchResults = searchResults is not null and { Length: > 0 };
+                ApplyScreenState();
             }
+        }
+
+        /// <summary>
+        /// Fills the player cards section with the given players, reusing the existing instances.
+        /// </summary>
+        private async UniTask ShowPlayerEntries(RtdbUserData[] players)
+        {
+            if (!searchUserEntriesParent || !searchUserEntryPrefab)
+                return;
+
+            var leftingInstances = players?.Length - (searchUserEntryInstances?.Count ?? 0) ?? 0;
+            if (leftingInstances > 0)
+                for (var i = 0; i < leftingInstances; i++)
+                {
+                    var newEntry = Instantiate(searchUserEntryPrefab, searchUserEntriesParent);
+                    newEntry.Initialize(OnInviteFriendToPlay);
+
+                    searchUserEntryInstances ??= new();
+                    searchUserEntryInstances.Add(newEntry);
+                }
+
+            // Clear previous entries
+            searchUserEntryInstances?.ForEach(x => x.gameObject.SetActive(false));
+
+            if (players is null or { Length: 0 })
+                return;
+
+            // Wait until all entries are configured before allowing interactions, to ensure a smooth user experience without partial data shown
+            await UniTask.WhenAll(players.Select((player, i) => UniTask.Create(async () =>
+            {
+                var entryInstance = searchUserEntryInstances[i];
+
+                await entryInstance.Configure(player);
+                entryInstance.gameObject.SetActive(true);
+            })));
+
+            searchUserEntriesParent.RefreshLayoutGroupsImmediateAndRecursive();
+        }
+
+        /// <summary>
+        /// Shows the recently played players that are not friends yet, so they can be added from the empty state.
+        /// </summary>
+        private async UniTask ShowRecentlyPlayedPlayers()
+        {
+            if (!UsesScreenStates)
+                return;
+
+            var recentlyPlayed = gameManager?.RecentlyPlayedDatas
+                ?.Where(x => x != null
+                    && !string.IsNullOrEmpty(x.id)
+                    && x.id != authManager?.UUID // Ignore self
+                    && (!FriendsEntryDatas?.Any(y => y.TargetID == x.id) ?? true)) // Ignore already friends
+                ?.GroupBy(x => x.id)
+                ?.Select(x => x.OrderByDescending(y => y.playedTime ?? 0).First())
+                ?.OrderByDescending(x => x.playedTime ?? 0)
+                ?.Select(x => new RtdbUserData
+                {
+                    userId = x.id,
+                    displayName = x.playerName
+                })
+                ?.ToArray();
+
+            hasRecentlyPlayedPlayers = recentlyPlayed is not null and { Length: > 0 };
+
+            // A search started meanwhile owns the player cards
+            if (isShowingSearchResults)
+                return;
+
+            await ShowPlayerEntries(recentlyPlayed);
+        }
+
+        // Player id -> profile icon id, filled from name searches; empty string means "looked up, not found"
+        private readonly Dictionary<string, string> profileIconIdsCache = new();
+        private bool isResolvingProfileIcons;
+        private bool isUserSearchPending;
+
+        /// <summary>
+        /// Finds a player's profile icon id through the existing name search (the friends service carries no icon).
+        /// Lookups run one by one because the search system rejects overlapping requests.
+        /// </summary>
+        private async UniTask<string> ResolveProfileIconId(string playerId, string playerName)
+        {
+            if (string.IsNullOrEmpty(playerId) || string.IsNullOrEmpty(playerName) || !gameManager)
+                return null;
+
+            if (profileIconIdsCache.TryGetValue(playerId, out var cached))
+                return cached;
+
+            // Friend names carry a "#1234" tag that is not part of the searchable display name
+            var tagIndex = playerName.IndexOf('#');
+            if (tagIndex > 0)
+                playerName = playerName.Substring(0, tagIndex);
+
+            var results = await gameManager.TryToSearchPlayersByName(playerName);
+
+            // A rejected request (search already running) returns null: leave it uncached to retry later
+            if (results is null)
+                return null;
+
+            CacheProfileIcons(results);
+            return profileIconIdsCache.TryGetValue(playerId, out var iconId)
+                ? iconId
+                : profileIconIdsCache[playerId] = string.Empty;
+        }
+
+        private void CacheProfileIcons(IEnumerable<RtdbUserData> players)
+        {
+            if (players is null)
+                return;
+
+            foreach (var player in players)
+                if (player != null && !string.IsNullOrEmpty(player.userId) && !string.IsNullOrEmpty(player.profileIconID))
+                    profileIconIdsCache[player.userId] = player.profileIconID;
+        }
+
+        /// <summary>
+        /// Loads the profile icons of the visible friend cards and recently played cards.
+        /// </summary>
+        private async UniTaskVoid LoadProfileIcons()
+        {
+            if (!UsesScreenStates || isResolvingProfileIcons || !gameManager)
+                return;
+
+            isResolvingProfileIcons = true;
+            try
+            {
+                var friendEntries = friendEntriesInstances
+                    ?.Where(x => x && x.gameObject.activeSelf && x.HasAvatar && x.FriendsEntryData.HasValue)
+                    .ToArray() ?? Array.Empty<FriendEntry>();
+
+                foreach (var entry in friendEntries)
+                {
+                    // The player's own search has priority over background lookups
+                    if (isUserSearchPending)
+                        return;
+
+                    var data = entry.FriendsEntryData.Value;
+                    var iconId = await ResolveProfileIconId(data.TargetID, data.Name);
+                    if (string.IsNullOrEmpty(iconId))
+                        continue;
+
+                    var sprite = await gameManager.GetSpriteAsync(iconId, Consts.CollectionKeys.Icons);
+
+                    // Skip cards reused for another friend meanwhile
+                    if (sprite && entry && entry.FriendsEntryData?.TargetID == data.TargetID)
+                        entry.SetAvatar(sprite);
+                }
+
+                if (isShowingSearchResults)
+                    return;
+
+                var playerEntries = searchUserEntryInstances
+                    ?.Where(x => x && x.gameObject.activeSelf && x.SearchedUserData != null && string.IsNullOrEmpty(x.SearchedUserData.profileIconID))
+                    .ToArray() ?? Array.Empty<SearchUserEntry>();
+
+                foreach (var entry in playerEntries)
+                {
+                    if (isUserSearchPending || isShowingSearchResults)
+                        return;
+
+                    var data = entry.SearchedUserData;
+                    var iconId = await ResolveProfileIconId(data.userId, data.displayName);
+                    if (!string.IsNullOrEmpty(iconId) && entry.SearchedUserData == data)
+                        await entry.SetPlayerIcon(iconId);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[{nameof(PartyController)}] Couldn't load profile icons: {e.Message}");
+            }
+            finally
+            {
+                isResolvingProfileIcons = false;
+            }
+        }
+
+        /// <summary>
+        /// Leaves the search results once the search field is cleared.
+        /// </summary>
+        private void OnSearchFieldSelected(string _)
+        {
+            if (isSearchFieldFocused)
+                return;
+
+            isSearchFieldFocused = true;
+            ApplyScreenState();
+        }
+
+        /// <summary>
+        /// Leaving an empty search bar goes back to the friends list.
+        /// </summary>
+        private void OnSearchFieldDeselected(string text)
+        {
+            if (!isSearchFieldFocused || !string.IsNullOrWhiteSpace(text))
+                return;
+
+            isSearchFieldFocused = false;
+            ApplyScreenState();
+        }
+
+        private async void OnSearchTextChanged(string text)
+        {
+            if (!isShowingSearchResults || !string.IsNullOrWhiteSpace(text))
+                return;
+
+            isShowingSearchResults = false;
+            hasSearchResults = false;
+            await ShowRecentlyPlayedPlayers();
+            ApplyScreenState();
+            LoadProfileIcons().Forget();
+        }
+
+        /// <summary>
+        /// Switches between the empty, recently played, friends and search layouts of the screen.
+        /// </summary>
+        private void ApplyScreenState()
+        {
+            var hasAnyFriend = (FriendsEntryDatas?.Length ?? 0) > 0;
+
+            // Layouts without the screen states (party panel) only toggle the empty label and search results
+            if (!UsesScreenStates)
+            {
+                if (emptyFriendlistLabel)
+                    emptyFriendlistLabel.SetActive(!hasAnyFriend);
+
+                if (searchUsersCanvasGroup)
+                    searchUsersCanvasGroup.SetActive(isShowingSearchResults && hasSearchResults);
+                return;
+            }
+
+            // Focusing the search bar or showing results switches to the search layout: the empty-state
+            // header with the centered bar, and the results listed under it instead of the friends grid
+            var isSearchMode = isShowingSearchResults || isSearchFieldFocused;
+            var isPlayerNotFound = isShowingSearchResults && !hasSearchResults;
+            var isShowingRecentlyPlayed = !hasAnyFriend && !isShowingSearchResults && hasRecentlyPlayedPlayers;
+
+            if (emptyFriendlistLabel)
+                emptyFriendlistLabel.SetActive((!hasAnyFriend || isSearchMode) && !isPlayerNotFound);
+
+            if (firstMatchHint)
+                firstMatchHint.SetActive(!hasAnyFriend && !isSearchMode && !hasRecentlyPlayedPlayers);
+
+            if (friendsSection)
+                friendsSection.SetActive(hasAnyFriend && !isSearchMode);
+
+            if (playerNotFoundState)
+                playerNotFoundState.SetActive(isPlayerNotFound);
+
+            if (playersSectionTitle)
+                playersSectionTitle.text = isShowingSearchResults ? searchResultsTitle : recentlyPlayedTitle;
+
+            var isShowingPlayers = (isShowingSearchResults && hasSearchResults) || isShowingRecentlyPlayed;
+
+            if (searchUsersCanvasGroup)
+                searchUsersCanvasGroup.SetActive(isShowingPlayers);
+
+            // Deactivate the section too, so a hidden section takes no room in the layout
+            if (playersSection)
+                playersSection.SetActive(isShowingPlayers);
+
+            // Zero flexible width keeps the row from inheriting the input field's flexible width
+            if (searchRowLayout)
+            {
+                var isFullWidth = (hasAnyFriend && !isSearchMode) || isPlayerNotFound;
+                searchRowLayout.preferredWidth = isFullWidth ? -1f : emptyStateSearchRowWidth;
+                searchRowLayout.flexibleWidth = isFullWidth ? 1f : 0f;
+            }
+
+            transform.RefreshLayoutGroupsImmediateAndRecursive();
         }
 
         /// <summary>
@@ -322,17 +607,25 @@ namespace ProDomino.FriendSystem
                 friendsCountLabel.text = $"{friendsAndRequestCount}/{friendManager?.FriendsConfigData?.friendshipsLimit ?? 50}";
             }
 
-            // Show or hide the "empty friendlist" label based on total friends count
-            if (emptyFriendlistLabel)
-            {
-                var hasAnyFriend = (FriendsEntryDatas?.Length ?? 0) > 0;
+            // Legacy layouts hide the search results each time the UI is configured
+            if (!UsesScreenStates)
+                hasSearchResults = isShowingSearchResults = false;
 
-                emptyFriendlistLabel.gameObject.SetActive(!hasAnyFriend);
-            }
+            // Show the empty, friends or search layout based on the current data
+            ApplyScreenState();
+        }
 
-            // By default, hide the search users canvas group each time we configure the UI
-            if (searchUsersCanvasGroup)
-                searchUsersCanvasGroup.SetActive(false);
+        /// <summary>
+        /// Drops the current search, going back to the friends list or the empty state.
+        /// </summary>
+        private void ResetSearch()
+        {
+            isShowingSearchResults = false;
+            hasSearchResults = false;
+            isSearchFieldFocused = false;
+
+            if (requestFriendshipInputfield)
+                requestFriendshipInputfield.SetTextWithoutNotify(string.Empty);
         }
 
         /// <summary>
@@ -350,7 +643,10 @@ namespace ProDomino.FriendSystem
             friendListCanvasGroup.SetActive(isVisible);
 
             if (isVisible)
+            {
+                ResetSearch();
                 ConfigureUI();
+            }
 
             OnFriendListVisibilityChanged?.Invoke(isVisible);
         }
@@ -435,10 +731,10 @@ namespace ProDomino.FriendSystem
             }
 
             // Remove duplicated entries selecting the most recent one
+            // (UUID is a creation timestamp shared by every entry built in the same second, so dedupe by player)
             friendsEntryDatas = friendsEntryDatas
-                ?.GroupBy(x => x.UUID)
-                ?.Select(x => x.OrderByDescending(y => y.Timestamp))
-                ?.FirstOrDefault()
+                ?.GroupBy(x => x.TargetID)
+                ?.Select(x => x.OrderByDescending(y => y.Timestamp).First())
                 ?.ToList();
 
             // Ensure we have enough instances to display all entries
@@ -555,6 +851,11 @@ namespace ProDomino.FriendSystem
 
                 transform.RefreshLayoutGroupsImmediateAndRecursive();
             }
+
+            // Data is fresh now: suggest recently played players and pick the layout
+            await ShowRecentlyPlayedPlayers();
+            ApplyScreenState();
+            LoadProfileIcons().Forget();
         }
 
         /// <summary>
@@ -835,6 +1136,9 @@ namespace ProDomino.FriendSystem
             catch (Exception ex)
             {
                 Debug.LogWarning($"Couldn't send a friends request to {rtdbUserData.userId}:\n\n{ex.Message}");
+
+                // Let the entry know the request failed so it keeps offering the action
+                throw;
             }
             finally
             {

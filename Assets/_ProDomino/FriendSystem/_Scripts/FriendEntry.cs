@@ -23,6 +23,20 @@ namespace ProDomino.FriendSystem
         [SerializeField] private CustomButtonUI inviteButton;
         [SerializeField] private CustomButtonUI RemoveButton;
 
+        [Header("Avatar (optional)")]
+        [SerializeField] private Image avatarImage;
+        [SerializeField] private Sprite defaultAvatarSprite;
+
+        [Header("Actions Menu (optional)")]
+        [Tooltip("Button that opens the actions menu holding the invite/remove buttons. Leave empty to show them inline.")]
+        [SerializeField] private Button actionsMenuButton;
+        [SerializeField] private GameObject actionsMenuPanel;
+
+        [Header("Status Label Colors (optional)")]
+        [SerializeField] private bool isTintingStatusLabel;
+        [SerializeField] private Color onlineStatusLabelColor = new(0.902f, 0.902f, 0.906f, 1f);
+        [SerializeField] private Color otherStatusLabelColor = new(0.541f, 0.541f, 0.561f, 1f);
+
         [Header("Status Indicator Colors")]
         [SerializeField] private Color onlineStatusColor = ColorUtility.TryParseHtmlString("#3FDF00", out var onlineColor) ? onlineColor : Color.green; 
         [SerializeField] private Color offlineStatusColor = ColorUtility.TryParseHtmlString("#DF0000", out var onlineColor) ? onlineColor : Color.red;
@@ -43,6 +57,53 @@ namespace ProDomino.FriendSystem
 
             if (RemoveButton)
                 RemoveButton.onClick.AddListener(OnPressRemoveButton);
+
+            if (actionsMenuButton)
+                actionsMenuButton.onClick.AddListener(ToggleActionsMenu);
+
+            SetActionsMenuVisible(false);
+        }
+
+        private void OnDisable()
+        {
+            SetActionsMenuVisible(false);
+        }
+
+        // Only one card keeps its actions menu open at a time
+        private static FriendEntry openedMenuOwner;
+
+        private bool isActionsMenuVisible;
+
+        private void ToggleActionsMenu()
+        {
+            SetActionsMenuVisible(!isActionsMenuVisible);
+        }
+
+        private void SetActionsMenuVisible(bool isVisible)
+        {
+            if (!actionsMenuPanel)
+                return;
+
+            if (isVisible && openedMenuOwner && openedMenuOwner != this)
+                openedMenuOwner.SetActionsMenuVisible(false);
+
+            isActionsMenuVisible = isVisible;
+
+            // A CanvasGroup keeps the menu buttons active while hidden: CustomButtonUI reads its default
+            // interactable state in Awake, so an inactive button configured before its Awake stays disabled
+            if (actionsMenuPanel.TryGetComponent<CanvasGroup>(out var menuGroup))
+            {
+                menuGroup.alpha = isVisible ? 1f : 0f;
+                menuGroup.interactable = isVisible;
+                menuGroup.blocksRaycasts = isVisible;
+            }
+            else
+                actionsMenuPanel.SetActive(isVisible);
+
+            if (isVisible)
+                openedMenuOwner = this;
+            else if (openedMenuOwner == this)
+                openedMenuOwner = null;
         }
 
         /// <summary>
@@ -66,8 +127,23 @@ namespace ProDomino.FriendSystem
         /// </summary>
         /// <param name="friendsEntryData">The friend entry data to display in the UI.</param>
         /// <param name="categoriesShown">Specifies which categories are currently shown.</param>
+        internal bool HasAvatar => avatarImage;
+
+        /// <summary>
+        /// Shows the given profile icon, or the default avatar when it is null.
+        /// </summary>
+        internal void SetAvatar(Sprite sprite)
+        {
+            if (avatarImage)
+                avatarImage.sprite = sprite ? sprite : defaultAvatarSprite;
+        }
+
         internal void Configure(FriendsEntryData? friendsEntryData, CategoriesShown categoriesShown)
         {
+            // A reused card must not keep the previous friend's icon while the new one loads
+            if (FriendsEntryData?.TargetID != friendsEntryData?.TargetID)
+                SetAvatar(null);
+
             FriendsEntryData = friendsEntryData;
 
             if (!FriendsEntryData.HasValue)
@@ -87,7 +163,14 @@ namespace ProDomino.FriendSystem
                 Debug.LogWarning("The Id label is null or the parameter 'Id' of the friend entry data is null or empty");
 
             if (friendStatusLabel)
+            {
                 friendStatusLabel.text = FriendsEntryData.Value.Availability.ToString();
+
+                if (isTintingStatusLabel)
+                    friendStatusLabel.color = FriendsEntryData.Value.Availability is Availability.Online
+                        ? onlineStatusLabelColor
+                        : otherStatusLabelColor;
+            }
             else
                 Debug.LogWarning("The status label is null");
 
@@ -102,15 +185,18 @@ namespace ProDomino.FriendSystem
                 };
 
             //  Enable the invite button only if the friend is online AND not already in the party.
+            // ignoreDefault: the card can be configured before the buttons run Awake (hidden section);
+            // without it CustomButtonUI keeps the pre-Awake "not interactable" default forever
             if (inviteButton)
                 inviteButton.SetButtonInteractable
                     (FriendsEntryData.HasValue 
                     && FriendsEntryData.Value.Availability is Availability.Online
-                    && (PartyMembers == null || !PartyMembers.Any(x => x?.PlayerID == FriendsEntryData.Value.TargetID)));
+                    && (PartyMembers == null || !PartyMembers.Any(x => x?.PlayerID == FriendsEntryData.Value.TargetID)),
+                    ignoreDefault: true);
 
             // Only allow removing friends
             if (RemoveButton)
-                RemoveButton.SetButtonInteractable(FriendsEntryData.HasValue);
+                RemoveButton.SetButtonInteractable(FriendsEntryData.HasValue, ignoreDefault: true);
 
             UpdateCategories(categoriesShown);
         }
@@ -157,6 +243,7 @@ namespace ProDomino.FriendSystem
                 return;
             }
 
+            SetActionsMenuVisible(false);
             onInviteFriendToPlay.Invoke(FriendsEntryData);
         }
 
@@ -171,6 +258,7 @@ namespace ProDomino.FriendSystem
                 return;
             }
 
+            SetActionsMenuVisible(false);
             onRemoveFriendFromList.Invoke(FriendsEntryData);
         }
     }
