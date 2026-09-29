@@ -26,6 +26,8 @@ namespace ProDomino.NotificationSystem
         [SerializeField] private TMP_Text categoryLabel;
         [SerializeField] private TMP_Text timestampLabel;
         [SerializeField] private Image avatarImage;
+        [Tooltip("Container of confirm/decline buttons; hidden when neither is available")]
+        [SerializeField] private GameObject actionsRow;
 
         private Func<string> getCurrentPlayerID;
         private Func<string, Sprite> getIconSprite;
@@ -64,15 +66,20 @@ namespace ProDomino.NotificationSystem
                 return;
             }
 
-            if (headerLabel && !string.IsNullOrEmpty(playerNotificationData.title))
+            var hasTitle = !string.IsNullOrEmpty(playerNotificationData.title);
+            if (headerLabel && hasTitle)
                 headerLabel.text = playerNotificationData.title;
-            else
-                Debug.LogWarning("Title label is missing or title data is empty.");
 
-            if (bodyLabel && !string.IsNullOrEmpty(playerNotificationData.body))
-                bodyLabel.text = playerNotificationData.body;
+            if (bodyLabel)
+            {
+                // Card without a dedicated header: render title as a bold first line above the body
+                var body = playerNotificationData.body ?? string.Empty;
+                bodyLabel.text = !headerLabel && hasTitle
+                    ? $"<color=#FFFFFF><b>{playerNotificationData.title}</b></color>\n{body}"
+                    : body;
+            }
             else
-                Debug.LogWarning("Body label is missing or body data is empty.");
+                Debug.LogWarning("Body label is missing.");
 
             if (iconImage && getIconSprite != null)
             {
@@ -162,6 +169,9 @@ namespace ProDomino.NotificationSystem
                         declineButton.onClick.AddListener(OnDeclineButtonClicked);
                 }
             }
+
+            if (actionsRow)
+                actionsRow.SetActive((confirmButton && confirmButton.gameObject.activeSelf) || (declineButton && declineButton.gameObject.activeSelf));
         }
 
         internal void Reset()
@@ -193,6 +203,8 @@ namespace ProDomino.NotificationSystem
                 declineButton.onClick.RemoveAllListeners();
                 declineButton.gameObject.SetActive(false);
             }
+            if (actionsRow)
+                actionsRow.SetActive(false);
         }
 
         private async void OnConfirmButtonClicked()

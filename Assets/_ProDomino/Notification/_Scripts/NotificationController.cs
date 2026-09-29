@@ -51,6 +51,7 @@ namespace ProDomino.NotificationSystem
         private DictionaryService dictionaryService;
         private AnalyticsManager analyticsManager;
         private List<NotificationEntry> notificationEntries;
+        private readonly HashSet<NotificationEntry> olderEntries = new();
 
         public bool IsViewingLatestNews { get; private set; }
         internal FriendsEntryData[] RequestsEntryDatas => friendManager.RequestsEntryDatas?.ToArray();
@@ -93,7 +94,11 @@ namespace ProDomino.NotificationSystem
             closePopUpButton?.onClick.AddListener(ClosePopUp);
 
             if (notificationFiltersToggleGroupUI)
+            {
                 notificationFiltersToggleGroupUI.SetOnCustomButtonSelectedCallback(FilterEntries);
+                // Tabs behave like radio buttons: clicking the active tab keeps it selected
+                notificationFiltersToggleGroupUI.SetOneMandatorySelectionLimit(true);
+            }
 
             // MainReferenceInitialize existing entries
             foreach (var notificationEntry in notificationEntries)
@@ -224,9 +229,11 @@ namespace ProDomino.NotificationSystem
             } 
             else if (relationShip.Type is RelationshipType.FriendRequest)
             {
+                // Member is always the other player; its role tells who sent the request
+                var isIncoming = relationShip.Member.Role is MemberRole.Source;
                 newPlayerNotificationData = GenerateRequestNotification
-                    (relationShip.Member.Id,
-                    authManager.UUID, 
+                    (isIncoming ? relationShip.Member.Id : authManager.UUID,
+                    isIncoming ? authManager.UUID : relationShip.Member.Id,
                     relationShip.Member.Profile.Name);
             }
             else
@@ -279,6 +286,10 @@ namespace ProDomino.NotificationSystem
         /// </summary>
         private void FilterEntries(string toggleId)
         {
+            // Null id comes from a deselect; keep the current tab
+            if (toggleId is null)
+                return;
+
             IsViewingLatestNews = toggleId is LatestNotifications;
 
             if (notificationEntries is null or { Count: 0 })
@@ -295,21 +306,42 @@ namespace ProDomino.NotificationSystem
                     (!IsViewingLatestNews && (x.PlayerNotificationData?.isGameNotification ?? false))))
                 .ToList();
 
+            // Sibling order is already Today/Older sorted by UpdateInstances; only toggle visibility
+            if (todaySectionHeader)
+                todaySectionHeader.SetActive(filteredEntries.Any(x => !olderEntries.Contains(x)));
+            if (olderSectionHeader)
+                olderSectionHeader.SetActive(filteredEntries.Any(olderEntries.Contains));
+
             if (filteredEntries is null or { Count: 0 })
             {
                 noNotificationsCanvasGroup?.SetActive(true, isSettingInteractable: false, isSettingBlocksRaycasts: false);
-                Debug.LogWarning("Couldn't filter notification. Collection is null or empty");
+                transform.RefreshLayoutGroupsImmediateAndRecursive();
                 return;
             }
             noNotificationsCanvasGroup?.SetActive(false, isSettingInteractable: false, isSettingBlocksRaycasts: false);
 
             foreach (var notificationEntry in filteredEntries)
-            {
                 notificationEntry.SetActive(true);
-                notificationEntry.transform.SetAsLastSibling();
-            }
 
             transform.RefreshLayoutGroupsImmediateAndRecursive();
+            RefreshLayoutNextFrame().Forget();
+        }
+
+        /// <summary>
+        /// TMP reports wrapped preferred height only after its mesh updates, so freshly configured cards
+        /// measure as one line on the first pass. Rebuild once more after the text has been generated.
+        /// </summary>
+        private async UniTaskVoid RefreshLayoutNextFrame()
+        {
+            await UniTask.Yield(PlayerLoopTiming.PostLateUpdate);
+            if (!this || notificationEntriesParent is not RectTransform content)
+                return;
+
+            Canvas.ForceUpdateCanvases();
+            foreach (var entry in notificationEntries)
+                if (entry && entry.gameObject.activeSelf)
+                    LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)entry.transform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
         }
 
         /// <summary>
@@ -421,6 +453,7 @@ namespace ProDomino.NotificationSystem
                 Debug.LogWarning("Player notification data collection is null or empty, no new instances will be created.");
 
             // Hide all current entries
+            olderEntries.Clear();
             notificationEntries.ForEach(instance =>
             {
                 instance.Reset();
@@ -508,9 +541,10 @@ namespace ProDomino.NotificationSystem
                         instance.Configure(notificationEntryData, onConfirm, onDecline);
                         instance.SetActive(true);
                         instance.transform.SetSiblingIndex(order++);
+                        olderEntries.Add(instance);
                     }
                 }
-            } 
+            }
             else
             {
                 if (todaySectionHeader) todaySectionHeader.SetActive(false);
@@ -519,9 +553,15 @@ namespace ProDomino.NotificationSystem
             }
 
             // Filter the notifications based on the current view if toggle group is active
-            if (notificationFiltersToggleGroupUI != null && notificationFiltersToggleGroupUI.gameObject.activeInHierarchy)
+            if (notificationFiltersToggleGroupUI != null)
             {
-                notificationFiltersToggleGroupUI.GetButtonUI(IsViewingLatestNews ? LatestNotifications : NewsNotifications)?.Select();
+                // Select() on an already-selected tab fires no callback, so reapply the filter directly
+                var tabID = IsViewingLatestNews ? LatestNotifications : NewsNotifications;
+                var tab = notificationFiltersToggleGroupUI.GetButtonUI(tabID);
+                if (tab && !tab.IsSelected)
+                    tab.Select();
+                else
+                    FilterEntries(tabID);
             }
             else
             {
@@ -567,11 +607,7 @@ namespace ProDomino.NotificationSystem
                 return;
             }
 
-            if (notificationFiltersToggleGroupUI)
-                notificationFiltersToggleGroupUI.DeselectAll();
-            else
-                Debug.LogWarning("Couldn't deselect all notification filters because toggle group reference is null");
-
+            // Tab selection persists across opens; UpdateInstances reapplies the active filter
             UpdateInstances().Forget();
 
             popUpCanvasGroup.SetActive(true);
@@ -590,11 +626,6 @@ namespace ProDomino.NotificationSystem
             }
 
             popUpCanvasGroup.SetActive(false);
-
-            if (notificationFiltersToggleGroupUI)
-                notificationFiltersToggleGroupUI.DeselectAll();
-            else
-                Debug.LogWarning("Couldn't deselect all notification filters because toggle group reference is null");
 
             UpdateInstances().Forget();
         }

@@ -481,7 +481,8 @@ namespace ProDomino.Dashboard.Editor
                 scrollRt.anchorMin = Vector2.zero;
                 scrollRt.anchorMax = Vector2.one;
                 scrollRt.offsetMin = new Vector2(10f, 10f);
-                scrollRt.offsetMax = new Vector2(-10f, -50f);
+                // Clear header (48) + Filter_Tabs (58..94) + gap
+                scrollRt.offsetMax = new Vector2(-10f, -100f);
 
                 var scrollRect = scrollGo.AddComponent<ScrollRect>();
                 scrollRect.horizontal = false;
