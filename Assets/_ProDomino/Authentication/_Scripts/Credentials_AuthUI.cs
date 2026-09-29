@@ -31,6 +31,7 @@ namespace ProDomino.Authentication
         [SerializeField] private TMP_InputField signInCredentialsInputField;
         [SerializeField] private TMP_InputField signInPasswordInputField;
         [SerializeField] private TMP_Text signInDenyFeedback;
+        [SerializeField] private TMP_Text signInPasswordDenyFeedback;
 
         [SerializeField, Header("Sign Up")] private CanvasGroup signUpCanvasGroup;
         [SerializeField] private Button signUpButton;
@@ -110,9 +111,20 @@ namespace ProDomino.Authentication
         private void OnPressRememberMeToggle(bool isRemember)
         {
             PlayerPrefs.SetInt("IsRememberPassword", isRemember ? 1 : 0);
+            PlayerPrefs.Save();
 
             // Set the toggle state without notifying listeners to avoid recursive calls
-            rememberMeToggle.SetIsOnWithoutNotify(isRemember);
+            if (rememberMeToggle)
+                rememberMeToggle.SetIsOnWithoutNotify(isRemember);
+        }
+
+        /// <summary>
+        /// Restores the persisted 'Remember Me' preference into the toggle without clearing it.
+        /// </summary>
+        private void RestoreRememberMeToggle()
+        {
+            if (rememberMeToggle)
+                rememberMeToggle.SetIsOnWithoutNotify(PlayerPrefs.GetInt("IsRememberPassword", 0) is 1);
         }
 
         /// <summary>
@@ -187,12 +199,8 @@ namespace ProDomino.Authentication
             signUpConfirmPasswordInputField.text = string.Empty;
 
             // Clear the feedback messages
-            signInDenyFeedback.text = string.Empty;
-
-            signUpUsernameDenyFeedback.text = string.Empty;
-            signUpEmailDenyFeedback.text = string.Empty;
-            signUpPasswordDenyFeedback.text = string.Empty;
-            signUpConfirmPasswordDenyFeedback.text = string.Empty;
+            FeedbackClear(isSignIn: true);
+            FeedbackClear(isSignIn: false);
         }
 
         /// <summary>
@@ -212,8 +220,8 @@ namespace ProDomino.Authentication
                 // Refresh the layout groups immediately to ensure the UI is updated correctly
                 transform.RefreshLayoutGroupsImmediateAndRecursive();
 
-                // By default, if the AuthUI is open, then reset the remember me toggle to false
-                OnPressRememberMeToggle(false);
+                // Keep the user's stored preference instead of clearing it every time the UI opens
+                RestoreRememberMeToggle();
             }
         }
 
@@ -279,23 +287,25 @@ namespace ProDomino.Authentication
         internal void FeedbackClear(bool isSignIn)
         {
             if (isSignIn)
-            { 
-                if (signInDenyFeedback)
-                    signInDenyFeedback.text = string.Empty;
-            } 
-            else 
             {
-                if (signUpUsernameDenyFeedback)
-                    signUpUsernameDenyFeedback.text = string.Empty;
+                ClearFeedbackLabel(signInDenyFeedback);
+                ClearFeedbackLabel(signInPasswordDenyFeedback);
+            }
+            else
+            {
+                ClearFeedbackLabel(signUpUsernameDenyFeedback);
+                ClearFeedbackLabel(signUpEmailDenyFeedback);
+                ClearFeedbackLabel(signUpPasswordDenyFeedback);
+                ClearFeedbackLabel(signUpConfirmPasswordDenyFeedback);
+            }
 
-                if (signUpEmailDenyFeedback)
-                    signUpEmailDenyFeedback.text = string.Empty;
+            static void ClearFeedbackLabel(TMP_Text label)
+            {
+                if (!label)
+                    return;
 
-                if (signUpPasswordDenyFeedback)
-                    signUpPasswordDenyFeedback.text = string.Empty;
-
-                if (signUpConfirmPasswordDenyFeedback)
-                    signUpConfirmPasswordDenyFeedback.text = string.Empty;
+                label.text = string.Empty;
+                label.gameObject.SetActive(false);
             }
         }
 
@@ -423,8 +433,13 @@ namespace ProDomino.Authentication
             }
 
             // If the feedback already exists, add a line jump
-            var feedback = isSignIn 
-                ? signInDenyFeedback 
+            var feedback = isSignIn
+                ? InputFieldType switch {
+                    // Password errors belong under the password field, not under the credentials field
+                    InputfieldType.Password or InputfieldType.ConfirmPassword
+                        => signInPasswordDenyFeedback != null ? signInPasswordDenyFeedback : signInDenyFeedback,
+                    _ => signInDenyFeedback,
+                }
                 : InputFieldType switch {
                     InputfieldType.Email => signUpEmailDenyFeedback,
                     InputfieldType.Password => signUpPasswordDenyFeedback,
@@ -432,12 +447,18 @@ namespace ProDomino.Authentication
                     InputfieldType.UserName or _ => signUpUsernameDenyFeedback,
                 };
 
+            if (!feedback)
+                return;
+
             if (feedback.text is not "")
                 TryToAddLineJump(true);
 
             // Once the deny message is set, set the feedback text
-            if (!string.IsNullOrEmpty(denyMessage) && feedback)
+            if (!string.IsNullOrEmpty(denyMessage))
+            {
                 feedback.text += denyMessage;
+                feedback.gameObject.SetActive(true);
+            }
 
             void TryToAddLineJump(bool isInsertingAtFirst = false)
             {
@@ -463,7 +484,10 @@ namespace ProDomino.Authentication
                 : signUpUsernameDenyFeedback;
 
             if (feedbackLabel)
+            {
                 feedbackLabel.text = feedback;
+                feedbackLabel.gameObject.SetActive(!string.IsNullOrEmpty(feedback));
+            }
 
             transform.RefreshLayoutGroupsImmediateAndRecursive();
         }

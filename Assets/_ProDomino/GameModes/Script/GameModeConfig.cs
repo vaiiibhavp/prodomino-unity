@@ -99,6 +99,8 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     public bool IsLocaPlayerHost => checkIfLocalPlayerIsHost?.Invoke() ?? false;
     public bool IsPartyRelay => checkIfIsPartyRelay?.Invoke() ?? false;
 
+    private bool isSelectionUISetUp;
+
     private bool selectionUIHiddenForMatch;
     /// <summary>
     /// True once <see cref="SetSelectionUIVisibility"/>(false) has hidden the selector for an
@@ -147,15 +149,31 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         if (playGameModeButton)
             playGameModeButton.SetIsInteractableByDefault(true);
+
+        // The dashboard keeps this panel deactivated while its own lobby is on screen and reactivates
+        // it from a click handler. Awake then runs synchronously inside that SetActive(true) call,
+        // while Start only runs a frame later. The Play button wiring and the selector callbacks must
+        // already be in place by then, otherwise SetExternalGameData selects the buttons without any
+        // of the *SelectedID fields being updated and RunGameMode refuses to start the match. So keep
+        // that setup in Awake.
+        SetupSelectionUI();
     }
 
-    private async void Start()
+    /// <summary>
+    /// Wires the Play button and every selector callback. Safe to call more than once.
+    /// </summary>
+    private void SetupSelectionUI()
     {
+        if (isSelectionUISetUp)
+            return;
+
         if (!playGameModeButton)
         {
             Debug.LogError("PlayGameButton reference is null. Is critic to assign it");
             return;
         }
+
+        isSelectionUISetUp = true;
 
         // Register the default value for the play button text if it exists
         if (playNavigationButton)
@@ -213,6 +231,14 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
             ValidateGameModeFullData();
         });
+
+    }
+
+    private async void Start()
+    {
+        // Late safety net: the setup already ran in Awake, this only covers a reference that was
+        // assigned after Awake.
+        SetupSelectionUI();
 
         // Wait until the AuthManager is initialized
         await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true });
@@ -708,20 +734,39 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             return;
         }
 
+        // Set the backing fields directly as well as selecting the buttons, the same way
+        // OpenGameModal does: the selected-id fields are only updated by the selector callbacks, and
+        // a caller that activates this panel and starts a match in the same frame cannot rely on
+        // that plumbing having run yet.
         if (numberOfTiles.HasValue)
+        {
+            _numberOfTilesSelector = numberOfTiles.Value;
             numberOfTilesSelector.GetButtonUI(numberOfTiles.Value.ToString())?.Select();
+        }
 
         if (gameMode.HasValue)
+        {
+            _gameModeSelectedID = gameMode.Value;
             gameModeSelector.GetButtonUI(gameMode.Value.ToString())?.Select();
+        }
 
         if (gameType.HasValue)
+        {
+            _gameTypeSelectedID = gameType.Value;
             gameTypeSelector.GetButtonUI(gameType.Value.ToString())?.Select();
+        }
 
         if (numberPlayers.HasValue)
+        {
+            _vsPlayerSelectedID = numberPlayers.Value;
             vsPlayerSelector.GetButtonUI(numberPlayers.Value.ToString())?.Select();
+        }
 
         if (difficultyLevel.HasValue)
+        {
+            _difficultySelector = difficultyLevel.Value;
             difficultySelector.GetButtonUI(difficultyLevel.Value.ToString())?.Select();
+        }
 
         ValidateGameModeFullData();
     }

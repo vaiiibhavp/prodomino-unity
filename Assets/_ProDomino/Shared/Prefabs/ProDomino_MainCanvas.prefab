@@ -624,7 +624,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -521}
+  m_AnchoredPosition: {x: 0, y: -384}
   m_SizeDelta: {x: 0, y: 463}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &269799734040912031
@@ -1165,7 +1165,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6500029555912721990
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2258,7 +2258,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -1008}
+  m_AnchoredPosition: {x: 0, y: -871}
   m_SizeDelta: {x: 0, y: 298}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &998434079987524340
@@ -3832,6 +3832,7 @@ GameObject:
   - component: {fileID: 18205935637671790}
   - component: {fileID: 1113757859167007185}
   - component: {fileID: 4343424948553002691}
+  - component: {fileID: 1111000000000000101}
   m_Layer: 0
   m_Name: ChallengeBanner
   m_TagString: Untagged
@@ -3913,6 +3914,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!114 &1111000000000000101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753656828309568478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1d4e2b9a8f4c5db6e3f1a027d84c11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slides:
+  - background: {fileID: 21300000, guid: d575d8f6ad474493a7daebdeb70fc22f, type: 3}
+    title: 
+    subtitle: 
+  - background: {fileID: 21300000, guid: e55d47591f7fdaf4f93e2d2e123819f8, type: 3}
+    title: 
+    subtitle: 
+  backgroundImage: {fileID: 855224101602773867}
+  titleLabel: {fileID: 1054051422475549000}
+  subtitleLabel: {fileID: 2305487225341875517}
+  paginationDots: {fileID: 1719749812171587240}
+  slideDuration: 5
+  fadeDuration: 0.35
+  swipeThreshold: 60
+  activeDotColor: {r: 0.99215686, g: 0.77254903, b: 0.3254902, a: 1}
+  inactiveDotColor: {r: 0.003921569, g: 0.003921569, b: 0.047058824, a: 0.7}
+  activeDotSize: 12
+  inactiveDotSize: 10
 --- !u!1 &1797741242804572796
 GameObject:
   m_ObjectHideFlags: 0
@@ -6735,7 +6766,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 1306}
+  m_SizeDelta: {x: 0, y: 1169}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &3495191009353351865
 GameObject:
@@ -13234,7 +13265,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3082022380422594206
 RectTransform:
   m_ObjectHideFlags: 0

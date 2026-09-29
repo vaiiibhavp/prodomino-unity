@@ -39,7 +39,12 @@ namespace ProDomino.GameModes
         [SerializeField] private UnityEvent resetNetworkManager;
         [SerializeField] private UniqueBoolEvent isTimeOut_MatchManager;
 
-        private GameManager gameManager;
+        private GameManager _gameManager;
+        // Resolved lazily: GameManager can register itself in the ServiceLocator after this Awake runs,
+        // which left the cached field null and threw in StartDomino right after the board was set up.
+        private GameManager gameManager => _gameManager
+            ? _gameManager
+            : (_gameManager = ServiceLocator.Instance?.GetService<GameManager>());
         private AdManager adManager;
 
         private PostMatchResultController _postMatchResultController;
@@ -76,7 +81,7 @@ namespace ProDomino.GameModes
 
         private void Awake()
         {
-            gameManager = ServiceLocator.Instance.GetService<GameManager>();
+            _gameManager = ServiceLocator.Instance.GetService<GameManager>();
             adManager = ServiceLocator.Instance.GetService<AdManager>();
         }
 
@@ -103,6 +108,28 @@ namespace ProDomino.GameModes
         /// <summary>
         /// Closes all main menu UI elements by hiding the selection UI and the difficulty selection menu.
         /// </summary>
+        /// <summary>
+        /// The game holder is parented under <see cref="_canvas"/>, which lives inside the game mode
+        /// panel. The dashboard keeps that panel deactivated while its lobby is on screen, so a match
+        /// started from there could end up parented under an inactive branch: the board never renders
+        /// (black screen) and the game mode's coroutines fail to start. Activate the branch before the
+        /// game mode is initialized.
+        /// </summary>
+        private void EnsureGameContainerActive()
+        {
+            if (!_canvas || _canvas.gameObject.activeInHierarchy)
+                return;
+
+            for (var current = _canvas.transform; current; current = current.parent)
+            {
+                if (current.gameObject.activeSelf)
+                    continue;
+
+                Debug.LogWarning($"[{nameof(MenuControllerGameMode)}] '{current.name}' was inactive while starting a match. Activating it so the board is visible.");
+                current.gameObject.SetActive(true);
+            }
+        }
+
         private void CloseAllMainMenus()
         {
             _gameModeConfig.SetSelectionUIVisibility(false);
@@ -372,18 +399,33 @@ namespace ProDomino.GameModes
 
                 _currentGameHolder.SetParent(_canvas, false);
                 _currentGameHolder.localScale = Vector3.one;
+
+                // Stretch the game holder over the whole canvas. The zero offsets below only mean
+                // "fill the parent" when the anchors are the stretch preset, and not every mode's
+                // controller prefab is authored that way.
+                _currentGameHolder.anchorMin = Vector2.zero;
+                _currentGameHolder.anchorMax = Vector2.one;
+                _currentGameHolder.pivot = new Vector2(0.5f, 0.5f);
                 _currentGameHolder.offsetMin = new Vector2(0, 0);
-                _currentGameHolder.offsetMin = new Vector2(0, 0);
+                _currentGameHolder.offsetMax = new Vector2(0, 0);
+
+                EnsureGameContainerActive();
 
                 currentGameModeScript.InitializeGameMode(_gameModeConfig, _difficulty, gameTypeSelectedID, vsPlayerSelectedID, isSinglePlayerIA: true, concentrateNumberOfTiles, 
                     InGameMenuActivate, () => IsTimeOut_MatchManager);
                 currentGameModeScript.RestartGame();
                 currentGameModeScript.SetupRandomHands();
 
-                // Register the new analytic in firebase
-                gameManager.UpdateAnalyticsValue((true, GlobalAnalyticType.usersPlayingNow, _gameModeConfig.GameModeSelectedID));
-
-                gameManager.RegisterStartMatchDateTime();
+                // Register the new analytic in firebase. Analytics must never abort a match that already started.
+                if (gameManager)
+                {
+                    gameManager.UpdateAnalyticsValue((true, GlobalAnalyticType.usersPlayingNow, _gameModeConfig.GameModeSelectedID));
+                    gameManager.RegisterStartMatchDateTime();
+                }
+                else
+                {
+                    Debug.LogWarning($"[{nameof(MenuControllerGameMode)}] GameManager service not found, skipping match-start analytics.");
+                }
             }
         }
 
@@ -425,8 +467,17 @@ namespace ProDomino.GameModes
 
                 _currentGameHolder.SetParent(_canvas, false);
                 _currentGameHolder.localScale = Vector3.one;
+
+                // Stretch the game holder over the whole canvas. The zero offsets below only mean
+                // "fill the parent" when the anchors are the stretch preset, and not every mode's
+                // controller prefab is authored that way.
+                _currentGameHolder.anchorMin = Vector2.zero;
+                _currentGameHolder.anchorMax = Vector2.one;
+                _currentGameHolder.pivot = new Vector2(0.5f, 0.5f);
                 _currentGameHolder.offsetMin = new Vector2(0, 0);
-                _currentGameHolder.offsetMin = new Vector2(0, 0);
+                _currentGameHolder.offsetMax = new Vector2(0, 0);
+
+                EnsureGameContainerActive();
 
                 currentGameModeScript.InitializeGameMode(_gameModeConfig, _difficulty, gameTypeSelectedID, vsPlayerSelectedID, isSinglePlayerIA: false, concentrateNumberOfTiles, 
                     InGameMenuActivate, () => IsTimeOut_MatchManager);
