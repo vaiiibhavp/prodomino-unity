@@ -63,6 +63,11 @@ namespace ProDomino.NavigationSystem
                     var overlayId = panel.NavigationPanelType.ToString();
                     panel.SetOverlayClosedCallback(() =>
                     {
+                        // Closed by pressing outside (e.g. on another sidebar entry): wait for the release,
+                        // LateUpdate restores only if that press did not select another entry
+                        if (IsPointerHeld())
+                            return;
+
                         if (customButtonToggleGroupUI.CheckIfSelected(overlayId))
                             RestorePreviousSelection();
                     });
@@ -137,7 +142,8 @@ namespace ProDomino.NavigationSystem
         {
             // Popups can close through paths that raise no event (outside click, direct CanvasGroup hide).
             // If an overlay's sidebar button is still highlighted but its popup is hidden, restore the previous selection.
-            if (navigationPanels is null)
+            // The press that closed the popup may still become a click on another entry
+            if (navigationPanels is null || IsPointerHeld())
                 return;
 
             foreach (var panel in navigationPanels)
@@ -152,6 +158,9 @@ namespace ProDomino.NavigationSystem
                 }
             }
         }
+
+        private static bool IsPointerHeld() =>
+            UnityEngine.InputSystem.Pointer.current?.press.isPressed ?? false;
 
         private void OnDestroy()
         {
