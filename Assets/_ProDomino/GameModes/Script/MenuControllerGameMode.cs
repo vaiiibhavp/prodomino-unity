@@ -202,6 +202,18 @@ namespace ProDomino.GameModes
         /// </summary>
         public void InGameMenuActivate()
         {
+            if (!_isOpenMenu)
+            {
+                // The main scene ships this controller's GameObject inactive, so the menu panel below it
+                // can never render (and Awake, which resolves adManager for To Lobby, never runs) until it is activated.
+                if (!gameObject.activeSelf)
+                    gameObject.SetActive(true);
+
+                // Replay opens gameplay without StartDomino/StartMatch, so the menu container may still be inactive.
+                if (_inGameMenuStuff && !_inGameMenuStuff.gameObject.activeSelf)
+                    _inGameMenuStuff.gameObject.SetActive(true);
+            }
+
             _inGameMenu.SetActive(!_isOpenMenu);
         }
 

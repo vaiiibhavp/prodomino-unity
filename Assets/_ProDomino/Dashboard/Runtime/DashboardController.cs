@@ -204,8 +204,10 @@ namespace ProDomino.Dashboard
             if (gameModeConfig)
             {
                 gameModeConfig.gameObject.SetActive(true);
+                // Restore interactable/blocksRaycasts too, not just alpha: the panel was hidden with all three
+                // off, and a non-interactable root disables every Selectable in the match UI (Settings, Hint, Pass).
                 if (gameModeConfig.RootCanvasGroup)
-                    gameModeConfig.RootCanvasGroup.alpha = 1f;
+                    gameModeConfig.RootCanvasGroup.SetActive(true);
             }
 
             gameModeConfig.SetExternalGameData(mode, type, players, difficulty, tiles);
