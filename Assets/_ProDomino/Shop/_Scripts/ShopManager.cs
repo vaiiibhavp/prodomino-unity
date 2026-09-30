@@ -167,6 +167,8 @@ namespace ProDomino.Shop
                 ?.Where(x => x.Key.isAvailable || x.Value is not null)
                 ?.ToDictionary(x => x.Key, x => x.Value);
 
+            CosmeticDataCollection = RemoveDuplicateSprites(CosmeticDataCollection);
+
             CosmeticDataCollection ??= new();
             if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Tiles))
             {
@@ -223,6 +225,28 @@ namespace ProDomino.Shop
                 Debug.LogWarning("ShopUI is null. Cannot configure the UI with the refreshed data.");
 
         }
+        /// <summary>
+        /// Several cosmetics resolve to the same sprite, most notably the "*_Default" entry, which points at
+        /// the same asset as the first real skin of its category. The shop listed both, so the same artwork
+        /// appeared twice in a tab. Keep one entry per sprite: the one the player already owns, otherwise the
+        /// cheapest one, so the free default wins over its paid twin.
+        /// </summary>
+        private Dictionary<GameCosmeticData, PlayerCosmeticData> RemoveDuplicateSprites(Dictionary<GameCosmeticData, PlayerCosmeticData> collection)
+        {
+            if (collection is null or { Count: 0 } || dictionaryService == null)
+                return collection;
+
+            return collection
+                .GroupBy(entry => (entry.Key.type, sprite: dictionaryService.GetSprite(entry.Key.type.ToString(), entry.Key.id)))
+                .SelectMany(group => group.Key.sprite == null
+                    ? group
+                    : group
+                        .OrderByDescending(entry => entry.Value is not null)
+                        .ThenBy(entry => entry.Key.price)
+                        .Take(1))
+                .ToDictionary(entry => entry.Key, entry => entry.Value);
+        }
+
         /// <summary>
         /// Handles the purchase of a cosmetic by calling the backend module and updating the UI accordingly.
         /// </summary>

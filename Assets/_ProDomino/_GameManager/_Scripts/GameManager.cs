@@ -860,29 +860,46 @@ namespace ProDomino.GameSystem
             }
         }
 
+        // Default cosmetic IDs, used whenever there is no profile (guest) or the profile has no cosmetic equipped
+        private string DefaultBoardID => $"{CosmeticType.Boards}_{Consts.CollectionKeys.Default}";
+        private string DefaultFundID => $"{CosmeticType.Fund}_{Consts.CollectionKeys.Default}";
+        private string DefaultTileID => $"{CosmeticType.Tiles}_{Consts.CollectionKeys.Default}";
+
         // Get the profile board based on the player's board skin ID or default to the default board icon
-        public (string id, Sprite icon) GetBoard() => PlayerProfileData?.boardSkinID is not null or ""
-            ? (PlayerProfileData.boardSkinID, dictionaryService.GetSprite(CosmeticType.Boards.ToString(), PlayerProfileData.boardSkinID))
-            : ("", dictionaryService.GetSprite(CosmeticType.Boards.ToString(), $"{CosmeticType.Boards}_{Consts.CollectionKeys.Default}"));
+        public (string id, Sprite icon) GetBoard()
+        {
+            var id = string.IsNullOrEmpty(PlayerProfileData?.boardSkinID) ? DefaultBoardID : PlayerProfileData.boardSkinID;
+            return (id, dictionaryService.GetSprite(CosmeticType.Boards.ToString(), id));
+        }
 
         // Get the profile fund icon based on the player's board fund skin ID or default to the default board fund icon
-        public (string id, Sprite icon) GetBoardFund() => PlayerProfileData?.boardFundSkinID is not null or ""
-            ? (PlayerProfileData.boardFundSkinID, dictionaryService.GetSprite(CosmeticType.Fund.ToString(), PlayerProfileData.boardFundSkinID))
-            : ("", dictionaryService.GetSprite(CosmeticType.Fund.ToString(), $"{CosmeticType.Fund}_{Consts.CollectionKeys.Default}"));
+        public (string id, Sprite icon) GetBoardFund()
+        {
+            var id = string.IsNullOrEmpty(PlayerProfileData?.boardFundSkinID) ? DefaultFundID : PlayerProfileData.boardFundSkinID;
+            return (id, dictionaryService.GetSprite(CosmeticType.Fund.ToString(), id));
+        }
 
         // Get the profile fund icon based on the player's board fund skin ID or default to the default board fund icon
-        public (string id, Sprite icon) GetTilePreview() => PlayerProfileData?.tileSkinID is not null or ""
-            ? (PlayerProfileData.tileSkinID, dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), PlayerProfileData.tileSkinID))
-            : ("", dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), $"{CosmeticType.Tiles}_{Consts.CollectionKeys.Default}"));
+        public (string id, Sprite icon) GetTilePreview()
+        {
+            var id = string.IsNullOrEmpty(PlayerProfileData?.tileSkinID) ? DefaultTileID : PlayerProfileData.tileSkinID;
+            return (id, dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), id));
+        }
 
         // Get the profile tiles based on the player's tile skin ID or default to the default tile skin
-        public (string id, Sprite[] icons) GetTiles() => PlayerProfileData?.tileSkinID is not null or ""
-            ? (PlayerProfileData.tileSkinID, dictionaryService.GetSpriteCollection($"{CosmeticType.Tiles}_{PlayerProfileData.tileSkinID}"))
-            : ("", dictionaryService.GetSpriteCollection($"{CosmeticType.Tiles}_{CosmeticType.Tiles}_{Consts.CollectionKeys.Default}")); // It's redundant but it needs to be like this to match the naming convention in the dictionary service and the cosmetic default id without hardcoding the default values
+        public (string id, Sprite[] icons) GetTiles()
+        {
+            var id = string.IsNullOrEmpty(PlayerProfileData?.tileSkinID) ? DefaultTileID : PlayerProfileData.tileSkinID;
+            // The doubled prefix matches the naming convention in the dictionary service
+            return (id, dictionaryService.GetSpriteCollection($"{CosmeticType.Tiles}_{id}"));
+        }
 
-        public (string id, Sprite icon) GetBackTile() => PlayerProfileData?.tileSkinID is not null or ""
-            ? ($"{PlayerProfileData.tileSkinID}_{Consts.CollectionKeys.Back}", dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), $"{PlayerProfileData.tileSkinID}_{Consts.CollectionKeys.Back}"))
-            : ("", dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), $"{CosmeticType.Tiles}_{Consts.CollectionKeys.Default}_{Consts.CollectionKeys.Back}"));
+        public (string id, Sprite icon) GetBackTile()
+        {
+            var id = string.IsNullOrEmpty(PlayerProfileData?.tileSkinID) ? DefaultTileID : PlayerProfileData.tileSkinID;
+            var backID = $"{id}_{Consts.CollectionKeys.Back}";
+            return (backID, dictionaryService.GetSprite(CosmeticType.Tiles.ToString(), backID));
+        }
 
         public (string id, Sprite icon)?[] GetBadges() => PlayerProfileData?.badgesIDs
             ?.Select(badge => !string.IsNullOrEmpty(badge)

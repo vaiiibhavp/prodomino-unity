@@ -220,6 +220,18 @@ namespace ProDomino.CustomizationSystem
             // Initialize collections
             UpdateCosmeticDataCollection(ref _playerCosmeticDataCollection);
 
+            // The "*_Default" entries share their sprite with the first real skin of their category, so the
+            // same artwork showed up twice in the list. Keep one entry per sprite.
+            _playerCosmeticDataCollection = _playerCosmeticDataCollection
+                ?.GroupBy(entry => (entry.Key.type, sprite: dictionaryService.GetSprite(entry.Key.type.ToString(), entry.Key.id)))
+                ?.SelectMany(group => group.Key.sprite == null
+                    ? group
+                    : group
+                        .OrderByDescending(entry => entry.Value is not null)
+                        .ThenBy(entry => entry.Key.price)
+                        .Take(1))
+                ?.ToDictionary(entry => entry.Key, entry => entry.Value);
+
             UpdateInstances();
             UpdateElements();
 

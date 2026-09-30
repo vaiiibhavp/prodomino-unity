@@ -57,6 +57,8 @@ namespace ProDomino.GameModes
 
         private Sprite defaultBoardImage;
         private Sprite defaultBoardFundImage;
+        private Color defaultBoardColor = Color.white;
+        private Color defaultBoardFundColor = Color.white;
 
         private int turnCurrentPlayerID = -1;
 
@@ -136,13 +138,19 @@ namespace ProDomino.GameModes
 
             // MainReferenceInitialize the default board fund image
             if (boardFundImage)
+            {
                 defaultBoardFundImage = boardFundImage.sprite;
+                defaultBoardFundColor = boardFundImage.color;
+            }
             else
                 Debug.LogWarning("BoardFundImage is not assigned in the inspector.");
 
             // MainReferenceInitialize the default board image
-            if (defaultBoardImage)
+            if (boardImage)
+            {
                 defaultBoardImage = boardImage.sprite;
+                defaultBoardColor = boardImage.color;
+            }
             else
                 Debug.LogWarning("BoardImage is not assigned in the inspector.");
 
@@ -780,32 +788,39 @@ namespace ProDomino.GameModes
         /// </summary>
         private void SetPlayerUI()
         {
-            // Wait until the AuthManager is initialized
-            if (gameManager is null or { IsAlreadyInitialized: false }
-                || !IsAuthenticated)
-            { 
-                Debug.LogWarning("AuthManager or GameManager is not initialized or authenticated. Cannot set UI.");
+            // Wait until the GameManager is initialized. Guests are not blocked here: without a
+            // signed in profile the GameManager getters below already fall back to the default
+            // cosmetics, and returning early left the board and its frame with no sprite at all.
+            if (gameManager is null or { IsAlreadyInitialized: false })
+            {
+                Debug.LogWarning("GameManager is not initialized. Cannot set UI.");
                 return;
             }
 
-            // Override the board fund image if the board fund skin searched from the GameManager is available
+            // Override the board fund image only when the skin lookup produced a sprite. A missing
+            // entry must keep the prefab look, otherwise the Image renders as a plain white quad.
             if (boardFundImage)
-                boardFundImage.sprite = gameManager?.BoardFund ?? defaultBoardFundImage;
+            {
+                var fundSprite = gameManager?.BoardFund;
+                boardFundImage.sprite = fundSprite ? fundSprite : defaultBoardFundImage;
+                boardFundImage.color = boardFundImage.sprite ? Color.white : defaultBoardFundColor;
+            }
             else
                 Debug.LogWarning("BoardFundImage is not assigned in the inspector.");
 
             // Override the board image if the board skin searched from the GameManager is available
             if (boardImage)
             {
-                boardImage.sprite = gameManager?.Board ?? defaultBoardImage;
-                boardImage.color = Color.white;
+                var boardSprite = gameManager?.Board;
+                boardImage.sprite = boardSprite ? boardSprite : defaultBoardImage;
+                boardImage.color = boardImage.sprite ? Color.white : defaultBoardColor;
             }
             else
                 Debug.LogWarning("BoardImage is not assigned in the inspector." + transform.gameObject.name );
 
             // Override the tile sprites if the tiles skin searched from the GameManager is available
             var tiles = gameManager?.Tiles;
-            if (tiles is not null and { Length: 28 })
+            if (tiles is not null and { Length: 28 } && tiles.All(tile => tile))
                 (DeckController as ExtendedDeckController)?.OverrideSpriteArray(gameManager.Tiles, gameManager.BackTile);
             else
                 Debug.LogWarning("GameManager.Tiles is null or does not contain 28 tiles.");
@@ -815,7 +830,7 @@ namespace ProDomino.GameModes
                 concentrate_GameMode.OverrideTilesSkin(gameManager.GetTiles().id);
 
             // Override the boneyard skin if ExtendedDeckController is available
-            (DeckController as ExtendedDeckController)?.OverrideBoneyardSkin(gameManager.PlayerProfileData.tileSkinID);
+            (DeckController as ExtendedDeckController)?.OverrideBoneyardSkin(gameManager.GetTiles().id);
         }
 
         protected override void ClearGameBoard()
