@@ -16,6 +16,7 @@ namespace ProDomino.Shared
         QuickMatch = 8,
         HelpScreen = 9,
         FriendsList = 10,
-        Dashboard = 11
+        Dashboard = 11,
+        Party = 12
     }
 }

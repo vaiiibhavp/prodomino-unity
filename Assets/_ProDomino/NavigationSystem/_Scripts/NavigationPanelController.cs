@@ -184,6 +184,15 @@ namespace ProDomino.NavigationSystem
             {
                 // The overlay covers the screen alone: hide the current panel until it closes
                 SetPanelBehindOverlayVisible(false);
+
+                // Switching between overlays (Party -> Friends List): close the open one first,
+                // otherwise it stays on top and covers the new popup
+                foreach (var other in navigationPanels.Where(x => x.IsOverlay && x != overlayModule && x.IsOverlayOpen))
+                {
+                    try { other.SetActiveNavigationPanel(false); }
+                    catch (Exception e) { Debug.LogException(e); }
+                }
+
                 overlayModule.SetActiveNavigationPanel(true);
                 return;
             }

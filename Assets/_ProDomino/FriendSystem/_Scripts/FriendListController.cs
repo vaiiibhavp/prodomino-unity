@@ -385,7 +385,7 @@ namespace ProDomino.FriendSystem
         /// </summary>
         private async UniTaskVoid LoadProfileIcons()
         {
-            if (!UsesScreenStates || isResolvingProfileIcons || !gameManager)
+            if (isResolvingProfileIcons || !gameManager)
                 return;
 
             isResolvingProfileIcons = true;
@@ -413,7 +413,8 @@ namespace ProDomino.FriendSystem
                         entry.SetAvatar(sprite);
                 }
 
-                if (isShowingSearchResults)
+                // Layouts without the players section (party panel) only show friend cards
+                if (isShowingSearchResults || !UsesScreenStates)
                     return;
 
                 var playerEntries = searchUserEntryInstances
@@ -644,6 +645,10 @@ namespace ProDomino.FriendSystem
 
             if (isVisible)
             {
+                // Drop cached icon ids so avatars changed since the last open show their latest icon
+                if (!isResolvingProfileIcons)
+                    profileIconIdsCache.Clear();
+
                 ResetSearch();
                 ConfigureUI();
             }

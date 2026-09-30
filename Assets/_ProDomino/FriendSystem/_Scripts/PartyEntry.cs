@@ -27,6 +27,12 @@ namespace ProDomino.FriendSystem
         [SerializeField] private GameObject partyMemberObject;
         [SerializeField] private GameObject availableSlotObject;
 
+        [Header("Local Player (optional)")]
+        [Tooltip("When set, the local player's slot shows this label instead of the player name")]
+        [SerializeField] private string localPlayerLabel;
+        [Tooltip("Shown only for the other members, hidden on the local player's slot")]
+        [SerializeField] private GameObject otherMemberObject;
+
         private AsyncActionHandler<PartyEntryData?> onPromMemberAsLeader;
         private AsyncActionHandler<PartyEntryData?> onKickMember;
         private Func<string> getCurrentPlayerID;
@@ -133,13 +139,17 @@ namespace ProDomino.FriendSystem
             else
                 Debug.LogWarning("Couldn't determine the visibility of the leader object because its reference is null");
 
+            var isCurrentPlayer = getCurrentPlayerID?.Invoke() == PartyEntryData?.PlayerID;
             if (hostingMemberObject)
-            {
-                var isCurrentPlayer = getCurrentPlayerID?.Invoke() == PartyEntryData?.PlayerID;
                 hostingMemberObject.SetActive(IsHosting || isCurrentPlayer);
-            }
             else
                 Debug.LogWarning("Couldn't determine the visibility of the no leader object because its reference is null");
+
+            if (isCurrentPlayer && usernameLabel && !string.IsNullOrEmpty(localPlayerLabel))
+                usernameLabel.text = localPlayerLabel;
+
+            if (otherMemberObject)
+                otherMemberObject.SetActive(!isCurrentPlayer);
         }
 
         /// <summary>
