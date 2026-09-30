@@ -66,6 +66,11 @@ namespace ProDomino.HandleProcessesSystem
         /// </summary>
         private readonly List<ProcessEntry> failedEntries = new();
 
+        [SerializeField] private int autoRecoveryRoundLimit = 3;
+        [SerializeField] private float autoRecoveryDelaySeconds = 2f;
+        private int autoRecoveryRound;
+        private bool isAutoRecoveryScheduled;
+
         /// <summary>
         /// Required by IService interface in your project structure.
         /// </summary>
@@ -248,21 +253,25 @@ namespace ProDomino.HandleProcessesSystem
                             result = await factory();
                         else
                         {
-                            var timed = await factory().TimeoutWithoutException(TimeSpan.FromSeconds(maxSingleTaskTimeout));
-                            result = timed.Result is not null ? timed.Result : default;
+                            // A timeout used to come back as a silent default "success"; report it as a failure.
+                            var (isTimeout, timedResult) = await factory().TimeoutWithoutException(TimeSpan.FromSeconds(maxSingleTaskTimeout));
+                            if (isTimeout)
+                                throw new TimeoutException($"Timed out after {maxSingleTaskTimeout}s");
+                            result = timedResult;
                         }
 
                         // If we reached this far: success
                         entry.LastErrorMessage = null;
                         entry.LastErrorCode = null;
 
+                        autoRecoveryRound = 0;
                         Debug.Log($"{class_key_id} {displayId} <color=cyan>succeeded on attempt</color> <b>{entry.Attempts}</b>.");
                         return result;
                     }
                     catch (Exception ex)
                     {
                         // Custom validation: treat false as failure
-                        if (entry.ResultValidator != null && !entry.ResultValidator(result))
+                        if (ex is not TimeoutException && entry.ResultValidator != null && !entry.ResultValidator(result))
                         {
                             // Treat as failure
                             lastException = new Exception($"Predicate validation failed: \n{ex.Message}", ex); ;
@@ -296,8 +305,10 @@ namespace ProDomino.HandleProcessesSystem
                         Debug.LogWarning(
                             $"{class_key_id} {displayId} <color=red>failed on attempt</color> {entry.Attempts}:\n\n<b>{ex.Message}</b>");
 
-                        // If the method was supposed to be played once or this was the last attempt, break
-                        if (!shouldRetrySomeTimes || attempt == automaticAttemptLimit - 1)
+                        // If the method was supposed to be played once or this was the last attempt, break.
+                        // A timed-out call is still running (it can't be cancelled), so it is not retried
+                        // automatically: a second copy could duplicate a non-idempotent call (purchase, reward claim).
+                        if (!shouldRetrySomeTimes || ex is TimeoutException || attempt == automaticAttemptLimit - 1)
                             break;
 
                         await UniTask.Delay(TimeSpan.FromSeconds(CalculateBackoffSeconds(attempt)));
@@ -310,7 +321,8 @@ namespace ProDomino.HandleProcessesSystem
                     lock (failedEntries)
                         failedEntries.Add(entry);
 
-                    DetermineHandleProcessErrorUI(HandleProcessType.CloudCodeException, isForced: true);
+                    // No Try Again popup: keep the loading screen up and re-run the failed entries in the background.
+                    ScheduleAutoRecovery().Forget();
 
                     // After recording failure, rethrow last exception so caller knows it failed.
                     Debug.LogError($"{class_key_id} {displayId} <color=red>Controlled Exception</color>\n\n<b>{lastException?.Message ?? "Unknown failure in InternalHandleProcess<T>"}</b>");
@@ -368,6 +380,40 @@ namespace ProDomino.HandleProcessesSystem
 
         private void IncrementPending() => Interlocked.Increment(ref currentAsyncTasks);
         private void DecrementPending() => Interlocked.Decrement(ref currentAsyncTasks);
+
+        /// <summary>
+        /// Replaces the Try Again popup: waits briefly, then re-runs the failed entries while the loading
+        /// screen stays visible. Capped by autoRecoveryRoundLimit so a permanently failing call can't
+        /// block the UI forever; after that the failures are dropped (logged) and the overlay hides.
+        /// </summary>
+        private async UniTaskVoid ScheduleAutoRecovery()
+        {
+            if (isAutoRecoveryScheduled)
+                return;
+            isAutoRecoveryScheduled = true;
+
+            DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen, isForced: true);
+
+            await UniTask.Delay(TimeSpan.FromSeconds(autoRecoveryDelaySeconds));
+            isAutoRecoveryScheduled = false;
+
+            if (autoRecoveryRound < autoRecoveryRoundLimit)
+            {
+                autoRecoveryRound++;
+                OnTryAgainClicked();
+                return;
+            }
+
+            lock (failedEntries)
+            {
+                foreach (var entry in failedEntries)
+                    Debug.LogError($"{class_key_id} {entry.Id} <color=red>gave up after auto recovery</color>: {entry.LastErrorMessage}");
+                failedEntries.Clear();
+            }
+
+            autoRecoveryRound = 0;
+            DetermineHandleProcessErrorUI(RecalculateGlobalErrorState(), isForced: true);
+        }
 
         /// <summary>
         /// When Try Again is clicked, re-run all failed entries that have a wrapper factory.
@@ -466,17 +512,18 @@ namespace ProDomino.HandleProcessesSystem
 
             // Step 2: Read external conditions
             bool internetDisconnected = CurrentHandleProcessErrorType == HandleProcessType.InternetDisconnected;
-            bool loadingActive = CurrentHandleProcessErrorType == HandleProcessType.LoadingScreen && currentAsyncTasks > 0;
-
             bool anyFailed;
             lock (failedEntries)
                 anyFailed = failedEntries.Count > 0;
 
-            bool showRetryPopup = CurrentHandleProcessErrorType == HandleProcessType.CloudCodeException || anyFailed;
+            // Errors no longer open the Try Again popup; they show the same "Loading..." overlay
+            // while ScheduleAutoRecovery re-runs the failed work.
+            bool isRecovering = CurrentHandleProcessErrorType == HandleProcessType.CloudCodeException || anyFailed || isAutoRecoveryScheduled;
+            bool loadingActive = (CurrentHandleProcessErrorType == HandleProcessType.LoadingScreen && currentAsyncTasks > 0) || isRecovering;
 
             // Step 3: Apply UI state
-            SetsVisibleRootCanvas(CurrentHandleProcessErrorType != HandleProcessType.None);
-            SetVisibleTryAgainCanvas(showRetryPopup);
+            SetsVisibleRootCanvas(CurrentHandleProcessErrorType != HandleProcessType.None || isRecovering);
+            SetVisibleTryAgainCanvas(false);
 
             SetVisibleLoadOrReconnectionCanvasGroup(
                 loadingActive || internetDisconnected,

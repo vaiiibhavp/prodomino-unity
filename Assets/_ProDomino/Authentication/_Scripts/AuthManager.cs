@@ -150,9 +150,8 @@ namespace ProDomino.Authentication
             // First, try to initialize Unity services
             await HandleProcess_AuthManagerProxy(TryToInitializeUnityServices, nameof(TryToInitializeUnityServices));
 
-            // Wait until the game manager has finished its Awake process
-            // The secuence is: GameManager.Awake -> AuthManager.Awake (initialize UGS) -> GameManager.Awake (continue) -> AuthManager Cached Login
-            await HandleProcess_AuthManagerProxy(() => UniTask.WaitForSeconds(1), "Waiting", shouldIgnoreTryAgainProcess: true);
+            // No fixed delay here: GameManager.Awake already waits on IsAlreadyInitialized before
+            // subscribing to the sign-in events, so it cannot miss the cached login below.
 
             // If Unity services are not initialized, do not continue
             if (!IsAlreadyInitialized)
@@ -165,9 +164,20 @@ namespace ProDomino.Authentication
             HandleCommonAuthHandlers();
 
             // Call specific OnAwake methods for each authentication method
-            await HandleProcess_AuthManagerProxy(OnAwake_Credentials, nameof(OnAwake_Credentials));
-            await HandleProcess_AuthManagerProxy(OnAwake_Facebook, nameof(OnAwake_Facebook));
-            await HandleProcess_AuthManagerProxy(OnAwake_Google, nameof(OnAwake_Google));
+            // Resolve the iOS tracking prompt once up front so the parallel OnAwake_* calls
+            // below don't each request it.
+            await TryToAuthorizeTracking();
+
+            // Credentials setup is independent of the provider sessions, so it runs alongside them.
+            // Facebook -> Google stays sequential: both may sign in or SignOut() on a missing
+            // session, and running them concurrently would race over the same UGS session.
+            await UniTask.WhenAll(
+                HandleProcess_AuthManagerProxy(OnAwake_Credentials, nameof(OnAwake_Credentials)),
+                UniTask.Create(async () =>
+                {
+                    await HandleProcess_AuthManagerProxy(OnAwake_Facebook, nameof(OnAwake_Facebook));
+                    await HandleProcess_AuthManagerProxy(OnAwake_Google, nameof(OnAwake_Google));
+                }));
 
             // Try to sign in using the cached user
             var isSignedInUsingCachedUser = await HandleProcess_AuthManagerProxy

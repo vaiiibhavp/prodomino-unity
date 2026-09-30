@@ -118,6 +118,16 @@ namespace ProDomino.GameSystem
 #endif
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
+            // Start localization now so its (WebGL: Addressables download) init overlaps UGS
+            // initialization instead of running after it. Awaited below, before LoadGameConfig.
+            var localizationInitTask = HandleProcess_GameManagerProxy
+                (uniTask: () => LocalizationSettings.InitializationOperation.ToUniTask(),
+                taskId: $"{nameof(LocalizationSettings)}_{nameof(LocalizationSettings.InitializationOperation)}",
+                showLoading: true,
+                shouldIgnoreTryAgainProcess: false,
+                returnExceptionOnError: false,
+                shouldRetrySomeTimes: true);
+
             // Wait until the authentication manager is initialized due ugs needs to be initialized before we can access the backend bindings
             // The secuence is: GameManager.Awake -> AuthManager.Awake (initialize UGS) -> GameManager.Awake (continue) -> AuthManager Cached Login
             await UniTask.WaitUntil(() => authManager is not null and { IsAlreadyInitialized: true });
@@ -132,13 +142,7 @@ namespace ProDomino.GameSystem
             authManager.HandleOnExpired(OnSignOutProxy);
 
             // Wait until localization is initialized
-            await HandleProcess_GameManagerProxy
-                (uniTask: () => LocalizationSettings.InitializationOperation.ToUniTask(),
-                taskId: $"{nameof(LocalizationSettings)}_{nameof(LocalizationSettings.InitializationOperation)}",
-                showLoading: true,
-                shouldIgnoreTryAgainProcess: false,
-                returnExceptionOnError: false,
-                shouldRetrySomeTimes: true);
+            await localizationInitTask;
 
             // Load the data from player preferences
             LoadGameConfig();
