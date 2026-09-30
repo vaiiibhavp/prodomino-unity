@@ -1,6 +1,7 @@
 using ProDomino.Authentication;
 using ProDomino.FriendSystem;
 using ProDomino.GameSystem;
+using ProDomino.NavigationSystem;
 using ProDomino.Shared;
 using System;
 using System.Linq;
@@ -57,6 +58,9 @@ namespace ProDomino.Dashboard
         [Tooltip("How long to wait for a search to begin after a card is pressed.")]
         [SerializeField] private float startTimeoutSeconds = 30f;
 
+        [Tooltip("Used to switch to the Games tab for the Block/Concentrate cards. Found at runtime if unassigned.")]
+        [SerializeField] private NavigationPanelController navigationPanelController;
+
         private static readonly DifficultyLevel[] AiDifficulties = { DifficultyLevel.Easy, DifficultyLevel.Medium, DifficultyLevel.Pro };
 
         private GameManager gameManager;
@@ -80,8 +84,8 @@ namespace ProDomino.Dashboard
             aiMatchButton?.onClick.AddListener(StartAiMatch);
             randomPlayersButton?.onClick.AddListener(() => StartOnline(GameMode.french, GameType.casual, "Random players · 1 vs 1"));
             competitiveButton?.onClick.AddListener(StartCompetitiveMatch);
-            blockButton?.onClick.AddListener(() => StartOnline(GameMode.block, GameType.casual, "Block · Online · 1 vs 1"));
-            concentrateButton?.onClick.AddListener(StartConcentrate);
+            blockButton?.onClick.AddListener(() => OpenGamesModal(GameMode.block));
+            concentrateButton?.onClick.AddListener(() => OpenGamesModal(GameMode.concentrate));
             cancelMatchmakingButton?.onClick.AddListener(CancelMatchmaking);
 
             SetOverlayVisible(false);
@@ -172,16 +176,23 @@ namespace ProDomino.Dashboard
             Launch(mode, type, NumberPlayers.oneVsOne, null, null, details);
         }
 
-        private void StartConcentrate()
+        /// <summary>
+        /// Block/Concentrate cards open the same mode-select popup as the Games tab: switch to Games
+        /// (sidebar NavegationPanel_Games_Button, toggle ID "Play") and open its modal there.
+        /// </summary>
+        private void OpenGamesModal(GameMode mode)
         {
             if (!CanStart()) return;
-            if (IsInParty)
-            {
-                Prompt("Concentrate is a solo game and can't be played in a party.");
-                return;
-            }
 
-            Launch(GameMode.concentrate, GameType.singlePlayerIA, NumberPlayers.solo, null, ConcentrateNumberOfTiles.tiles_28, "Concentrate · Solo");
+            if (!navigationPanelController)
+                navigationPanelController = FindAnyObjectByType<NavigationPanelController>(FindObjectsInactive.Include);
+
+            if (navigationPanelController)
+                navigationPanelController.ExternalActivateNavigationPanel(NavigationPanelType.Play);
+            else
+                Debug.LogWarning($"[{nameof(DashboardController)}] NavigationPanelController not found; opening popup without switching tab.");
+
+            gameModeConfig.OpenGameModal(mode.ToString());
         }
 
         private bool CanStart()
