@@ -20,18 +20,28 @@ namespace ProDomino.GameSystem
             button = GetComponent<Button>();
             button.onClick.AddListener(OnPressDeleteButton);
 
-            if (button)
-                button.interactable = false;
-            else
-                Debug.LogError("DeleteAccountProxy: button reference is missing");
-
             if (gameManager)
             {
                 gameManager.HandleOnSignIn(OnSignedIn);
                 gameManager.HandleOnSignOut(OnSignedOut);
-            } 
+            }
             else
                 Debug.LogError("DeleteAccountProxy: GameManager reference is missing");
+
+            // Popup may be activated after sign-in already fired, so sync with current auth state
+            button.interactable = gameManager && gameManager.IsAuthenticated;
+        }
+
+        private void OnDestroy()
+        {
+            if (button)
+                button.onClick.RemoveListener(OnPressDeleteButton);
+
+            if (!gameManager)
+                return;
+
+            gameManager.UnHandleOnSignIn(OnSignedIn);
+            gameManager.UnHandleOnSignOut(OnSignedOut);
         }
 
         private void OnPressDeleteButton()

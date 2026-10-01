@@ -78,6 +78,12 @@ namespace ProDomino.GameSystem
             else
                 Debug.LogError("DeleteAccountController: Confirm button reference is missing");
 
+            // Bind hide action to cancel button
+            if (cancelButton)
+                cancelButton.onClick.AddListener(HideDeleteAccountPopUp);
+            else
+                Debug.LogError("DeleteAccountController: Cancel button reference is missing");
+
             // Validate required services
             if (!gameManager || !authManager || !promptFadeController)
                 Debug.LogError("DeleteAccountController: services references are missing");

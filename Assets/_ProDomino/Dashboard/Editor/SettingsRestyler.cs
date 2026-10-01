@@ -426,6 +426,17 @@ namespace ProDomino.Dashboard.Editor
                 var eulaBtnGo = CreateActionButton(actRowGo.transform, "EulaButton", "EULA Agreement",
                     new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(12f, 0f), new Vector2(0f, 0f), 20f);
 
+                // 2e-bis. Delete Account Button (388x72, centered under actions row)
+                var deleteBtnGo = CreateActionButton(containerGo.transform, "DeleteAccountButton", "Delete Account",
+                    Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, 20f);
+                var deleteBtnRt = deleteBtnGo.GetComponent<RectTransform>();
+                deleteBtnRt.anchorMin = new Vector2(0.5f, 1f);
+                deleteBtnRt.anchorMax = new Vector2(0.5f, 1f);
+                deleteBtnRt.pivot = new Vector2(0.5f, 1f);
+                deleteBtnRt.anchoredPosition = new Vector2(0f, -401f);
+                deleteBtnRt.sizeDelta = new Vector2(388f, 72f);
+                deleteBtnGo.AddComponent<ProDomino.GameSystem.DeleteAccountProxy>();
+
                 // 2f. Version Footer
                 var verGo = new GameObject("VersionText", typeof(RectTransform), typeof(TextMeshProUGUI));
                 verGo.layer = rootGo.layer;
