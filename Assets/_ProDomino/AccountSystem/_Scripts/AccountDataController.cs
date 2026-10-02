@@ -1,5 +1,6 @@
 using ProDomino.AchievementSystem;
 using ProDomino.Authentication;
+using ProDomino.CustomizationSystem;
 using ProDomino.GameSystem;
 using ProDomino.Leaderboard;
 using ProDomino.Shared;
@@ -35,6 +36,8 @@ namespace ProDomino.AccountSystem
         [SerializeField] private LeaderboardAccountEntry leaderboardAccountEntryPrefab;
         [SerializeField] private Button leftArrow, rightArrow;
         [SerializeField] private Button backButton;
+        [SerializeField] private Button editProfileButton;
+        [SerializeField] private CustomizationController customizationController;
 
         private GameManager gameManager;
         private AuthManager authManager;
@@ -55,6 +58,26 @@ namespace ProDomino.AccountSystem
             leftArrow?.onClick.AddListener(() => ChangePage(false));
             rightArrow?.onClick.AddListener(() => ChangePage(true));
             backButton?.onClick.AddListener(() => SetVisibility(false));
+            editProfileButton?.onClick.AddListener(OpenCustomization);
+        }
+
+        /// <summary>
+        /// Hides the profile and opens the customization pop-up. The controller lives outside this prefab, so it is
+        /// resolved from the scene when not assigned.
+        /// </summary>
+        private void OpenCustomization()
+        {
+            if (!customizationController)
+                customizationController = FindAnyObjectByType<CustomizationController>(FindObjectsInactive.Include);
+
+            if (!customizationController)
+            {
+                Debug.LogError($"Missing reference: {nameof(customizationController)}");
+                return;
+            }
+
+            SetVisibility(false);
+            customizationController.SetVisibility(true);
         }
 
         private void Start()
