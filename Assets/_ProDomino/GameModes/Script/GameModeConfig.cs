@@ -3,6 +3,7 @@ using ProDomino.AdSystem;
 using ProDomino.Authentication;
 using ProDomino.FriendSystem;
 using ProDomino.GameModes;
+using ProDomino.NavigationSystem;
 using ProDomino.Shared;
 using System;
 using System.Collections;
@@ -779,6 +780,10 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     {
         selectionUIHiddenForMatch = !isVisible;
         selectionUICanvasGroup.SetActive(isVisible);
+
+        // Back on the selection menu = match exited. Exit flow never calls SetGameplayVisibility(false)
+        if (isVisible)
+            SetSidebarBlockedByGameplay(false);
         if (isVisible)
             selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
 
@@ -957,7 +962,33 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         if (isVisible)
             CloseGameModal();
+
+        SetSidebarBlockedByGameplay(isVisible);
     }
+
+    private NavigationPanelController navigationPanelController;
+    private bool isSidebarBlockedByGameplay;
+
+    /// <summary>
+    /// Blocks sidebar input while a match is on screen. Only interactable/raycasts change, alpha is kept.
+    /// </summary>
+    private void SetSidebarBlockedByGameplay(bool isBlocked)
+    {
+        if (isSidebarBlockedByGameplay == isBlocked)
+            return;
+
+        if (!navigationPanelController)
+            navigationPanelController = FindAnyObjectByType<NavigationPanelController>(FindObjectsInactive.Include);
+
+        if (!navigationPanelController)
+            return;
+
+        isSidebarBlockedByGameplay = isBlocked;
+        navigationPanelController.SetInteractable(!isBlocked);
+    }
+
+    // Safety net: never leave the sidebar locked if this panel goes away mid-match
+    private void OnDisable() => SetSidebarBlockedByGameplay(false);
 
     /// <summary>
     /// Sets the visibility of the UI background and refreshes its layout if made visible.

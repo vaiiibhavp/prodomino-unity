@@ -1,32 +1,88 @@
+using System;
+using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using ProDomino.AccountSystem;
 using static ProDomino.Dashboard.Editor.PdUiKit;
+using Object = UnityEngine.Object;
 
 namespace ProDomino.Dashboard.Editor
 {
+    // Rebuilds the "My Profile" screen (AccountData_PopUp) to the dashboard design: header, avatar column
+    // with four stat cards, then a framed section with game tabs, the Elo card, mini stats and the
+    // per-mode records list. Every reference AccountDataController / LeaderboardAccountEntry use is rewired.
     public static class ProfileRestyler
     {
         private const string PrefabPath = "Assets/_ProDomino/AccountSystem/Prefabs/AccountData_PopUp.prefab";
+        private const string EntryPrefabPath = "Assets/_ProDomino/AccountSystem/Prefabs/LeaderboardAccount_Entry.prefab";
+        private const string MiddleScreenPath = "Assets/_ProDomino/Shared/Prefabs/MiddleScreen_Scalable.prefab";
+        private const string MainCanvasPath = "Assets/_ProDomino/Shared/Prefabs/ProDomino_MainCanvas.prefab";
+        private const string ScenePath = "Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity";
+        private const string InstanceName = "AccountData_PopUp";
+
+        private const string TrophyIcon = "Assets/_ProDomino/_Art/Dashboard/QuickMatch_Competitive_Trophy.png";
+        private const string CoinIcon = "Assets/_ProDomino/_Art/Dashboard/Icon_Coin_Raster.png";
+        private const string TilesIcon = "Assets/_ProDomino/_UI/Icons/Icons_Achievement/1000_tiles_Achiev_Icon.png";
+        private const string HornIcon = "Assets/_ProDomino/Dashboard/Generated/Achiev_Horn_Gold.png";
+        private const string QuestIcon = "Assets/_ProDomino/Dashboard/Generated/Achiev_Quest_Badge.png";
+        private const string StarIcon = "Assets/_ProDomino/Dashboard/Generated/Achiev_Star_Gold.png";
+        private const string ChevronIcon = "Assets/_ProDomino/Dashboard/Generated/Chevron_Down.png";
+        private const string CloseIcon = "Assets/_ProDomino/Dashboard/Generated/Shop_Close_Btn.png";
+        private const string DefaultAvatar = "Assets/_ProDomino/_Art/Dashboard/Header_ProfileAvatar_Default.png";
+
+        private static readonly Color TextSoft = Hex("#8A8FA3");
+        private static readonly Color GridLine = new Color(1f, 1f, 1f, 0.06f);
 
         private static TMP_FontAsset fRegular, fMedium, fSemiBold, fBold, fExtraBold;
-        private static Sprite cardBg, statCardBg, tabBg, tabActiveBg, avatarRingBg, inputBg;
-        private static Sprite goldBtnNormal, goldBtnHover, dangerBtnBg;
+        private static Sprite sectionBg, statCardBg, tabBg, tabActiveBg, circle, goldBtn, dangerBtn,
+            rowBg, pillBg, iconBoxBg, headerMark, trashIcon, divider;
 
         [MenuItem("ProDomino/Dashboard/Restyle Profile Screen")]
         public static void Apply()
         {
-            Debug.Log("[ProfileRestyler] Starting Profile screen restyle...");
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
             PrepareAssets();
+            StyleEntryPrefab();
             StylePrefab();
-
+            CleanInstance(MiddleScreenPath);
+            CleanInstance(MainCanvasPath);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             Debug.Log("[ProfileRestyler] SUCCESS: Profile screen restyled.");
+        }
+
+        // The open game scene keeps its own overrides on the popup subtree; drop them so the prefab drives it.
+        [MenuItem("ProDomino/Dashboard/Restyle Profile Screen (Clean Scene Overrides)")]
+        public static void CleanSceneOverrides()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+            if (scene.path != ScenePath)
+            {
+                Debug.LogWarning($"[ProfileRestyler] Active scene is {scene.path}, expected {ScenePath}.");
+                return;
+            }
+            var canvas = scene.GetRootGameObjects().FirstOrDefault(g => g.name == "ProDomino_MainCanvas");
+            var popup = canvas ? FindDeep(canvas.transform, InstanceName) : null;
+            if (!popup) { Debug.LogError("[ProfileRestyler] Popup not found in scene."); return; }
+
+            int reverted = 0;
+            foreach (var t in popup.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == popup) continue; // the root keeps its active-state / canvas-group values
+                if (!PrefabUtility.IsPartOfPrefabInstance(t)) continue;
+                foreach (var c in t.GetComponents<Component>())
+                {
+                    if (!c) continue;
+                    PrefabUtility.RevertObjectOverride(c, InteractionMode.AutomatedAction);
+                    reverted++;
+                }
+                PrefabUtility.RevertObjectOverride(t.gameObject, InteractionMode.AutomatedAction);
+            }
+            CopyRectFromSibling((RectTransform)popup);
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+            Debug.Log($"[ProfileRestyler] Scene overrides cleaned ({reverted} components).");
         }
 
         private static void PrepareAssets()
@@ -37,338 +93,59 @@ namespace ProDomino.Dashboard.Editor
             fBold = LoadFont("Montserrat-Bold");
             fExtraBold = LoadFont("Montserrat-ExtraBold");
 
-            cardBg = MakePanelSprite("Profile_CardBg", 64, 64, 14, Hex("#0D1120"), Hex("#070A14"), Hex("#1E2538"), 1.2f, true);
-            statCardBg = MakePanelSprite("Profile_StatCardBg", 48, 48, 10, Hex("#111828"), Hex("#0A0E1C"), Hex("#1E2538"), 1f, true);
-            tabBg = MakeRoundedSprite("Profile_TabBg", 48, 48, 24, Hex("#111828"), Hex("#111828"));
-            tabActiveBg = MakeRoundedSprite("Profile_TabActiveBg", 200, 48, 24, Hex("#3B82F6"), Hex("#2563EB"));
-            avatarRingBg = MakeCircleSprite("Profile_AvatarRing", 128);
-            inputBg = MakePanelSprite("Profile_InputBg", 48, 48, 10, Hex("#111625"), Hex("#0E1320"), Hex("#222B3D"), 1.2f, true);
-            goldBtnNormal = MakeRoundedSprite("Profile_GoldBtn", 200, 56, 28, AccentStart, AccentEnd);
-            goldBtnHover = MakeRoundedSprite("Profile_GoldBtnHover", 200, 56, 28, Hex("#FFB300"), Hex("#FFCA28"));
-            dangerBtnBg = MakePanelSprite("Profile_DangerBtn", 48, 48, 10, Hex("#7F1D1D"), Hex("#991B1B"), Hex("#EF4444"), 1f, true);
+            sectionBg = MakePanelSprite("Profile_SectionBg", 64, 64, 14, Hex("#0B1020"), Hex("#060914"), Hex("#1C2438"), 1.2f);
+            statCardBg = MakePanelSprite("Profile_StatCardBg", 48, 48, 10, Hex("#121A2C"), Hex("#0A0F1D"), Hex("#232C42"), 1f);
+            tabBg = MakePanelSprite("Profile_TabBarBg", 48, 48, 8, Hex("#0E1424"), Hex("#0E1424"), Hex("#1E2638"), 1f);
+            tabActiveBg = MakeRoundedSprite("Profile_TabActiveBg", 200, 40, 8, Hex("#3B6FD8"), Hex("#6FA2F5"));
+            circle = MakeCircleSprite("Profile_AvatarRing", 128);
+            goldBtn = MakeRoundedSprite("Profile_GoldBtn", 120, 32, 6, AccentStart, AccentEnd);
+            dangerBtn = MakeRoundedSprite("Profile_DangerBtn", 32, 32, 6, Hex("#E5484D"), Hex("#C9343A"));
+            rowBg = MakePanelSprite("Profile_RowBg", 48, 48, 8, Hex("#141B2D"), Hex("#0D1322"), Hex("#232C42"), 1f);
+            pillBg = MakePanelSprite("Profile_PillBg", 32, 32, 6, Hex("#141B2D"), Hex("#141B2D"), Hex("#2A3450"), 1f);
+            iconBoxBg = MakePanelSprite("Profile_IconBoxBg", 32, 32, 6, Hex("#2A1F12"), Hex("#1A140C"), Hex("#4A3418"), 1f);
+            headerMark = MakeRoundedSprite("Profile_HeaderMark", 24, 24, 4, AccentStart, AccentEnd);
+            divider = MakeRoundedSprite("Profile_Divider", 4, 4, 0, Color.white, Color.white);
+            trashIcon = MakeTrashIcon();
         }
 
+        // ------------------------------------------------------------------ popup
         private static void StylePrefab()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            Require(prefab, PrefabPath);
-
             var root = PrefabUtility.LoadPrefabContents(PrefabPath);
             try
             {
-                var rootRt = (RectTransform)root.transform;
-                rootRt.anchorMin = Vector2.zero;
-                rootRt.anchorMax = Vector2.one;
-                rootRt.offsetMin = Vector2.zero;
-                rootRt.offsetMax = Vector2.zero;
+                Stretch((RectTransform)root.transform);
 
-                // Panel = dark overlay
+                // The screen sits inside the content area like the other sections: no dim overlay.
                 var panel = root.transform.Find("Panel");
-                if (panel != null)
+                if (panel && panel.TryGetComponent<Image>(out var panelImg))
                 {
-                    var panelImg = panel.GetComponent<Image>();
-                    if (panelImg != null)
-                    {
-                        panelImg.color = new Color(0f, 0f, 0f, 0.6f);
-                        panelImg.sprite = null;
-                    }
+                    panelImg.sprite = null;
+                    panelImg.color = new Color(0f, 0f, 0f, 0f);
                 }
 
-                // ProfileInfo_Scalable = the content card
                 var info = root.transform.Find("ProfileInfo_Scalable");
-                if (info == null)
-                {
-                    Debug.LogError("[ProfileRestyler] ProfileInfo_Scalable not found!");
-                    PrefabUtility.UnloadPrefabContents(root);
-                    return;
-                }
-
+                Require(info, "ProfileInfo_Scalable");
                 var infoRt = (RectTransform)info;
-
-                // Reanchor content card to be centered, sized to fill the screen card area
-                infoRt.anchorMin = new Vector2(0.17f, 0.05f);
-                infoRt.anchorMax = new Vector2(0.98f, 0.95f);
-                infoRt.offsetMin = Vector2.zero;
-                infoRt.offsetMax = Vector2.zero;
+                Stretch(infoRt);
                 infoRt.pivot = new Vector2(0.5f, 0.5f);
-
-                // Add screen card background to content area
+                infoRt.localScale = Vector3.one;
                 var infoBg = GetOrAdd<Image>(info);
                 infoBg.sprite = GetOrCreateScreenCardSprite();
                 infoBg.type = Image.Type.Sliced;
                 infoBg.color = Color.white;
                 infoBg.raycastTarget = true;
+                foreach (var c in info.GetComponents<LayoutGroup>()) Object.DestroyImmediate(c);
+                foreach (var c in info.GetComponents<ContentSizeFitter>()) Object.DestroyImmediate(c);
 
-                // Destroy existing children of ProfileInfo_Scalable to rebuild
                 for (int i = info.childCount - 1; i >= 0; i--)
                     Object.DestroyImmediate(info.GetChild(i).gameObject);
 
-                // ==================== HEADER ====================
-                var header = MakeNode(info, "Header");
-                TL((RectTransform)header, 28f, 24f, 300f, 36f);
+                BuildHeader(info);
+                BuildTopRow(info);
+                BuildSection(info);
 
-                var headerIcon = MakeImg(header, "Icon", null, Hex("#FFA800"), 22f, 22f);
-                MiddleLeft((RectTransform)headerIcon.transform, 0f, 22f, 22f);
-
-                var headerTitle = MakeText(header, "TitleText", "My Profile", fBold, 24f, Color.white);
-                var titleRt = (RectTransform)headerTitle.transform;
-                titleRt.anchorMin = new Vector2(0f, 0f);
-                titleRt.anchorMax = new Vector2(1f, 1f);
-                titleRt.offsetMin = new Vector2(34f, 0f);
-                titleRt.offsetMax = Vector2.zero;
-
-                // ==================== AVATAR INFO CARD (Left) ====================
-                var avatarCard = MakeNode(info, "AvatarInfoCard");
-                TL((RectTransform)avatarCard, 28f, 76f, 260f, 320f);
-
-                var avatarCardBg = GetOrAdd<Image>(avatarCard);
-                avatarCardBg.sprite = statCardBg;
-                avatarCardBg.type = Image.Type.Sliced;
-                avatarCardBg.color = Color.white;
-
-                // Gold Member badge
-                var badgeBg = MakeImg(avatarCard, "BadgeBg", goldBtnNormal, Color.white, 120f, 26f);
-                TL((RectTransform)badgeBg.transform, 20f, 12f, 120f, 26f);
-                var badgeText = MakeText(avatarCard, "BadgeText", "Gold Member", fSemiBold, 11f, OnAccent);
-                TL((RectTransform)badgeText.transform, 20f, 12f, 120f, 26f);
-                badgeText.alignment = TextAlignmentOptions.Center;
-
-                // Avatar circle
-                var avatarHolder = MakeNode(avatarCard, "AvatarHolder");
-                TLCentered((RectTransform)avatarHolder, 48f, 100f, 100f);
-
-                var avatarRing = MakeImg(avatarHolder, "AvatarRing", avatarRingBg, Hex("#E67E22"), 100f, 100f);
-                Stretch((RectTransform)avatarRing.transform);
-
-                var avatarMask = MakeNode(avatarHolder, "AvatarMask");
-                var maskRt = (RectTransform)avatarMask;
-                maskRt.anchorMin = new Vector2(0.05f, 0.05f);
-                maskRt.anchorMax = new Vector2(0.95f, 0.95f);
-                maskRt.offsetMin = Vector2.zero;
-                maskRt.offsetMax = Vector2.zero;
-                var mask = avatarMask.gameObject.AddComponent<Mask>();
-                mask.showMaskGraphic = false;
-                var maskImg = avatarMask.gameObject.AddComponent<Image>();
-                maskImg.sprite = avatarRingBg;
-                maskImg.color = Color.white;
-
-                var profileImg = MakeImg(avatarMask, "ProfileImage", null, Color.white, 90f, 90f);
-                Stretch((RectTransform)profileImg.transform);
-
-                // Username
-                var userName = MakeText(avatarCard, "Text_User_Name", "Martin", fBold, 20f, Color.white);
-                TLCentered((RectTransform)userName.transform, 158f, 200f, 28f);
-                userName.alignment = TextAlignmentOptions.Center;
-
-                // Email / ID
-                var userId = MakeText(avatarCard, "Text_ID", "martin123@gmail.com", fRegular, 12f, TextMuted);
-                TLCentered((RectTransform)userId.transform, 186f, 200f, 18f);
-                userId.alignment = TextAlignmentOptions.Center;
-
-                // Edit Profile button
-                var editBtnGo = MakeNode(avatarCard, "EditProfileBtn");
-                TLCentered((RectTransform)editBtnGo, 216f, 140f, 36f);
-                var editBtnImg = editBtnGo.gameObject.AddComponent<Image>();
-                editBtnImg.sprite = goldBtnNormal;
-                editBtnImg.type = Image.Type.Sliced;
-                editBtnImg.color = Color.white;
-                var editBtn = editBtnGo.gameObject.AddComponent<Button>();
-                NeutralTint(editBtnGo, editBtnImg);
-                var editBtnText = MakeText(editBtnGo, "BtnText", "Edit Profile", fSemiBold, 13f, OnAccent);
-                Stretch((RectTransform)editBtnText.transform);
-                editBtnText.alignment = TextAlignmentOptions.Center;
-
-                // Delete button (small red)
-                var delBtnGo = MakeNode(avatarCard, "DeleteBtn");
-                TL((RectTransform)delBtnGo, 190f, 216f, 36f, 36f);
-                var delBtnImg = delBtnGo.gameObject.AddComponent<Image>();
-                delBtnImg.sprite = dangerBtnBg;
-                delBtnImg.type = Image.Type.Sliced;
-                delBtnImg.color = Color.white;
-                delBtnGo.gameObject.AddComponent<Button>();
-                var delIcon = MakeText(delBtnGo, "DelIcon", "✖", fBold, 14f, Color.white);
-                Stretch((RectTransform)delIcon.transform);
-                delIcon.alignment = TextAlignmentOptions.Center;
-
-                // ==================== STATS CARDS ROW (Right of avatar) ====================
-                var statsRow = MakeNode(info, "StatsRow");
-                var statsRt = (RectTransform)statsRow;
-                statsRt.anchorMin = new Vector2(0f, 1f);
-                statsRt.anchorMax = new Vector2(1f, 1f);
-                statsRt.pivot = new Vector2(0f, 1f);
-                statsRt.anchoredPosition = new Vector2(300f, -76f);
-                statsRt.sizeDelta = new Vector2(-328f, 120f);
-
-                var hlg = statsRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-                hlg.spacing = 12f;
-                hlg.childAlignment = TextAnchor.MiddleLeft;
-                hlg.childControlWidth = true;
-                hlg.childControlHeight = true;
-                hlg.childForceExpandWidth = true;
-                hlg.childForceExpandHeight = true;
-                hlg.padding = new RectOffset(0, 0, 0, 0);
-
-                BuildStatCard(statsRow, "CompletedAchievement_Entry", "12", "Completed\nAchievements");
-                BuildStatCard(statsRow, "AchievementsPoints_Entry", "380", "Achievement\nPoints");
-                BuildStatCard(statsRow, "TotalMatches_Entry", "120", "Total Matches\nPlayed");
-                BuildStatCard(statsRow, "TotalGameTime_Entry", "43m 8s", "Total Game\nTime");
-
-                // ==================== TAB BAR ====================
-                var tabBar = MakeNode(info, "TabBar");
-                var tabBarRt = (RectTransform)tabBar;
-                tabBarRt.anchorMin = new Vector2(0f, 1f);
-                tabBarRt.anchorMax = new Vector2(1f, 1f);
-                tabBarRt.pivot = new Vector2(0f, 1f);
-                tabBarRt.anchoredPosition = new Vector2(28f, -220f);
-                tabBarRt.sizeDelta = new Vector2(-56f, 50f);
-
-                var tabBarBg = GetOrAdd<Image>(tabBar);
-                tabBarBg.sprite = statCardBg;
-                tabBarBg.type = Image.Type.Sliced;
-                tabBarBg.color = Color.white;
-
-                var tabHlg = tabBar.gameObject.AddComponent<HorizontalLayoutGroup>();
-                tabHlg.spacing = 4f;
-                tabHlg.padding = new RectOffset(4, 4, 4, 4);
-                tabHlg.childAlignment = TextAnchor.MiddleCenter;
-                tabHlg.childControlWidth = true;
-                tabHlg.childControlHeight = true;
-                tabHlg.childForceExpandWidth = true;
-                tabHlg.childForceExpandHeight = true;
-
-                BuildTab(tabBar, "BlockTab", "Block Game", true);
-                BuildTab(tabBar, "ConcentrateTab", "Concentrate Game", false);
-
-                // ==================== BOTTOM CONTENT ====================
-                // Left: Elo Rating card
-                var eloCard = MakeNode(info, "EloRatingCard");
-                var eloRt = (RectTransform)eloCard;
-                eloRt.anchorMin = new Vector2(0f, 0f);
-                eloRt.anchorMax = new Vector2(0.48f, 1f);
-                eloRt.pivot = new Vector2(0f, 1f);
-                eloRt.offsetMin = new Vector2(28f, 28f);
-                eloRt.offsetMax = new Vector2(0f, -284f);
-
-                var eloCardBg = GetOrAdd<Image>(eloCard);
-                eloCardBg.sprite = statCardBg;
-                eloCardBg.type = Image.Type.Sliced;
-                eloCardBg.color = Color.white;
-
-                var eloTitle = MakeText(eloCard, "EloTitle", "Elo Rating", fBold, 16f, Color.white);
-                TL((RectTransform)eloTitle.transform, 20f, 16f, 120f, 24f);
-
-                var eloDropdown = MakeText(eloCard, "EloDropdown", "All Time ▾", fMedium, 12f, TextMuted);
-                var edRt = (RectTransform)eloDropdown.transform;
-                edRt.anchorMin = new Vector2(1f, 1f);
-                edRt.anchorMax = new Vector2(1f, 1f);
-                edRt.pivot = new Vector2(1f, 1f);
-                edRt.anchoredPosition = new Vector2(-16f, -18f);
-                edRt.sizeDelta = new Vector2(80f, 20f);
-                eloDropdown.alignment = TextAlignmentOptions.Right;
-
-                // Placeholder for chart area
-                var chartArea = MakeNode(eloCard, "ChartArea");
-                var chartRt = (RectTransform)chartArea;
-                chartRt.anchorMin = new Vector2(0f, 0f);
-                chartRt.anchorMax = new Vector2(1f, 1f);
-                chartRt.offsetMin = new Vector2(16f, 20f);
-                chartRt.offsetMax = new Vector2(-16f, -48f);
-
-                // Right column: Stats + Achievements
-                var rightCol = MakeNode(info, "RightColumn");
-                var rcRt = (RectTransform)rightCol;
-                rcRt.anchorMin = new Vector2(0.48f, 0f);
-                rcRt.anchorMax = new Vector2(1f, 1f);
-                rcRt.pivot = new Vector2(0f, 1f);
-                rcRt.offsetMin = new Vector2(12f, 28f);
-                rcRt.offsetMax = new Vector2(-28f, -284f);
-
-                var rcVlg = rightCol.gameObject.AddComponent<VerticalLayoutGroup>();
-                rcVlg.spacing = 12f;
-                rcVlg.padding = new RectOffset(0, 0, 0, 0);
-                rcVlg.childAlignment = TextAnchor.UpperLeft;
-                rcVlg.childControlWidth = true;
-                rcVlg.childControlHeight = false;
-                rcVlg.childForceExpandWidth = true;
-                rcVlg.childForceExpandHeight = false;
-
-                // Stats row (Elo, Wins, Placement)
-                var miniStatsRow = MakeNode(rightCol, "MiniStatsRow");
-                var msLe = miniStatsRow.gameObject.AddComponent<LayoutElement>();
-                msLe.preferredHeight = 80f;
-                var msHlg = miniStatsRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-                msHlg.spacing = 12f;
-                msHlg.childControlWidth = true;
-                msHlg.childControlHeight = true;
-                msHlg.childForceExpandWidth = true;
-                msHlg.childForceExpandHeight = true;
-
-                BuildMiniStatCard(miniStatsRow, "EloStat", "1200", "Elo Rating");
-                BuildMiniStatCard(miniStatsRow, "WinsStat", "12", "Wins");
-                BuildMiniStatCard(miniStatsRow, "PlacementStat", "100 / 50 / 50", "2nd / 3rd / 4th");
-
-                // Achievements section
-                var achieveCard = MakeNode(rightCol, "AchievementsSection");
-                var acLe = achieveCard.gameObject.AddComponent<LayoutElement>();
-                acLe.flexibleHeight = 1f;
-                acLe.preferredHeight = 200f;
-
-                var acBg = GetOrAdd<Image>(achieveCard);
-                acBg.sprite = statCardBg;
-                acBg.type = Image.Type.Sliced;
-                acBg.color = Color.white;
-
-                var acTitle = MakeText(achieveCard, "AchievementsTitle", "Achievements", fBold, 16f, Color.white);
-                TL((RectTransform)acTitle.transform, 20f, 16f, 200f, 24f);
-
-                // Leaderboard entries parent (used by AccountDataController)
-                var entriesParent = MakeNode(achieveCard, "EntriesParent");
-                var epRt = (RectTransform)entriesParent;
-                epRt.anchorMin = new Vector2(0f, 0f);
-                epRt.anchorMax = new Vector2(1f, 1f);
-                epRt.offsetMin = new Vector2(12f, 12f);
-                epRt.offsetMax = new Vector2(-12f, -48f);
-
-                var epVlg = entriesParent.gameObject.AddComponent<VerticalLayoutGroup>();
-                epVlg.spacing = 8f;
-                epVlg.childControlWidth = true;
-                epVlg.childControlHeight = false;
-                epVlg.childForceExpandWidth = true;
-                epVlg.childForceExpandHeight = false;
-
-                // ==================== BACK BUTTON ====================
-                var backBtn = MakeNode(info, "BackButton");
-                var bbRt = (RectTransform)backBtn;
-                bbRt.anchorMin = new Vector2(1f, 1f);
-                bbRt.anchorMax = new Vector2(1f, 1f);
-                bbRt.pivot = new Vector2(1f, 1f);
-                bbRt.anchoredPosition = new Vector2(-20f, -20f);
-                bbRt.sizeDelta = new Vector2(36f, 36f);
-
-                var bbImg = backBtn.gameObject.AddComponent<Image>();
-                bbImg.sprite = statCardBg;
-                bbImg.type = Image.Type.Sliced;
-                bbImg.color = Color.white;
-                var bbButton = backBtn.gameObject.AddComponent<Button>();
-                NeutralTint(backBtn, bbImg);
-
-                var bbX = MakeText(backBtn, "XText", "✕", fBold, 18f, TextMuted);
-                Stretch((RectTransform)bbX.transform);
-                bbX.alignment = TextAlignmentOptions.Center;
-
-                // ==================== PAGE LABEL (bottom center) ====================
-                var pageLabel = MakeText(info, "PageLabel", "1/1", fMedium, 12f, TextMuted);
-                var plRt = (RectTransform)pageLabel.transform;
-                plRt.anchorMin = new Vector2(0.5f, 0f);
-                plRt.anchorMax = new Vector2(0.5f, 0f);
-                plRt.pivot = new Vector2(0.5f, 0f);
-                plRt.anchoredPosition = new Vector2(0f, 8f);
-                plRt.sizeDelta = new Vector2(60f, 20f);
-                pageLabel.alignment = TextAlignmentOptions.Center;
-
-                // ==================== REWIRE AccountDataController ====================
                 RewireController(root, info);
-
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally
@@ -377,189 +154,541 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
-        private static void RewireController(GameObject root, Transform info)
+        private static void BuildHeader(Transform info)
         {
-            var ctrl = root.GetComponent<AccountDataController>();
-            if (ctrl == null)
-            {
-                Debug.LogWarning("[ProfileRestyler] AccountDataController not found, skipping rewire.");
-                return;
-            }
+            var header = Node(info, "Header");
+            TopBand(header, 24f, 22f, 24f, 36f);
 
-            var so = new SerializedObject(ctrl);
+            var mark = Img(header, "Icon", headerMark, Color.white, Image.Type.Sliced);
+            MiddleLeft(mark, 0f, 20f, 20f);
 
-            WireTmp(so, "usernameLabel", info, "Text_User_Name");
-            WireTmp(so, "userIDLabel", info, "Text_ID");
-            WireTmp(so, "currentPageLabel", info, "PageLabel");
+            var title = MakeText(header, "TitleText", "My Profile", fBold, 24f, Color.white);
+            Fill(title.rectTransform, 32f, 0f, 0f, 0f);
 
-            // Stats cards value labels
-            WireTmp(so, "completedAchievementsLabel", info, "CompletedAchievement_Entry/ValueText");
-            WireTmp(so, "achievementPointsLabel", info, "AchievementsPoints_Entry/ValueText");
-            WireTmp(so, "totalMatchPlayedLabel", info, "TotalMatches_Entry/ValueText");
-            WireTmp(so, "totalGameTimeLabel", info, "TotalGameTime_Entry/ValueText");
-
-            // Profile image
-            var profileImgT = FindDeep(info, "ProfileImage");
-            if (profileImgT != null)
-            {
-                var prop = so.FindProperty("profileImage");
-                if (prop != null)
-                    prop.objectReferenceValue = profileImgT.GetComponent<Image>();
-            }
-
-            // Leaderboard entries parent
-            var entriesParent = FindDeep(info, "EntriesParent");
-            if (entriesParent != null)
-            {
-                var prop = so.FindProperty("leaderboardAccountParent");
-                if (prop != null)
-                    prop.objectReferenceValue = entriesParent;
-            }
-
-            // Back button
-            var backBtnT = FindDeep(info, "BackButton");
-            if (backBtnT != null)
-            {
-                var prop = so.FindProperty("backButton");
-                if (prop != null)
-                    prop.objectReferenceValue = backBtnT.GetComponent<Button>();
-            }
-
-            // Arrow buttons (pagination) - hidden for now
-            var leftProp = so.FindProperty("leftArrow");
-            if (leftProp != null) leftProp.objectReferenceValue = null;
-            var rightProp = so.FindProperty("rightArrow");
-            if (rightProp != null) rightProp.objectReferenceValue = null;
-
-            // CanvasGroup
-            var cgProp = so.FindProperty("rootCanvasGroup");
-            if (cgProp != null)
-                cgProp.objectReferenceValue = root.GetComponent<CanvasGroup>();
-
-            so.ApplyModifiedPropertiesWithoutUndo();
+            // Back / close button, top-right of the card.
+            var back = Node(info, "BackButton");
+            back.anchorMin = back.anchorMax = Vector2.one;
+            back.pivot = Vector2.one;
+            back.anchoredPosition = new Vector2(-22f, -22f);
+            back.sizeDelta = new Vector2(36f, 36f);
+            var backImg = back.gameObject.AddComponent<Image>();
+            backImg.sprite = Load<Sprite>(CloseIcon);
+            backImg.preserveAspect = true;
+            backImg.color = Color.white;
+            back.gameObject.AddComponent<Button>();
+            NeutralTint(back, backImg);
         }
 
-        private static void WireTmp(SerializedObject so, string propName, Transform root, string path)
+        private static void BuildTopRow(Transform info)
         {
-            var target = FindDeepPath(root, path);
-            if (target == null) return;
+            var row = Node(info, "TopRow");
+            TopBand(row, 24f, 72f, 24f, 150f);
 
-            var tmp = target.GetComponent<TextMeshProUGUI>();
-            if (tmp == null) return;
+            // ---- avatar column
+            var avatarCard = Node(row, "AvatarInfoCard");
+            avatarCard.anchorMin = new Vector2(0f, 0f);
+            avatarCard.anchorMax = new Vector2(0f, 1f);
+            avatarCard.pivot = new Vector2(0f, 0.5f);
+            avatarCard.anchoredPosition = Vector2.zero;
+            avatarCard.sizeDelta = new Vector2(190f, 0f);
 
-            var prop = so.FindProperty(propName);
-            if (prop != null)
-                prop.objectReferenceValue = tmp;
+            var holder = Node(avatarCard, "AvatarHolder");
+            TLCentered(holder, 6f, 72f, 72f);
+            var ring = Img(holder, "AvatarRing", circle, Hex("#F28C28"), Image.Type.Simple);
+            Stretch(ring);
+            var maskRt = Node(holder, "AvatarMask");
+            maskRt.anchorMin = new Vector2(0.06f, 0.06f);
+            maskRt.anchorMax = new Vector2(0.94f, 0.94f);
+            maskRt.offsetMin = maskRt.offsetMax = Vector2.zero;
+            var maskImg = maskRt.gameObject.AddComponent<Image>();
+            maskImg.sprite = circle;
+            maskRt.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            var profile = Img(maskRt, "ProfileImage", Load<Sprite>(DefaultAvatar), Color.white, Image.Type.Simple);
+            Stretch(profile);
+            profile.GetComponent<Image>().preserveAspect = true;
+
+            // "Gold Member" badge overlaps the top-left of the avatar.
+            var badge = Img(avatarCard, "Badge", goldBtn, Color.white, Image.Type.Sliced);
+            TLCentered(badge, 0f, 86f, 18f);
+            badge.anchoredPosition = new Vector2(-36f, 0f);
+            var badgeText = MakeText(badge, "BadgeText", "Gold Member", fBold, 9f, OnAccent);
+            Stretch(badgeText.rectTransform);
+            badgeText.alignment = TextAlignmentOptions.Center;
+
+            var name = MakeText(avatarCard, "Text_User_Name", "Martin", fBold, 16f, Color.white);
+            TLCentered(name.rectTransform, 82f, 186f, 20f);
+            Label(name, fBold, 16f, Color.white).alignment = TextAlignmentOptions.Center;
+
+            var id = MakeText(avatarCard, "Text_ID", "martin123@gmail.com", fRegular, 11f, TextSoft);
+            TLCentered(id.rectTransform, 103f, 186f, 16f);
+            Label(id, fRegular, 11f, TextSoft).alignment = TextAlignmentOptions.Center;
+
+            var buttons = Node(avatarCard, "Buttons");
+            TLCentered(buttons, 124f, 118f, 24f);
+            var edit = Node(buttons, "EditProfileBtn");
+            TL(edit, 0f, 0f, 88f, 24f);
+            var editImg = edit.gameObject.AddComponent<Image>();
+            editImg.sprite = goldBtn; editImg.type = Image.Type.Sliced;
+            edit.gameObject.AddComponent<Button>();
+            NeutralTint(edit, editImg);
+            var editText = MakeText(edit, "BtnText", "Edit Profile", fBold, 10f, OnAccent);
+            Stretch(editText.rectTransform);
+            editText.alignment = TextAlignmentOptions.Center;
+
+            var del = Node(buttons, "DeleteBtn");
+            TL(del, 94f, 0f, 24f, 24f);
+            var delImg = del.gameObject.AddComponent<Image>();
+            delImg.sprite = dangerBtn; delImg.type = Image.Type.Sliced;
+            del.gameObject.AddComponent<Button>();
+            NeutralTint(del, delImg);
+            var delIcon = Img(del, "Icon", trashIcon, Color.white, Image.Type.Simple);
+            delIcon.anchorMin = delIcon.anchorMax = new Vector2(0.5f, 0.5f);
+            delIcon.sizeDelta = new Vector2(14f, 14f);
+
+            // ---- separator
+            var sep = Img(row, "Separator", divider, new Color(1f, 1f, 1f, 0.08f), Image.Type.Simple);
+            sep.anchorMin = new Vector2(0f, 0.12f);
+            sep.anchorMax = new Vector2(0f, 0.88f);
+            sep.pivot = new Vector2(0f, 0.5f);
+            sep.anchoredPosition = new Vector2(206f, 0f);
+            sep.sizeDelta = new Vector2(1f, 0f);
+
+            // ---- four stat cards
+            var stats = Node(row, "StatsRow");
+            stats.anchorMin = new Vector2(0f, 0.5f);
+            stats.anchorMax = new Vector2(1f, 0.5f);
+            stats.pivot = new Vector2(0f, 0.5f);
+            stats.offsetMin = new Vector2(224f, -40f);
+            stats.offsetMax = new Vector2(-48f, 40f);
+            var hlg = stats.gameObject.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 16f;
+            hlg.childControlWidth = hlg.childControlHeight = true;
+            hlg.childForceExpandWidth = hlg.childForceExpandHeight = true;
+
+            StatCard(stats, "CompletedAchievement_Entry", TrophyIcon, "0", "Completed\nAchievements");
+            StatCard(stats, "AchievementsPoints_Entry", CoinIcon, "0", "Achievement\nPoints");
+            StatCard(stats, "TotalMatches_Entry", TilesIcon, "0", "Total Matches\nPlayed");
+            StatCard(stats, "TotalGameTime_Entry", HornIcon, "0s", "Total Game\nTime");
         }
 
-        private static Transform FindDeepPath(Transform root, string path)
+        private static void BuildSection(Transform info)
         {
-            var parts = path.Split('/');
-            var current = root;
-            foreach (var part in parts)
+            var section = Img(info, "ProfileSection", sectionBg, Color.white, Image.Type.Sliced);
+            Fill(section, 24f, 24f, 24f, 238f);
+
+            // ---- tab bar
+            var tabBar = Img(section, "TabBar", tabBg, Color.white, Image.Type.Sliced);
+            TopBand(tabBar, 18f, 18f, 18f, 44f);
+            var tabHlg = tabBar.gameObject.AddComponent<HorizontalLayoutGroup>();
+            tabHlg.padding = new RectOffset(4, 4, 4, 4);
+            tabHlg.spacing = 4f;
+            tabHlg.childControlWidth = tabHlg.childControlHeight = true;
+            tabHlg.childForceExpandWidth = tabHlg.childForceExpandHeight = true;
+            Tab(tabBar, "BlockTab", "Block Game", true);
+            Tab(tabBar, "ConcentrateTab", "Concentrate Game", false);
+
+            // ---- Elo card (left 46%)
+            var elo = Img(section, "EloRatingCard", statCardBg, Color.white, Image.Type.Sliced);
+            elo.anchorMin = Vector2.zero;
+            elo.anchorMax = new Vector2(0.46f, 1f);
+            elo.offsetMin = new Vector2(18f, 18f);
+            elo.offsetMax = new Vector2(-8f, -76f);
+            BuildEloCard(elo);
+
+            // ---- right column
+            var right = Node(section, "RightColumn");
+            right.anchorMin = new Vector2(0.46f, 0f);
+            right.anchorMax = Vector2.one;
+            right.offsetMin = new Vector2(8f, 18f);
+            right.offsetMax = new Vector2(-18f, -76f);
+
+            var mini = Node(right, "MiniStatsRow");
+            TopBand(mini, 0f, 0f, 0f, 84f);
+            var miniHlg = mini.gameObject.AddComponent<HorizontalLayoutGroup>();
+            miniHlg.spacing = 12f;
+            miniHlg.childControlWidth = miniHlg.childControlHeight = true;
+            miniHlg.childForceExpandWidth = miniHlg.childForceExpandHeight = true;
+            MiniStat(mini, "EloStat", "1200", "Elo Rating", 1f);
+            MiniStat(mini, "WinsStat", "12", "Wins", 1f);
+            MiniStat(mini, "PlacementStat", "100 / 50 / 50", "2nd / 3rd / 4th", 2f);
+
+            var ach = Img(right, "AchievementsSection", statCardBg, Color.white, Image.Type.Sliced);
+            Fill(ach, 0f, 0f, 0f, 96f);
+            var achTitle = MakeText(ach, "AchievementsTitle", "Achievements", fBold, 16f, Color.white);
+            TopBand(achTitle.rectTransform, 18f, 14f, 120f, 24f);
+
+            // Pagination (wired to AccountDataController's arrows; shown only with more than one page).
+            var pager = Node(ach, "Pager");
+            pager.anchorMin = pager.anchorMax = Vector2.one;
+            pager.pivot = Vector2.one;
+            pager.anchoredPosition = new Vector2(-14f, -12f);
+            pager.sizeDelta = new Vector2(108f, 28f);
+            PagerArrow(pager, "LeftArrow", true);
+            var page = MakeText(pager, "PageLabel", "1/1", fMedium, 12f, TextSoft);
+            page.rectTransform.anchorMin = page.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            page.rectTransform.sizeDelta = new Vector2(44f, 28f);
+            page.alignment = TextAlignmentOptions.Center;
+            PagerArrow(pager, "RightArrow", false);
+
+            var entries = Node(ach, "EntriesParent");
+            Fill(entries, 14f, 14f, 14f, 50f);
+            var vlg = entries.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 8f;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = true;
+            vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.childForceExpandHeight = false;
+        }
+
+        private static void BuildEloCard(RectTransform card)
+        {
+            var title = MakeText(card, "EloTitle", "Elo Rating", fBold, 16f, Color.white);
+            TopBand(title.rectTransform, 18f, 14f, 160f, 24f);
+
+            var pill = Img(card, "EloDropdown", pillBg, Color.white, Image.Type.Sliced);
+            pill.anchorMin = pill.anchorMax = Vector2.one;
+            pill.pivot = Vector2.one;
+            pill.anchoredPosition = new Vector2(-14f, -12f);
+            pill.sizeDelta = new Vector2(92f, 28f);
+            var pillText = MakeText(pill, "Text", "All Time", fMedium, 11f, TextMuted);
+            Fill(pillText.rectTransform, 10f, 0f, 22f, 0f);
+            var chev = Img(pill, "Chevron", Load<Sprite>(ChevronIcon), TextMuted, Image.Type.Simple);
+            MiddleRight(chev, 8f, 10f, 10f);
+            chev.GetComponent<Image>().preserveAspect = true;
+
+            // Axis grid; the rating history itself has no backing data yet.
+            var chart = Node(card, "ChartArea");
+            Fill(chart, 56f, 18f, 18f, 56f);
+            string[] yLabels = { "1600", "1500", "1400", "1300", "1200", "1100", "1000" };
+            for (int i = 0; i < yLabels.Length; i++)
             {
-                current = FindDeep(current, part);
-                if (current == null) return null;
+                float t = 1f - i / (float)(yLabels.Length - 1);
+                var line = Img(chart, $"Grid_{yLabels[i]}", divider, GridLine, Image.Type.Simple);
+                line.anchorMin = new Vector2(0f, t);
+                line.anchorMax = new Vector2(1f, t);
+                line.sizeDelta = new Vector2(0f, 1f);
+                line.anchoredPosition = Vector2.zero;
+
+                var lbl = MakeText(chart, $"Y_{yLabels[i]}", yLabels[i], fRegular, 10f, TextSoft);
+                lbl.rectTransform.anchorMin = lbl.rectTransform.anchorMax = new Vector2(0f, t);
+                lbl.rectTransform.pivot = new Vector2(1f, 0.5f);
+                lbl.rectTransform.anchoredPosition = new Vector2(-8f, 0f);
+                lbl.rectTransform.sizeDelta = new Vector2(40f, 14f);
+                lbl.alignment = TextAlignmentOptions.MidlineRight;
             }
-            return current;
+            var xTitle = MakeText(card, "XAxisTitle", "Match Number", fRegular, 10f, TextSoft);
+            xTitle.rectTransform.anchorMin = new Vector2(0f, 0f);
+            xTitle.rectTransform.anchorMax = new Vector2(1f, 0f);
+            xTitle.rectTransform.pivot = new Vector2(0.5f, 0f);
+            xTitle.rectTransform.anchoredPosition = new Vector2(19f, 18f);
+            xTitle.rectTransform.sizeDelta = new Vector2(-74f, 16f);
+            xTitle.alignment = TextAlignmentOptions.Center;
+
+            var empty = MakeText(chart, "EmptyText", "No rating history yet", fMedium, 12f, TextSoft);
+            Stretch(empty.rectTransform);
+            empty.alignment = TextAlignmentOptions.Center;
         }
 
-        // ==================== BUILDERS ====================
-
-        private static void BuildStatCard(Transform parent, string name, string value, string label)
+        private static void StatCard(Transform parent, string name, string iconPath, string value, string label)
         {
-            var card = MakeNode(parent, name);
+            var card = Img(parent, name, statCardBg, Color.white, Image.Type.Sliced);
 
-            var bg = GetOrAdd<Image>(card);
-            bg.sprite = statCardBg;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
+            var icon = Img(card, "Icon", Load<Sprite>(iconPath), Color.white, Image.Type.Simple);
+            MiddleLeft(icon, 16f, 36f, 36f);
+            icon.GetComponent<Image>().preserveAspect = true;
 
-            var valText = MakeText(card, "ValueText", value, fExtraBold, 32f, Color.white);
-            var valRt = (RectTransform)valText.transform;
-            valRt.anchorMin = new Vector2(0f, 0.5f);
-            valRt.anchorMax = new Vector2(1f, 1f);
-            valRt.offsetMin = new Vector2(48f, 0f);
-            valRt.offsetMax = new Vector2(-8f, -8f);
-            valText.alignment = TextAlignmentOptions.Left;
-            valText.enableAutoSizing = true;
-            valText.fontSizeMin = 16f;
-            valText.fontSizeMax = 32f;
+            var val = MakeText(card, "ValueText", value, fBold, 26f, Color.white);
+            val.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            val.rectTransform.anchorMax = new Vector2(1f, 1f);
+            val.rectTransform.offsetMin = new Vector2(64f, -2f);
+            val.rectTransform.offsetMax = new Vector2(-10f, -8f);
+            Label(val, fBold, 26f, Color.white).alignment = TextAlignmentOptions.BottomLeft;
 
-            var lblText = MakeText(card, "LabelText", label, fRegular, 11f, TextMuted);
-            var lblRt = (RectTransform)lblText.transform;
-            lblRt.anchorMin = new Vector2(0f, 0f);
-            lblRt.anchorMax = new Vector2(1f, 0.5f);
-            lblRt.offsetMin = new Vector2(48f, 8f);
-            lblRt.offsetMax = new Vector2(-8f, 0f);
-            lblText.alignment = TextAlignmentOptions.Left;
-            lblText.textWrappingMode = TextWrappingModes.Normal;
-            lblText.enableAutoSizing = true;
-            lblText.fontSizeMin = 8f;
-            lblText.fontSizeMax = 11f;
+            var lbl = MakeText(card, "LabelText", label, fRegular, 11f, TextSoft);
+            lbl.rectTransform.anchorMin = Vector2.zero;
+            lbl.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            lbl.rectTransform.offsetMin = new Vector2(64f, 6f);
+            lbl.rectTransform.offsetMax = new Vector2(-10f, -2f);
+            lbl.alignment = TextAlignmentOptions.TopLeft;
+            lbl.textWrappingMode = TextWrappingModes.Normal;
+            lbl.lineSpacing = -8f;
         }
 
-        private static void BuildMiniStatCard(Transform parent, string name, string value, string label)
+        private static void MiniStat(Transform parent, string name, string value, string label, float flex)
         {
-            var card = MakeNode(parent, name);
+            var card = Img(parent, name, statCardBg, Color.white, Image.Type.Sliced);
+            card.gameObject.AddComponent<LayoutElement>().flexibleWidth = flex;
 
-            var bg = GetOrAdd<Image>(card);
-            bg.sprite = statCardBg;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
+            var val = MakeText(card, "ValueText", value, fBold, 22f, Color.white);
+            val.rectTransform.anchorMin = new Vector2(0f, 0.42f);
+            val.rectTransform.anchorMax = Vector2.one;
+            val.rectTransform.offsetMin = new Vector2(16f, 0f);
+            val.rectTransform.offsetMax = new Vector2(-12f, -10f);
+            Label(val, fBold, 22f, Color.white).alignment = TextAlignmentOptions.BottomLeft;
 
-            var valText = MakeText(card, "ValueText", value, fExtraBold, 28f, Color.white);
-            TLCentered((RectTransform)valText.transform, 14f, 150f, 34f);
-            valText.alignment = TextAlignmentOptions.Center;
-            valText.enableAutoSizing = true;
-            valText.fontSizeMin = 14f;
-            valText.fontSizeMax = 28f;
-
-            var lblText = MakeText(card, "LabelText", label, fRegular, 10f, TextMuted);
-            var lblRt = (RectTransform)lblText.transform;
-            lblRt.anchorMin = new Vector2(0f, 0f);
-            lblRt.anchorMax = new Vector2(1f, 0f);
-            lblRt.pivot = new Vector2(0.5f, 0f);
-            lblRt.anchoredPosition = new Vector2(0f, 8f);
-            lblRt.sizeDelta = new Vector2(-8f, 20f);
-            lblText.alignment = TextAlignmentOptions.Center;
+            var lbl = MakeText(card, "LabelText", label, fRegular, 11f, TextSoft);
+            lbl.rectTransform.anchorMin = Vector2.zero;
+            lbl.rectTransform.anchorMax = new Vector2(1f, 0.42f);
+            lbl.rectTransform.offsetMin = new Vector2(16f, 10f);
+            lbl.rectTransform.offsetMax = new Vector2(-12f, -4f);
+            Label(lbl, fRegular, 11f, TextSoft).alignment = TextAlignmentOptions.TopLeft;
         }
 
-        private static void BuildTab(Transform parent, string name, string label, bool active)
+        private static void Tab(Transform parent, string name, string label, bool active)
         {
-            var tab = MakeNode(parent, name);
-
-            var bg = GetOrAdd<Image>(tab);
-            bg.sprite = active ? tabActiveBg : tabBg;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
-
-            var btn = tab.gameObject.AddComponent<Button>();
-            NeutralTint(tab, bg);
-
+            var tab = Node(parent, name);
+            var img = tab.gameObject.AddComponent<Image>();
+            img.sprite = active ? tabActiveBg : null;
+            img.type = Image.Type.Sliced;
+            img.color = active ? Color.white : new Color(1f, 1f, 1f, 0f);
+            tab.gameObject.AddComponent<Button>();
+            NeutralTint(tab, img);
             var text = MakeText(tab, "TabText", label, active ? fSemiBold : fMedium, 15f, active ? Color.white : TextMuted);
-            Stretch((RectTransform)text.transform);
+            Stretch(text.rectTransform);
             text.alignment = TextAlignmentOptions.Center;
         }
 
-        // ==================== HELPERS ====================
+        private static void PagerArrow(Transform pager, string name, bool left)
+        {
+            var btn = Img(pager, name, pillBg, Color.white, Image.Type.Sliced);
+            btn.anchorMin = btn.anchorMax = new Vector2(left ? 0f : 1f, 0.5f);
+            btn.pivot = new Vector2(left ? 0f : 1f, 0.5f);
+            btn.anchoredPosition = Vector2.zero;
+            btn.sizeDelta = new Vector2(28f, 28f);
+            var img = btn.GetComponent<Image>();
+            img.raycastTarget = true;
+            btn.gameObject.AddComponent<Button>();
+            NeutralTint(btn, img);
+            var chev = Img(btn, "Chevron", Load<Sprite>(ChevronIcon), TextMuted, Image.Type.Simple);
+            chev.anchorMin = chev.anchorMax = new Vector2(0.5f, 0.5f);
+            chev.sizeDelta = new Vector2(10f, 10f);
+            chev.localEulerAngles = new Vector3(0f, 0f, left ? -90f : 90f);
+            chev.GetComponent<Image>().preserveAspect = true;
+        }
 
-        private static Transform MakeNode(Transform parent, string name)
+        private static void RewireController(GameObject root, Transform info)
+        {
+            var ctrl = root.GetComponent<AccountDataController>();
+            Require(ctrl, nameof(AccountDataController));
+            var so = new SerializedObject(ctrl);
+
+            Ref(so, "usernameLabel", Tmp(info, "Text_User_Name"));
+            Ref(so, "userIDLabel", Tmp(info, "Text_ID"));
+            Ref(so, "currentPageLabel", Tmp(info, "PageLabel"));
+            Ref(so, "completedAchievementsLabel", Tmp(FindDeep(info, "CompletedAchievement_Entry"), "ValueText"));
+            Ref(so, "achievementPointsLabel", Tmp(FindDeep(info, "AchievementsPoints_Entry"), "ValueText"));
+            Ref(so, "totalMatchPlayedLabel", Tmp(FindDeep(info, "TotalMatches_Entry"), "ValueText"));
+            Ref(so, "totalGameTimeLabel", Tmp(FindDeep(info, "TotalGameTime_Entry"), "ValueText"));
+            Ref(so, "profileImage", FindDeep(info, "ProfileImage").GetComponent<Image>());
+            Ref(so, "leaderboardAccountParent", FindDeep(info, "EntriesParent"));
+            Ref(so, "backButton", FindDeep(info, "BackButton").GetComponent<Button>());
+            Ref(so, "leftArrow", FindDeep(info, "LeftArrow").GetComponent<Button>());
+            Ref(so, "rightArrow", FindDeep(info, "RightArrow").GetComponent<Button>());
+            Ref(so, "rootCanvasGroup", root.GetComponent<CanvasGroup>());
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // ------------------------------------------------------------------ records row
+        // One row per game mode: icon, mode name, best 1v1 / 1v3 tier and score.
+        private static void StyleEntryPrefab()
+        {
+            var root = PrefabUtility.LoadPrefabContents(EntryPrefabPath);
+            try
+            {
+                var rt = (RectTransform)root.transform;
+                rt.anchorMin = new Vector2(0f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f);
+                rt.sizeDelta = new Vector2(0f, 58f);
+                rt.localScale = Vector3.one;
+                foreach (var c in root.GetComponents<LayoutGroup>()) Object.DestroyImmediate(c);
+                foreach (var c in root.GetComponents<ContentSizeFitter>()) Object.DestroyImmediate(c);
+                var le = GetOrAdd<LayoutElement>(root.transform);
+                le.preferredHeight = 58f; le.minHeight = 58f; le.flexibleHeight = -1f;
+                le.preferredWidth = -1f; le.flexibleWidth = 1f;
+
+                var bg = GetOrAdd<Image>(root.transform);
+                bg.sprite = rowBg; bg.type = Image.Type.Sliced; bg.color = Color.white; bg.raycastTarget = false;
+
+                for (int i = root.transform.childCount - 1; i >= 0; i--)
+                    Object.DestroyImmediate(root.transform.GetChild(i).gameObject);
+
+                var box = Img(root.transform, "IconBox", iconBoxBg, Color.white, Image.Type.Sliced);
+                MiddleLeft(box, 12f, 36f, 36f);
+                var icon = Img(box, "Icon", Load<Sprite>(QuestIcon), Color.white, Image.Type.Simple);
+                Fill(icon, 5f, 5f, 5f, 5f);
+                icon.GetComponent<Image>().preserveAspect = true;
+
+                var mode = MakeText(root.transform, "Text_GameMode", "Block", fBold, 14f, Color.white);
+                mode.rectTransform.anchorMin = new Vector2(0f, 0f);
+                mode.rectTransform.anchorMax = new Vector2(0.38f, 1f);
+                mode.rectTransform.offsetMin = new Vector2(60f, 0f);
+                mode.rectTransform.offsetMax = new Vector2(0f, 0f);
+                Label(mode, fBold, 14f, Color.white).fontStyle = FontStyles.UpperCase;
+
+                var one = Record(root.transform, "OneVsOne", "1 vs 1", 0.38f, 0.69f);
+                var three = Record(root.transform, "OneVsThree", "1 vs 3", 0.69f, 1f);
+
+                var entry = root.GetComponent(FindType("ProDomino.AccountSystem.LeaderboardAccountEntry"));
+                Require(entry, "LeaderboardAccountEntry");
+                var so = new SerializedObject(entry);
+                Ref(so, "gameModeLabel", mode);
+                Ref(so, "oneVsOneLabel", one);
+                Ref(so, "oneVsThreeLabel", three);
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, EntryPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static TextMeshProUGUI Record(Transform row, string name, string caption, float xMin, float xMax)
+        {
+            var col = Node(row, name);
+            col.anchorMin = new Vector2(xMin, 0f);
+            col.anchorMax = new Vector2(xMax, 1f);
+            col.offsetMin = new Vector2(8f, 8f);
+            col.offsetMax = new Vector2(-12f, -8f);
+
+            var star = Img(col, "Star", Load<Sprite>(StarIcon), Color.white, Image.Type.Simple);
+            MiddleLeft(star, 0f, 16f, 16f);
+            star.GetComponent<Image>().preserveAspect = true;
+
+            var cap = MakeText(col, "Caption", caption, fRegular, 10f, TextSoft);
+            cap.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            cap.rectTransform.anchorMax = Vector2.one;
+            cap.rectTransform.offsetMin = new Vector2(22f, 0f);
+            cap.rectTransform.offsetMax = Vector2.zero;
+            cap.alignment = TextAlignmentOptions.BottomLeft;
+
+            var val = MakeText(col, "Value", "No Record", fSemiBold, 12f, Accent);
+            val.rectTransform.anchorMin = Vector2.zero;
+            val.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            val.rectTransform.offsetMin = new Vector2(22f, 0f);
+            val.rectTransform.offsetMax = Vector2.zero;
+            Label(val, fSemiBold, 12f, Accent).alignment = TextAlignmentOptions.TopLeft;
+            return val;
+        }
+
+        // ------------------------------------------------------------------ host prefabs
+        // Reverts rect/visual overrides on the popup subtree and gives the root the Friends List rect so it
+        // fills the content area next to the sidebar like the other sections.
+        private static void CleanInstance(string prefabPath)
+        {
+            var host = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var popup = FindDeep(host.transform, InstanceName);
+                if (!popup) { Debug.LogWarning($"[ProfileRestyler] {InstanceName} not in {prefabPath}"); return; }
+
+                foreach (var t in popup.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t == popup || !PrefabUtility.IsPartOfPrefabInstance(t)) continue;
+                    foreach (var c in t.GetComponents<Component>())
+                        if (c) PrefabUtility.RevertObjectOverride(c, InteractionMode.AutomatedAction);
+                    PrefabUtility.RevertObjectOverride(t.gameObject, InteractionMode.AutomatedAction);
+                }
+                CopyRectFromSibling((RectTransform)popup);
+
+                var instanceRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(popup.gameObject);
+                if (instanceRoot)
+                    PrefabUtility.RemoveUnusedOverrides(new[] { instanceRoot }, InteractionMode.AutomatedAction);
+                PrefabUtility.SaveAsPrefabAsset(host, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(host);
+            }
+        }
+
+        private static void CopyRectFromSibling(RectTransform rt)
+        {
+            var reference = rt.parent ? rt.parent.Find("FriendList_Popup") as RectTransform : null;
+            if (reference)
+            {
+                rt.anchorMin = reference.anchorMin; rt.anchorMax = reference.anchorMax;
+                rt.pivot = reference.pivot;
+                rt.offsetMin = reference.offsetMin; rt.offsetMax = reference.offsetMax;
+                rt.localScale = reference.localScale;
+            }
+            else
+            {
+                Stretch(rt);
+                rt.localScale = Vector3.one;
+            }
+        }
+
+        // ------------------------------------------------------------------ helpers
+        private static Sprite MakeTrashIcon()
+        {
+            const int s = 32;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                // texture y is bottom-up: body 4..22, lid 24..26, handle 27..29
+                bool body = y >= 4 && y <= 22 && x >= 9 && x <= 22 && !(y >= 8 && y <= 18 && (x == 13 || x == 18));
+                bool lid = y >= 24 && y <= 26 && x >= 6 && x <= 25;
+                bool handle = y >= 27 && y <= 29 && x >= 13 && x <= 18;
+                var c = Color.white;
+                c.a = body || lid || handle ? 1f : 0f;
+                tex.SetPixel(x, y, c);
+            }
+            return SaveSprite($"{GeneratedDir}/Profile_TrashIcon.png", tex);
+        }
+
+        private static RectTransform Node(Transform parent, string name)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             go.layer = parent.gameObject.layer;
-            return go.transform;
+            return (RectTransform)go.transform;
         }
 
-        private static GameObject MakeImg(Transform parent, string name, Sprite sprite, Color color, float w, float h)
+        private static RectTransform Img(Transform parent, string name, Sprite sprite, Color color, Image.Type type) =>
+            (RectTransform)MakeImage(parent, name, sprite, color, type).transform;
+
+        // Stretched with insets measured from each edge.
+        private static void Fill(RectTransform rt, float left, float bottom, float right, float top)
         {
-            var go = MakeImage(parent, name, sprite, color, Image.Type.Simple);
-            var img = go.GetComponent<Image>();
-            img.preserveAspect = true;
-            var rt = go.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(w, h);
-            return go;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2(left, bottom);
+            rt.offsetMax = new Vector2(-right, -top);
+        }
+
+        // Full-width band at a fixed distance from the top.
+        private static void TopBand(RectTransform rt, float left, float top, float right, float height)
+        {
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = Vector2.one;
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.offsetMin = new Vector2(left, -top - height);
+            rt.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static T Load<T>(string path) where T : Object
+        {
+            var a = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (!a) Debug.LogWarning($"[ProfileRestyler] Missing asset {path}");
+            return a;
+        }
+
+        private static TMP_Text Tmp(Transform root, string name)
+        {
+            var t = root ? FindDeep(root, name) : null;
+            return t ? t.GetComponent<TMP_Text>() : null;
+        }
+
+        private static void Ref(SerializedObject so, string prop, Object value)
+        {
+            var p = so.FindProperty(prop);
+            if (p == null) throw new Exception($"[ProfileRestyler] Property {prop} not found on {so.targetObject.GetType().Name}");
+            if (!value) throw new Exception($"[ProfileRestyler] Target for {prop} not found");
+            p.objectReferenceValue = value;
         }
     }
 }

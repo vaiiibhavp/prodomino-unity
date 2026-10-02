@@ -286,7 +286,7 @@ namespace ProDomino.NavigationSystem
         /// Method used to block or unblock the navigation panel interaction.
         /// </summary>
         /// <param name="isInteractable"></param>
-        internal void SetInteractable(bool isInteractable)
+        public void SetInteractable(bool isInteractable)
         {
             canvasGroup.SetActive(isInteractable, isSettingAlpha: false);
         }
