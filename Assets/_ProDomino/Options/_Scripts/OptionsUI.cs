@@ -248,6 +248,14 @@ namespace ProDomino.Options
                 return;
             }
 
+            // Verified players go straight to the My Profile screen. Unverified players still need
+            // the menu for email verification and sign out.
+            if (gameManager.IsAuthenticatedAndVerified)
+            {
+                OnPressOpenAccountPopUpButton();
+                return;
+            }
+
             // Toggle the profile menu
             SetActiveInterface(optionsInterface, optionsInterface.alpha is 0);
         }

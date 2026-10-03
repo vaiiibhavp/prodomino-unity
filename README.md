@@ -6,29 +6,67 @@ through leaderboards, achievements, missions, clubs and a cosmetics shop.
 
 Version: `0.7.15` · Main scene: `Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity`
 
+> The production scene lives under `Assets/_tests/` for historical reasons. It is the scene the
+> game boots into, despite the folder name.
+
+---
+
+## Contents
+
+- [Getting started](#getting-started)
+- [Repository and branches](#repository-and-branches)
+- [Tech stack](#tech-stack)
+- [Game modes and match types](#game-modes-and-match-types)
+- [Main menu UI](#main-menu-ui)
+- [UI redesign](#ui-redesign)
+- [WebGL build](#webgl-build)
+- [Deploy](#deploy)
+- [Developer tooling (Unity MCP)](#developer-tooling-unity-mcp)
+- [Known gaps](#known-gaps)
+
 ---
 
 ## Getting started
 
-1. Open the project with **Unity 6000.4.1f1** (Unity Hub → Add → this folder).
-2. Open the scene `Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity`.
-3. Press **Play**. The game starts on the Dashboard; sign-in and online play require the
-   Unity Services / Firebase credentials configured for the project.
+1. Clone the repository (see [Repository and branches](#repository-and-branches)).
+2. Open the project with **Unity 6000.4.1f1** (Unity Hub → Add → this folder). The first import
+   takes a while; `Library/`, `Temp/`, `Logs/` and `UserSettings/` are regenerated locally and are
+   not in the repo.
+3. Open `Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity`.
+4. Press **Play**. The game starts on the Dashboard.
 
-`Library/`, `Temp/`, `Logs/`, `UserSettings/` and backend build output are not in the repo —
-Unity regenerates them on first open (the first import takes a while).
+Sign-in and online play need the project linked to its Unity Cloud project
+(**Edit → Project Settings → Services**) and the Firebase project `playprodomino`. Ask the project
+owner for access to both.
+
+Local-only secrets (for example the Figma API token used for design work) go in `.env.local` at
+the repo root. That file is gitignored; never commit tokens.
 
 ---
 
-## Repository layout
+## Repository and branches
+
+| Remote | URL |
+|---|---|
+| `neworigin` (active) | `git@github.com:vaiiibhavp/prodomino-unity.git` |
+| `origin` (legacy) | `git@github.com:pipaliyavivek/ProDomino.git` |
+
+- Day-to-day work happens on `dev_jaimin` and is pushed to `neworigin`.
+- `main` is the release branch; open pull requests against it.
+- Commit freely, but push only after review.
+
+### Layout
 
 | Path | What it is |
 |---|---|
 | `Assets/_ProDomino/` | All game code and content, split per system (see below) |
+| `Assets/DominoTemplate_v2/` | Board, tiles and in-match game controller prefabs |
 | `Assets/_tests/` | Test scenes, including the main playable scene |
 | `Assets/Localization/` | Localization tables (English, Spanish) |
+| `Assets/WebGLTemplates/` | `WebGL_ProDomino_Template` |
 | `Backend/` | C# Cloud Code modules + shared libraries (`Project`, `FirebaseSharedLibrary`, `HelperSharedLibrary`) |
-| `FirebaseFunctions/` | Firebase project config for cloud functions |
+| `FirebaseFunctions/` | Firebase project config (`.firebaserc`, `firebase.json`) only |
+| `.agents/`, `Tools/` | Unity MCP bridge and its setup scripts |
 | `Packages/`, `ProjectSettings/` | Unity package manifest and project settings |
 
 ### Gameplay systems (`Assets/_ProDomino/`)
@@ -51,7 +89,7 @@ Each system is its own assembly definition:
 - **Unity Services:** Cloud Code, Cloud Save, Leaderboards, Friends, Remote Config, Deployment
 - **Backend:** C# Cloud Code modules (account deletion, e-mail verification, password recovery,
   protected player/game data) plus Firebase (auth, messaging, functions) through a WebGL bridge
-- **Other:** Facebook SDK, Unity Localization (en/es), Input System, Visual Scripting
+- **Other:** Facebook SDK, Unity Localization (en/es), Input System, Visual Scripting, DOTween
 
 ---
 
@@ -95,172 +133,45 @@ of the Play panel. Its cards start matches through the existing `GameModeConfig`
 While searching, an overlay shows the mode, a timer and a Cancel button. The Dashboard hides
 itself while a match is on screen and returns when the match ends.
 
-### Editor tools (`ProDomino` menu)
-
-Used to (re)apply the UI design to the prefabs and to verify the result headlessly:
-
-- `ProDomino/Dashboard/Restyle Sidebar + Render`
-- `ProDomino/Dashboard/Restyle Header + Dashboard + Render`
-- `ProDomino/Dashboard/Clean MainSceneDomDemo Layout Overrides`
-- `ProDomino/Dashboard/Render Main Canvas To PNG` and `Render MainSceneDomDemo Canvas To PNG`
-
-The render tools write PNGs of the canvas (edit-mode and simulated runtime) so UI changes can be
-checked without entering Play mode.
-
-### AI-assisted development (Unity MCP)
-
-The project includes a **Model Context Protocol (MCP)** bridge that lets
-[Antigravity](https://deepmind.google/antigravity) (Google's AI coding assistant) control the
-live Unity Editor — read logs, inspect GameObjects, execute menu items, toggle Play mode, and
-capture screenshots — all from the chat window.
-
-**Architecture**
-
-```
-┌──────────────────┐   stdio (JSON-RPC)   ┌───────────────────┐    HTTP 127.0.0.1:8080    ┌───────────────────┐
-│   Antigravity     │ ◄──────────────────► │  Node.js MCP      │ ◄──────────────────────► │  Unity Editor      │
-│   (AI Agent)      │                      │  server.js         │                          │  UnityMcpBridge.cs │
-└──────────────────┘                      └───────────────────┘                          └───────────────────┘
-                                           .agents/mcp/                                   Assets/_ProDomino/
-                                           unity-bridge/                                  Dashboard/Editor/
-```
-
-- **UnityMcpBridge.cs** — an `[InitializeOnLoad]` Editor script that starts an `HttpListener`
-  on `127.0.0.1:8080` (tries ports 8080–8084). It exposes REST-style endpoints and dispatches
-  Unity API calls to the main thread via `EditorApplication.delayCall`.
-- **server.js** — a lightweight Node.js process that speaks the MCP JSON-RPC protocol over
-  stdio and translates each tool call into an HTTP request to the Unity bridge.
-
-**Available MCP tools**
-
-| Tool | Description | Example use |
-|---|---|---|
-| `unity_status` | Check Unity version, active scene, play mode state | "Is the editor running?" |
-| `unity_execute_menu_item` | Run any `MenuItem` on the main thread | "Run `ProDomino/Dashboard/Restyle Sidebar + Render`" |
-| `unity_get_logs` | Retrieve recent console logs (filter by Error / Warning / Log) | "Show me the last errors" |
-| `unity_clear_logs` | Clear the captured log buffer | "Clear the console" |
-| `unity_get_hierarchy` | List root GameObjects in the active scene | "What objects are in the scene?" |
-| `unity_inspect_object` | Inspect components and RectTransform of a named GameObject | "Inspect the `Dashboard_Content` object" |
-| `unity_play_mode` | Start, pause, or stop Play Mode | "Enter play mode" |
-| `unity_capture_screenshot` | Capture a screenshot of the Game/Scene view | "Take a screenshot" |
-
-**Verifying the bridge is running**
-
-1. In Unity, go to **ProDomino → MCP → Check Status** — you'll see
-   `[UnityMcpBridge] Running: True on port 8080` in the Console.
-2. The bridge auto-starts when Unity loads (domain reload). Use **ProDomino → MCP → Restart
-   Bridge Server** if it ever stops.
-
-**Troubleshooting**
-
-| Problem | Fix |
-|---|---|
-| `ECONNREFUSED` when Antigravity calls a tool | Unity Editor is not running, or the bridge hasn't compiled yet. Open Unity and wait for the console to show `[UnityMcpBridge] Connected`. |
-| Port 8080 already in use | The bridge auto-tries ports 8080–8084. If all are taken, free one or change `DefaultPort` in `UnityMcpBridge.cs`. |
-| Tools don't appear in Antigravity | Make sure `.agents/mcp.json` exists at the repo root (it should after cloning). Or run `Tools/setup-antigravity.ps1` to configure the global config. |
-
 ---
-
-## Developer setup (Antigravity AI)
-
-### Quick start (zero config)
-
-```bash
-git clone git@github.com:pipaliyavivek/ProDomino.git
-# Open the project in Unity Editor (wait for compilation — the MCP bridge auto-starts)
-# Open the project folder in Antigravity — Unity MCP tools are available immediately
-```
-
-That's it. Antigravity auto-discovers the project-level MCP config at
-[`.agents/mcp.json`](.agents/mcp.json), which uses a relative path to the bundled
-[`server.js`](.agents/mcp/unity-bridge/server.js). No global configuration is needed.
-
-### Optional: global MCP config
-
-If you want the Unity MCP tools available in **all** Antigravity sessions (not just when this
-project workspace is open), run the setup script:
-
-**Windows (PowerShell):**
-```powershell
-powershell -ExecutionPolicy Bypass -File Tools\setup-antigravity.ps1
-```
-
-**macOS / Linux (Bash):**
-```bash
-chmod +x Tools/setup-antigravity.sh
-./Tools/setup-antigravity.sh
-```
-
-The script writes (or merges into) `~/.gemini/config/mcp_config.json` with the absolute path
-to this repo's `server.js`. It preserves any other MCP servers you have configured.
-
-### What's in `.agents/`
-
-```
-.agents/
-├── mcp.json                         # Project-level MCP server registration
-└── mcp/
-    └── unity-bridge/
-        ├── package.json             # Node.js package metadata (no dependencies)
-        └── server.js                # MCP stdio server (bridges to Unity HTTP)
-```
-
-This folder is **committed to git** so every developer gets the same AI tooling on clone.
-
-### Prerequisites
-
-| Requirement | Version | Why |
-|---|---|---|
-| Node.js | ≥ 18.0.0 | Runs the MCP stdio server |
-| Unity | 6000.4.1f1 | The editor that hosts the HTTP bridge |
-| Antigravity | Latest | AI coding assistant that consumes MCP tools |
 
 ## UI redesign
 
-The new design lives in Figma: **ProDomino UI (Client)**
-(`https://www.figma.com/design/JuelfIraT35vtjM4WxIGW7/ProDomino-UI--Client-`). The redesign is
-applied screen by screen to the real prefabs — there are no parallel "new UI" prefabs, so the game
-keeps working while the look changes.
+The design lives in Figma: **ProDomino UI (Client)**
+(`https://www.figma.com/design/JuelfIraT35vtjM4WxIGW7/ProDomino-UI--Client-`). It is applied
+screen by screen to the real prefabs. There are no parallel "new UI" prefabs, so the game keeps
+working while the look changes.
 
 ### How a screen is redesigned
 
-Every screen follows the same loop, so a redesign never costs functionality:
+1. **Inventory the screen.** List its hierarchy and the scripts that own it. Every object a script
+   references is moved and re-skinned, never replaced or deleted.
+2. **Capture the design.** Read the frame from Figma (rects, colours, fonts, gaps) and export any
+   artwork it uses.
+3. **Edit the prefab directly.** Reparent existing widgets into layout groups that mirror the Figma
+   frame tree and apply sprites and type styles. Add nothing the runtime cannot keep alive.
+4. **Clear scene overrides.** `MainSceneDomDemo.unity` stores its own layout values for the canvas
+   instance, and those win over the prefab. Revert them after editing the prefab.
+5. **Verify** in the Editor at 1920x1080 and at small windows (1280x720, 940x600, 600x900),
+   including the error and empty states, then open the screen from its entry point in Play mode.
+6. **Commit** the prefab and the scene.
 
-1. **Inventory the screen.** Dump its hierarchy and the scripts that own it
-   (`DashboardDiagnostics.LogScreenInventory`, `LogBrokenReferences`). Note every object a script
-   holds a reference to — those objects are moved and re-skinned, never replaced or deleted.
-2. **Capture the design.** Pull the frame from Figma (rect, colours, fonts, gaps) into a spec file,
-   and export any artwork the frame uses.
-3. **Write/extend an editor script** under `Assets/_ProDomino/Dashboard/Editor/` that rebuilds the
-   screen in its own prefab: reparent the existing widgets into layout groups that mirror the
-   Figma frame tree, apply the generated sprites and the type styles, and add nothing the runtime
-   cannot keep alive.
-4. **Re-apply scene overrides.** The game scene stores its own copy of layout values for the canvas
-   instance, which wins over the prefab — run `Clean MainSceneDomDemo Layout Overrides` (or the
-   screen's own revert step) after rebuilding.
-5. **Verify, three ways:**
-   - *numbers* — a per-element check against the Figma rects (`Verify Login + Register Against
-     Figma` is the template; each screen gets its own table),
-   - *pictures* — off-screen renders at 1920x1080 plus small windows (1280x720, 940x600, 600x900),
-     including the screen's error/empty states,
-   - *behaviour* — `PlayModeLoginProbe` style probe: run the game headless, raycast the entry
-     point, click it and assert the screen opens.
-6. **Commit** the editor script, the rebuilt prefab and the scene, and push.
+The first screens (sidebar, header, dashboard, auth) were built with editor restylers under
+`Assets/_ProDomino/Dashboard/Editor/` on top of the shared kit `PdUiKit.cs` (colour tokens, radii,
+fonts, sprite factory). Those scripts and their `ProDomino/Dashboard/*` menu items still exist,
+but new screens are edited in the prefab directly.
 
 **Rules that keep functionality intact**
 
-- Keep every referenced object alive. Emptied legacy containers are taken out of the layout
-  (`ignoreLayout`) or deactivated — their children are moved out first.
-- Don't rename an object before `grep`ing for its name: some code looks widgets up by name.
-- Don't touch serialized script fields from the restyler. If a link is already broken, repair it
-  explicitly (`DashboardDiagnostics.RelinkClearedReferences`).
-- Variable-height content (validation text, lists) belongs in layout groups, so it pushes the rest
-  of the screen instead of overlapping it (`HideWhenEmpty` collapses an empty message).
-- Fixed-size cards get `FitInArea`, which scales them down on small windows instead of clipping.
+- Keep every referenced object alive. Take emptied legacy containers out of the layout
+  (`ignoreLayout`) or deactivate them, after moving their children out.
+- Search the code for an object's name before renaming it: some code looks widgets up by name.
+- Don't change serialized script fields while restyling. Repair already-broken links explicitly.
+- Put variable-height content (validation text, lists) in layout groups so it pushes the rest of
+  the screen instead of overlapping it (`HideWhenEmpty` collapses an empty message).
+- Give fixed-size cards `FitInArea`, which scales them down on small windows instead of clipping.
 
 ### Screen inventory
-
-Everything the client can show, where it lives, and its redesign status.
 
 | # | Screen | Prefab / location | Owner script | Opened from | Status |
 |---|---|---|---|---|---|
@@ -270,9 +181,9 @@ Everything the client can show, where it lives, and its redesign status.
 | 4 | Login | `Authentication/Prefabs/AuthUI.prefab` (`SignIn_Container`) | `AuthUI`, `Credentials_AuthUI` | header → Log In | **Done** |
 | 5 | Create Account | same prefab (`SignUp_Container`) | `Credentials_AuthUI` | login → Create an Account | **Done** |
 | 6 | Forgot Password | same prefab (`Recovery_Container`) | `Credentials_AuthUI` | login → Forgot Password | **Done** |
-| 7 | Leaderboard | `LeaderboardSystem/Prefabs/LeaderboardUI_NavPanel_New.prefab` (and `_Old`) | `LeaderboardUI_New` / `_Old` | sidebar → Leaderboard, rank chip | **Next** |
-| 8 | Shop | `Prefabs/UI/Shop_Screen.prefab` | `ShopUI`, `ShopManager` | sidebar → Shop, token chip | Planned |
-| 9 | Achievements | `Prefabs/UI/Achievements_Screen.prefab` | `AchievementUI` | sidebar → Achievements | Planned |
+| 7 | Leaderboard | `LeaderboardSystem/Prefabs/LeaderboardUI_NavPanel_New.prefab` | `LeaderboardUI_New` | sidebar → Leaderboard, rank chip | **Done** |
+| 8 | Shop | `Prefabs/UI/Shop_Screen.prefab`, `Shop/Prefabs/Shop_Element.prefab` | `ShopUI`, `ShopManager` | sidebar → Shop, token chip | **Done** |
+| 9 | Achievements | `Prefabs/UI/Achievements_Screen.prefab`, `Achiev_List_Container.prefab` | `AchievementUI` | sidebar → Achievements | **Done** |
 | 10 | Party / Form party | `FriendSystem/Prefabs/Form_party_Screen.prefab` | `PartyController` | sidebar → Party | Planned |
 | 11 | Friend list | `FriendSystem/Prefabs/FriendList_PopUp.prefab` | `PartyController` | account menu → Friend list | Planned |
 | 12 | Friendship request | `FriendSystem/Prefabs/ConfirmFriendship_PopUp.prefab` | `ConfirmFriendshipPopUp` | invite link | Planned |
@@ -286,78 +197,38 @@ Everything the client can show, where it lives, and its redesign status.
 | 20 | Email verification | `Prefabs/UI/EmailVerificationPopup.prefab` | `OptionsUI` | after sign-up | Planned |
 | 21 | Daily bonus | `MissionSystem/Prefabs/DailyBonus_PopUp.prefab` | `MissionManager` | daily login | Planned |
 | 22 | Monthly subscription | `InAppPurchaseSystem/Prefabs/MonthlySubscription_PopUp.prefab` | `MonthlySubscriptionPopUp` | header / shop | Planned |
-| 23 | Game mode select | `Prefabs/UI/GameModeSelectUI.prefab` | `GameModeConfig` | Play panel (full options) | Planned |
+| 23 | Game mode select | `Prefabs/UI/GameModeSelectUI.prefab` | `GameModeConfig` | Play panel (full options) | **Done** |
 | 24 | Quick match | `QuickMatchSystem/Prefabs/QuickMatchUI_NavPanel.prefab` | `QuickMatchController` | dashboard cards | Planned |
 | 25 | Post-match results | `Prefabs/UI/Post_match_Results_Popup.prefab` | `PostMatchResultController` | end of a match | Planned |
-| 26 | In-match HUD / board | `DominoTemplate_v2/Prefabs/*` (`Gameplay_FrameContainer`, `ScoreContainer_*`) | `GameController`, `DominoView` | during a match | Planned |
+| 26 | In-match HUD / board | `DominoTemplate_v2/Prefabs/*` (`Gameplay_FrameContainer`, `ScoreContainer_*`) | `GameController`, `DominoView` | during a match | In progress |
 | 27 | Loading / retry overlay | `HandleProcessesSystem/Prefabs/HandleProcessesController.prefab` | `HandleProcessesController` | any pending request | Planned |
 | 28 | Session / delete account / provider error | `_GameManager/Prefabs/*`, `Authentication/Prefabs/AuthProviderError_PopUp.prefab` | `SessionPopUp`, `DeleteAccountController` | error states | Planned |
 | 29 | Tournament | not implemented | — | sidebar → Tournament | Needs design **and** code |
 
-### Order of work
+#26 status: the Concentrate board uses the new dark/neon look; Block, Draw, French and Five
+prefabs are synced to the same layout but still need the board sizing fix listed in
+[Known gaps](#known-gaps).
 
-**Phase 0 — shared UI kit — done.** `Dashboard/Editor/PdUiKit.cs` now holds the design tokens
-(colours, radii, row/field/button heights), the fonts, the generated-sprite factory and the
-hierarchy / layout / skin helpers; the sidebar, header and auth restylers take everything from it
-(`using static PdUiKit`) and keep only what is specific to their screen. A colour or radius change
-is now a one-line edit that lands on every screen. Verified as visually neutral: the auth renders
-came out byte-identical, the canvas renders differ in no sampled pixel, the Figma check still
-reports 29/29, and the play-mode probe still opens the login pop-up.
+### Order of remaining work
 
-**Phase 1 — Leaderboard (#7).** Second sidebar entry, linked from the header rank chip and the
-dashboard. It introduces the list components (tabs, filter dropdown, table rows, your-rank row)
-that Achievements, Club and Party reuse.
-
-**Phase 2 — Shop (#8)**, because the header token chip already opens it and it carries revenue.
-
-**Phase 3 — Achievements (#9)**, reusing Phase 1's grid/row components.
-
-**Phase 4 — Party, friend list, friendship request (#10, #11, #12)** — one flow, done together;
-the dashboard invite card and the sidebar party rows already point at it.
-
-**Phase 5 — Club (#13).** **Phase 6 — Rules and Review (#14, #15).** **Phase 7 — Help (#16).**
-
-**Phase 8 — account pop-ups (#17–#22)**, all small and sharing the auth card style.
-
-**Phase 9 — match flow (#23, #24, #25).** **Phase 10 — in-match HUD (#26)**, the largest piece and
-the one that touches gameplay code; keep it on its own branch.
-
-**Phase 11 — system overlays (#27, #28)** and finally **Tournament (#29)**, which needs both a
-design and new gameplay code.
-
-### Next task in detail — Leaderboard (#7)
-
-1. **Decide which panel survives.** `LeaderboardUI_NavPanel_New` and `..._Old` both live under
-   `InnerScreen` and both implement `INavigationPanel`; `LeaderboardManager` picks whichever is
-   *active* (`FindFirstObjectByType<AbstractLeaderboardUI>`), which is fragile. Keep `_New`, take
-   `_Old` out of the canvas (deactivate, don't delete), and confirm `LeaderboardManager`,
-   `PlayerBestRankController` and the rank chip still resolve.
-2. **Inventory** `LeaderboardUI_NavPanel_New.prefab`: entry template (`LeaderboardEntry_Prefab`),
-   filter (`LeaderboardFilter_Prefab`), `Rankings_PlayerContainer`, the mode/period selectors and
-   the empty state. Record every serialized reference in `LeaderboardUI_New`.
-3. **Capture the Figma leaderboard frame** (needs a working token) — table columns, row height,
-   rank badges, the highlighted "you" row, tabs and the period dropdown.
-4. **Rebuild** in a new `LeaderboardRestyler` editor script: header + tabs row, a scroll view whose
-   content is a vertical layout group, restyled row template (rank, avatar, name, score, trend),
-   sticky "your rank" row, empty/loading state. Rows must stay the prefab the manager instantiates.
-5. **Verify**: rect table vs Figma; renders at four window sizes with 0, 3 and 50 entries; a
-   play-mode probe that opens the panel from the sidebar and asserts rows are built and the
-   player's own row is highlighted.
-6. **Commit** script + prefab + scene, and re-render the dashboard to confirm the rank chip still
-   matches.
+1. **In-match HUD (#26)** — finish the board across all modes. It touches gameplay code, so keep
+   it on its own branch.
+2. **Party, friend list, friendship request (#10–#12)** — one flow, done together.
+3. **Club (#13)**, then **Rules and Review (#14, #15)**, then **Help (#16)**.
+4. **Account pop-ups (#17–#22)** — small, and they share the auth card style.
+5. **Quick match and post-match results (#24, #25)**.
+6. **System overlays (#27, #28)**, then **Tournament (#29)**, which needs design and new code.
 
 ### Design coverage (Figma)
 
-The file has four pages: **High-Fidelity-Web-UI** (the desktop source of truth), **Mobile
-Responsive UI** (the same flows at phone width), **Design System** (colour palette, typography,
-buttons, tabs, popups, header, sidebar, states, domino tiles) and **Draft**.
-
-Every desktop flow, the screens inside it, and what they map to in the client:
+The file has four pages: **High-Fidelity-Web-UI** (desktop source of truth), **Mobile
+Responsive UI** (same flows at phone width), **Design System** (palette, typography, buttons,
+tabs, popups, header, sidebar, states, domino tiles) and **Draft**.
 
 | Figma flow (node) | Screens | Client screens |
 |---|---|---|
-| Onboarding Flow (`9:6`) | Login, Registration, Account created OK / failed, Forgot password, Create new password ×2 | #4, #5, #6 and the account created / failed pop-ups (`AuthResult_PopUp`) — **done**. Create new password + Password updated are not built: the game has no in-app reset step (recovery emails a link), so they need backend work first. The design's 3D-domino backdrop behind the card is still open (the pop-up currently opens over the dimmed dashboard). |
-| Dashboard (`113:3362`, `174:9469`, `780:25875`) | Dashboard, Dashboard before login, Monthly / Daily challenge, header before & after login | #2, #3 — **done**; the logged-out dashboard and header variants are not built yet |
+| Onboarding Flow (`9:6`) | Login, Registration, Account created OK / failed, Forgot password, Create new password ×2 | #4–#6 and `AuthResult_PopUp` |
+| Dashboard (`113:3362`, `174:9469`, `780:25875`) | Dashboard, before login, Monthly / Daily challenge, header before & after login | #2, #3 |
 | Leaderboard (`263:24215`) | Leaderboard, empty state | #7 |
 | Shop Flow (`44:4`) | Tiles, Icons, Frames, Boards, Boards pop-up, Badges | #8 |
 | Achievements & Rewards (`188:47834`) | 2 screens | #9 |
@@ -370,39 +241,30 @@ Every desktop flow, the screens inside it, and what they map to in the client:
 | Settings (`63:199`) | Game type selection pop-up | #17, #23 |
 | Profile (`249:24823`) | Profile, Account settings, Edit profile, Delete profile ×3 | #18, #19 |
 | Notification (`248:42429`) | Notification | header bell (not yet a client screen) |
-| Payment Portal (`441:34252`) | 2 screens | #22 and the shop checkout |
+| Payment Portal (`441:34252`) | 2 screens | #22 and shop checkout |
 | Block Game — Single vs AI (`178:10920`) | Games, game type pop-up (+ before login), 1v1 / 1v3 / 2v2 boards, result pop-ups | #23, #25, #26 |
 | Block Game — Casual & Competitive (`185:24058`) | 13 screens incl. in-match chat | #23, #25, #26 |
 | Concentrate — Single vs AI (`235:23741`) | 13 screens, solo / 1v1 / 1v3 / 2v2, 28 and 56 tiles | #23, #25, #26 |
-| Tournament (`188:44375`) | Tournament | #29 (needs code) |
+| Tournament (`188:44375`) | Tournament | #29 |
 
-Notes from the mapping:
+Notes:
 
-- The design has **"before login" variants** (dashboard, header, games, game-type pop-up) that the
-  client does not implement — the logged-out state currently shows the same screens with empty
-  data. Worth scheduling after the leaderboard.
-- The **Mobile Responsive UI** page is a real phone layout, not just a scaled card. The screens
-  built so far scale to fit (`FitInArea`); matching the mobile design properly is a separate pass
-  once the desktop screens are done.
-- Nothing in the design covers the loading/retry overlay (#27) or the session/error pop-ups (#28),
-  so those follow the design system components rather than a frame.
+- The design has **"before login" variants** (dashboard, header, games, game-type pop-up) that
+  the client does not implement; the logged-out state shows the same screens with empty data.
+- The **Mobile Responsive UI** page is a real phone layout. Built screens only scale to fit
+  (`FitInArea`); a proper mobile pass comes after the desktop screens.
+- The design does not cover the loading/retry overlay (#27) or the session/error pop-ups (#28);
+  those follow the Design System components.
 
-### Still needed
-
-- **Which leaderboard panel to keep** (see step 1 above) — my recommendation is `_New`.
-- **Onboarding backdrop** — the design's 3D-domino background behind the auth card, or keep the
-  dimmed dashboard.
-- **In-app password reset** — needed before "Create new password" / "Password updated" can work.
-
-Design artwork used by the built screens (card pattern, badge icons, eye icons, 👋) is exported
-from the Figma file into `Assets/_ProDomino/_UI/Icons/Icons_Auth/`.
+Design artwork used by built screens is exported from Figma into
+`Assets/_ProDomino/_UI/Icons/`.
 
 ---
 
 ## WebGL build
 
-The project targets **Web (WebGL)**. The relevant settings are already saved in
-`ProjectSettings` — don't change them per build unless you mean to:
+The project targets **Web (WebGL)**. The settings below are saved in `ProjectSettings`; don't
+change them per build unless you mean to.
 
 | Setting | Value |
 |---|---|
@@ -416,28 +278,28 @@ The project targets **Web (WebGL)**. The relevant settings are already saved in
 
 ### Build from the Editor
 
-1. **File → Build Settings** → platform **Web** → *Switch Platform* (first time only; it takes a while).
-2. Check the scene list — `Assets/_tests/TemporalTestDemoMultiplayer/Scene/MainSceneDomDemo.unity`
-   must be enabled and is the scene the game boots into.
-3. **Build** (or *Build And Run*) and pick an output folder, e.g. `Builds/WebGL/`.
-4. `Assets/Editor/WebGLPostBuild.cs` runs automatically after the build and copies
-   `firebase-messaging-sw.js` next to `index.html`. Push notifications don't work without it,
-   so check the console for the "copied" log line.
+1. **File → Build Settings** → platform **Web** → *Switch Platform* (first time only; slow).
+2. Make sure `MainSceneDomDemo.unity` is enabled in the scene list. It is the boot scene.
+3. **Build** (or *Build And Run*) into an output folder, e.g. `Builds/WebGL/`.
+4. `Assets/Editor/WebGLPostBuild.cs` runs after the build and copies `firebase-messaging-sw.js`
+   next to `index.html`. Push notifications don't work without it, so check the console for the
+   "copied" log line.
 
-The output folder contains `index.html`, `Build/` (the `.br` compressed engine and data files)
-`TemplateData/` and `firebase-messaging-sw.js`. Builds are **not** committed (`.gitignore`
-excludes `Build/` and `Builds/`).
-
-> There is no headless/CI build script in the repo yet, so builds are made from the Editor.
+The output contains `index.html`, `Build/` (Brotli-compressed engine and data), `TemplateData/`
+and `firebase-messaging-sw.js`. Builds are not committed (`.gitignore` excludes `Build/` and
+`Builds/`). There is no headless/CI build script yet.
 
 ### Testing the build locally
 
-Open the build through a local web server, not `file://`, or the browser blocks the engine
-files and the service worker:
+Serve the build over HTTP, not `file://`, or the browser blocks the engine files and the service
+worker:
 
 ```bash
-cd Builds/WebGL && python -m http.server 8080   # then open http://localhost:8080
+cd Builds/WebGL
+python -m http.server 8080
 ```
+
+Then open `http://localhost:8080`.
 
 ---
 
@@ -445,42 +307,101 @@ cd Builds/WebGL && python -m http.server 8080   # then open http://localhost:808
 
 ### Web build hosting
 
-Not configured in this repository — the build folder is uploaded to whichever web host you use.
-Whatever the host, it must serve the Brotli files correctly:
+Not configured in this repository; upload the build folder to your web host. The host must:
 
 - Serve `Build/*.br` with `Content-Encoding: br` and the matching `Content-Type`
-  (`application/wasm` for `.wasm.br`, `application/javascript` for `.js.br`).
-- Without those headers the player still loads, because decompression fallback is enabled, but
-  it is noticeably slower to start.
-- Serve `firebase-messaging-sw.js` from the site root, over HTTPS, so push notifications work.
+  (`application/wasm` for `.wasm.br`, `application/javascript` for `.js.br`). Without these
+  headers the player still loads (decompression fallback is on) but starts noticeably slower.
+- Serve `firebase-messaging-sw.js` from the site root over HTTPS, so push notifications work.
 
 ### Firebase (project `playprodomino`)
 
-`FirebaseFunctions/` holds the Firebase config (`.firebaserc`, `firebase.json`) for the cloud
-functions codebase. The functions source itself is not in this repository.
-
-```bash
-cd FirebaseFunctions && firebase deploy --only functions
-```
+`FirebaseFunctions/` holds only the Firebase config. The functions source is not in this
+repository, so deploying functions has to be done from the repository that holds the source.
 
 ### Unity Cloud Code
 
 `Backend/` contains the C# Cloud Code modules (account deletion, e-mail verification, password
-recovery, protected data) and their shared libraries. They are published to Unity Cloud Code
-with the **Deployment** package (`com.unity.services.deployment`) from the Unity Editor.
+recovery, protected data) and their shared libraries. Publish them to Unity Cloud Code with the
+**Deployment** package (`com.unity.services.deployment`) from the Unity Editor
+(**Window → Deployment**).
+
+---
+
+## Developer tooling (Unity MCP)
+
+The repo includes a **Model Context Protocol (MCP)** bridge that lets an AI coding assistant
+(set up for [Antigravity](https://deepmind.google/antigravity)) control the live Unity Editor:
+read logs, inspect GameObjects, run menu items, toggle Play mode and capture screenshots.
+
+```
+AI assistant  ◄── stdio (JSON-RPC) ──►  server.js  ◄── HTTP 127.0.0.1:8080 ──►  UnityMcpBridge.cs
+                                        .agents/mcp/unity-bridge/              Assets/_ProDomino/Dashboard/Editor/
+```
+
+- **`UnityMcpBridge.cs`** — `[InitializeOnLoad]` Editor script. Starts an `HttpListener` on
+  `127.0.0.1` (ports 8080–8084) and runs Unity API calls on the main thread via
+  `EditorApplication.delayCall`.
+- **`server.js`** — Node.js process that speaks MCP over stdio and forwards each tool call to the
+  bridge over HTTP.
+
+### Setup
+
+Requirements: Node.js ≥ 18 and the Unity Editor open on this project.
+
+The project-level config [`.agents/mcp.json`](.agents/mcp.json) points to the bundled
+[`server.js`](.agents/mcp/unity-bridge/server.js) by relative path, so opening the repo in
+Antigravity is enough. To register the tools globally (all sessions), run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools\setup-antigravity.ps1
+```
+
+On macOS/Linux use `Tools/setup-antigravity.sh`. The script merges into
+`~/.gemini/config/mcp_config.json` and keeps any other servers you have configured.
+
+### Tools
+
+| Tool | Description |
+|---|---|
+| `unity_status` | Unity version, active scene, play mode state |
+| `unity_execute_menu_item` | Run any `MenuItem` on the main thread |
+| `unity_get_logs` | Recent console logs (filter by Error / Warning / Log) |
+| `unity_clear_logs` | Clear the captured log buffer |
+| `unity_get_hierarchy` | Root GameObjects in the active scene |
+| `unity_inspect_object` | Components and RectTransform of a named GameObject |
+| `unity_play_mode` | Start, pause or stop Play mode |
+| `unity_capture_screenshot` | Screenshot of the Game/Scene view |
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Is the bridge running? | **ProDomino → MCP → Check Status** logs `[UnityMcpBridge] Running: True on port 8080`. **ProDomino → MCP → Restart Bridge Server** restarts it. |
+| `ECONNREFUSED` on a tool call | Unity is not open or has not finished compiling. Wait for `[UnityMcpBridge] Connected` in the console. |
+| Port 8080 in use | The bridge tries 8080–8084. If all are taken, free one or change `DefaultPort` in `UnityMcpBridge.cs`. |
+| Tools missing in the assistant | Check that `.agents/mcp.json` exists, or run the global setup script. |
 
 ---
 
 ## Known gaps
 
-- Dashboard statistics (games played / players online) and the monthly challenge progress are
-  still static placeholder values.
-- The old game-mode selection screen is kept but hidden; its extra options (Draw, Five, 2v2,
-  manual difficulty) are not reachable from the new Dashboard.
-- The reference design's "Games" and "Friends List" sidebar rows are not implemented.
-- The design's "Create new password" and "Password updated" screens need an in-app password reset
-  (a backend step that accepts a reset code, and an email link that opens the game with it).
-- Both leaderboard panels (`_New` and `_Old`) are still in the canvas and `LeaderboardManager`
-  picks whichever happens to be active.
-- Everything from **Leaderboard** onwards in the redesign is still the old look — see
-  [UI redesign](#ui-redesign).
+- **Leaderboard panels:** both `LeaderboardUI_NavPanel_New` and `_Old` are under `InnerScreen`,
+  and `LeaderboardManager` uses whichever is active
+  (`FindFirstObjectByType<AbstractLeaderboardUI>`). Recommended: keep `_New` and deactivate
+  `_Old` (don't delete it), then confirm `LeaderboardManager`, `PlayerBestRankController` and the
+  rank chip still resolve.
+- **Board sizing outside Concentrate:** Block, Draw, French and Five boards lack Concentrate's
+  `AspectRatioFitter` sizing chain, so the board can collapse to 0x0 at runtime.
+- **Password reset:** the design's "Create new password" and "Password updated" screens need an
+  in-app reset (a backend step that accepts a reset code, and an email link that opens the game
+  with it). Recovery currently only emails a link.
+- **Onboarding backdrop:** the design's 3D-domino background behind the auth card is not built;
+  the pop-up opens over the dimmed dashboard.
+- **Dashboard data:** games played, players online and monthly challenge progress are static
+  placeholders.
+- **Hidden game options:** the old game-mode screen is hidden; Draw, Five, 2v2 and manual
+  difficulty are not reachable from the Dashboard.
+- **Sidebar:** the design's "Games" and "Friends List" rows are not implemented.
+- **Logged-out variants:** the "before login" dashboard, header and game-type screens are not
+  built.

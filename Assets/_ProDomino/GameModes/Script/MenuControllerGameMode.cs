@@ -409,17 +409,19 @@ namespace ProDomino.GameModes
             {
                 _currentGameHolder = currentGameModeScript.ExtendedGameController.GetRect();
 
-                _currentGameHolder.SetParent(_canvas, false);
-                _currentGameHolder.localScale = Vector3.one;
-
                 // Stretch the game holder over the whole canvas. The zero offsets below only mean
                 // "fill the parent" when the anchors are the stretch preset, and not every mode's
                 // controller prefab is authored that way.
+                // Done before SetParent: the root AspectRatioFitter drives sizeDelta as soon as it is
+                // parented, so zeroing offsets afterwards only shifts anchoredPosition off-centre.
                 _currentGameHolder.anchorMin = Vector2.zero;
                 _currentGameHolder.anchorMax = Vector2.one;
                 _currentGameHolder.pivot = new Vector2(0.5f, 0.5f);
                 _currentGameHolder.offsetMin = new Vector2(0, 0);
                 _currentGameHolder.offsetMax = new Vector2(0, 0);
+
+                _currentGameHolder.SetParent(_canvas, false);
+                _currentGameHolder.localScale = Vector3.one;
 
                 EnsureGameContainerActive();
 
@@ -477,17 +479,19 @@ namespace ProDomino.GameModes
                 currentGameModeScript.SetChatLobbyObj(_lobbyChatContainer);
                 _currentGameHolder = currentGameModeScript.ExtendedGameController.GetRect();
 
-                _currentGameHolder.SetParent(_canvas, false);
-                _currentGameHolder.localScale = Vector3.one;
-
                 // Stretch the game holder over the whole canvas. The zero offsets below only mean
                 // "fill the parent" when the anchors are the stretch preset, and not every mode's
                 // controller prefab is authored that way.
+                // Done before SetParent: the root AspectRatioFitter drives sizeDelta as soon as it is
+                // parented, so zeroing offsets afterwards only shifts anchoredPosition off-centre.
                 _currentGameHolder.anchorMin = Vector2.zero;
                 _currentGameHolder.anchorMax = Vector2.one;
                 _currentGameHolder.pivot = new Vector2(0.5f, 0.5f);
                 _currentGameHolder.offsetMin = new Vector2(0, 0);
                 _currentGameHolder.offsetMax = new Vector2(0, 0);
+
+                _currentGameHolder.SetParent(_canvas, false);
+                _currentGameHolder.localScale = Vector3.one;
 
                 EnsureGameContainerActive();
 
