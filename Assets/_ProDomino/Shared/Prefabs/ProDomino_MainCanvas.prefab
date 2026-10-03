@@ -624,7 +624,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -384}
+  m_AnchoredPosition: {x: 0, y: -521}
   m_SizeDelta: {x: 0, y: 463}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &269799734040912031
@@ -1159,13 +1159,29 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6500029555912721990}
+  - component: {fileID: 7419385620193847261}
   m_Layer: 0
   m_Name: StatPillsRow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
+--- !u!114 &7419385620193847261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561538244557872515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3e9a41d2b84f6e9a1c5d08b4e2f913, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ProDomino.Dashboard.DashboardStatsController
+  gamesPlayedTodayLabel: {fileID: 8968677918712509714}
+  usersPlayingNowLabel: {fileID: 1116930627767027433}
+  activePlayersLabel: {fileID: 3316595382608275747}
 --- !u!224 &6500029555912721990
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2258,7 +2274,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -871}
+  m_AnchoredPosition: {x: 0, y: -1008}
   m_SizeDelta: {x: 0, y: 298}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &998434079987524340
@@ -3047,7 +3063,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1.5k
+  m_text: '-'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}
   m_sharedMaterial: {fileID: 5652718590499094948, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}
@@ -3321,7 +3337,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 200
+  m_text: '-'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}
   m_sharedMaterial: {fileID: 5652718590499094948, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}
@@ -6766,7 +6782,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 1169}
+  m_SizeDelta: {x: 0, y: 1306}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &3495191009353351865
 GameObject:
@@ -10295,7 +10311,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 20
+  m_text: '-'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}
   m_sharedMaterial: {fileID: 5652718590499094948, guid: 60b2d11174c46f8448ee805f4d6ed1f6, type: 2}

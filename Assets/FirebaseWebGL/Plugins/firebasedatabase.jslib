@@ -831,5 +831,86 @@ mergeInto(LibraryManager.library, {
         } catch (err) {
             unityInstance.SendMessage(objectNameParsed, fallbackParsed, err.toString());
         }
+    },
+
+    /**
+     * Subscribes to live changes of the "global_analytics" node.
+     * Every change (from any client) is pushed to Unity as the full node JSON.
+     * Calling it again replaces the previous subscription.
+     */
+    SubscribeGlobalAnalytics: function (objectName, callback, fallback) {
+        const parsedObjectName = UTF8ToString(objectName);
+        const parsedCallback = UTF8ToString(callback);
+        const parsedFallback = UTF8ToString(fallback);
+
+        try {
+            if (!window.firebaseDatabase) {
+                unityInstance.SendMessage(parsedObjectName, parsedFallback, "Firebase not initialized");
+                return;
+            }
+
+            const ref = window.firebaseDatabase.ref("global_analytics");
+
+            if (window._pdGlobalAnalyticsHandler)
+                ref.off("value", window._pdGlobalAnalyticsHandler);
+
+            window._pdGlobalAnalyticsHandler = function (snapshot) {
+                unityInstance.SendMessage(parsedObjectName, parsedCallback, JSON.stringify(snapshot.val() || {}));
+            };
+
+            ref.on("value", window._pdGlobalAnalyticsHandler, function (error) {
+                unityInstance.SendMessage(parsedObjectName, parsedFallback, error.message || "RTDB error");
+            });
+        } catch (err) {
+            unityInstance.SendMessage(parsedObjectName, parsedFallback, err.toString());
+        }
+    },
+
+    UnsubscribeGlobalAnalytics: function () {
+        try {
+            if (window.firebaseDatabase && window._pdGlobalAnalyticsHandler)
+                window.firebaseDatabase.ref("global_analytics").off("value", window._pdGlobalAnalyticsHandler);
+        } catch (err) {
+            console.error("UnsubscribeGlobalAnalytics failed:", err && err.toString());
+        }
+        window._pdGlobalAnalyticsHandler = null;
+    },
+
+    /**
+     * Counts players with a live session: status == 1 and a heartbeat inside the last "windowSeconds".
+     * Uses the same "users/{uid}" session fields written by UpdateSessionHeartbeat.
+     * Returns the count as a string. Needs ".indexOn": ["lastHeartbeat"] on "users" to avoid a full download.
+     */
+    CountActivePlayers: function (windowSeconds, objectName, callback, fallback) {
+        const parsedObjectName = UTF8ToString(objectName);
+        const parsedCallback = UTF8ToString(callback);
+        const parsedFallback = UTF8ToString(fallback);
+
+        try {
+            if (!window.firebaseDatabase) {
+                unityInstance.SendMessage(parsedObjectName, parsedFallback, "Firebase not initialized");
+                return;
+            }
+
+            const since = Math.floor(Date.now() / 1000) - windowSeconds;
+
+            window.firebaseDatabase.ref("users")
+                .orderByChild("lastHeartbeat")
+                .startAt(since)
+                .once("value")
+                .then(snap => {
+                    let count = 0;
+                    snap.forEach(child => {
+                        if ((child.child("status").val() || 0) === 1)
+                            count++;
+                    });
+                    unityInstance.SendMessage(parsedObjectName, parsedCallback, String(count));
+                })
+                .catch(err => {
+                    unityInstance.SendMessage(parsedObjectName, parsedFallback, err.message || "RTDB error");
+                });
+        } catch (err) {
+            unityInstance.SendMessage(parsedObjectName, parsedFallback, err.toString());
+        }
     }
 });

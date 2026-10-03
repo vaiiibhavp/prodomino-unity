@@ -198,6 +198,25 @@ namespace FirebaseWebGL.Scripts.FirebaseBridge
             string callback, string fallback);
 
         /// <summary>
+        /// Subscribes to live changes of the global analytics node. The callback receives the full node JSON on every change.
+        /// </summary>
+        [DllImport("__Internal")]
+        public static extern void SubscribeGlobalAnalytics(string objectName, string callback, string fallback);
+
+        /// <summary>
+        /// Removes the live global analytics subscription.
+        /// </summary>
+        [DllImport("__Internal")]
+        public static extern void UnsubscribeGlobalAnalytics();
+
+        /// <summary>
+        /// Counts players with status online and a heartbeat inside the last <paramref name="windowSeconds"/>.
+        /// The callback receives the count as a string.
+        /// </summary>
+        [DllImport("__Internal")]
+        public static extern void CountActivePlayers(int windowSeconds, string objectName, string callback, string fallback);
+
+        /// <summary>
         /// Calls the WebGL .jslib search function, sending the search text and RTDB URL.
         /// Handles JS → C# callbacks and returns results via the provided delegates.
         /// </summary>

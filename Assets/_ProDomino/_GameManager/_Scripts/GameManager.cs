@@ -163,6 +163,7 @@ namespace ProDomino.GameSystem
         private void Update()
         {
             Update_SessionSystem();
+            Update_GlobalAnalyticsSystem();
         }
 
         private void OnDestroy()
@@ -815,6 +816,7 @@ namespace ProDomino.GameSystem
             CleanSearchCollection();
 
             OnSignOut_SessionSystem();
+            StopGlobalAnalyticsLive();
 
             onSignedOut?.Invoke();
         }

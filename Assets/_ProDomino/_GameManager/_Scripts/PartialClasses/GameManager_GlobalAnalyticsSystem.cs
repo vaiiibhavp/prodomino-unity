@@ -19,7 +19,18 @@ namespace ProDomino.GameSystem
         private UnityEvent onUpdateGlobaAnalyticsData;
         private bool wereInitializedGlobalAnalytics = false;
 
+        // Must match the session TIMEOUT used by CheckIfSessionActive in firebasedatabase.jslib
+        private const int ActivePlayersWindowSeconds = 60;
+        [SerializeField] private float activePlayersRefreshInterval = 30f;
+        private float activePlayersTimer;
+        private bool isGlobalAnalyticsLive;
+
         public GlobalAnalyticsData GlobalAnalyticsData { get; private set; }
+
+        /// <summary>
+        /// Players with an online session (heartbeat inside the session timeout). -1 until the first count arrives.
+        /// </summary>
+        public int ActivePlayers { get; private set; } = -1;
 
         /// <summary>
         /// Initializes daily analytics when the player starts the game.
@@ -42,6 +53,88 @@ namespace ProDomino.GameSystem
             // Wait until session is active or sign out occurs
             await UniTask.WaitUntil(() => wereInitializedGlobalAnalytics || !authManager.IsAuthenticated)
                 .TimeoutWithoutException(TimeSpan.FromSeconds(10));
+
+            if (authManager.IsAuthenticated)
+                StartGlobalAnalyticsLive();
+        }
+
+        /// <summary>
+        /// Starts the realtime subscription to the global counters and the active players polling.
+        /// </summary>
+        private void StartGlobalAnalyticsLive()
+        {
+            if (!IsValidPlatformToUseJSlib())
+                return;
+
+            FirebaseDatabase.SubscribeGlobalAnalytics(
+                gameObject.name,
+                nameof(OnAnalyticsUpdated),
+                nameof(OnAnalyticsUpdateFailed)
+            );
+
+            isGlobalAnalyticsLive = true;
+            activePlayersTimer = 0f;
+            RequestActivePlayersCount();
+        }
+
+        /// <summary>
+        /// Stops the realtime subscription, used on sign out
+        /// </summary>
+        private void StopGlobalAnalyticsLive()
+        {
+            if (!IsValidPlatformToUseJSlib())
+                return;
+
+            if (isGlobalAnalyticsLive)
+                FirebaseDatabase.UnsubscribeGlobalAnalytics();
+
+            isGlobalAnalyticsLive = false;
+            wereInitializedGlobalAnalytics = false;
+            ActivePlayers = -1;
+            GlobalAnalyticsData = null;
+        }
+
+        /// <summary>
+        /// Active players come from session heartbeats, which change every few seconds, so they are polled instead of listened
+        /// </summary>
+        private void Update_GlobalAnalyticsSystem()
+        {
+            if (!isGlobalAnalyticsLive || !IsAuthenticated)
+                return;
+
+            activePlayersTimer += Time.unscaledDeltaTime;
+            if (activePlayersTimer >= activePlayersRefreshInterval)
+            {
+                activePlayersTimer = 0f;
+                RequestActivePlayersCount();
+            }
+        }
+
+        private void RequestActivePlayersCount()
+        {
+            FirebaseDatabase.CountActivePlayers(
+                ActivePlayersWindowSeconds,
+                gameObject.name,
+                nameof(OnActivePlayersCounted),
+                nameof(OnActivePlayersCountFailed)
+            );
+        }
+
+        public void OnActivePlayersCounted(string count)
+        {
+            if (!int.TryParse(count, out var value))
+            {
+                Debug.LogWarning($"[Analytics] Invalid active players count: {count}");
+                return;
+            }
+
+            ActivePlayers = value;
+            onUpdateGlobaAnalyticsData?.Invoke();
+        }
+
+        public void OnActivePlayersCountFailed(string error)
+        {
+            Debug.LogWarning($"[Analytics] Active players count failed: {error}");
         }
 
 
