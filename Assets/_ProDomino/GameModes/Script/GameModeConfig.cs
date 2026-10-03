@@ -384,9 +384,9 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 5. Update VS Player buttons ---
         SetVsPlayerInteractable(NumberPlayers.solo, isConcentrateMode);
-        SetVsPlayerInteractable(NumberPlayers.oneVsOne, !isConcentrateMode);
-        SetVsPlayerInteractable(NumberPlayers.oneVsThree, !isConcentrateMode);
-        SetVsPlayerInteractable(NumberPlayers.twoVsTwo, !isConcentrateMode);
+        SetVsPlayerInteractable(NumberPlayers.oneVsOne, true);
+        SetVsPlayerInteractable(NumberPlayers.oneVsThree, true);
+        SetVsPlayerInteractable(NumberPlayers.twoVsTwo, true);
 
         // --- 6. Update Difficulty panel and buttons ---
         SetDifficultyUI(!isConcentrateMode && GameTypeSelectedID == GameType.singlePlayerIA);
@@ -396,10 +396,6 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 8. Deselect invalid selections ---
         if (vsPlayerSelector.CheckIfSelected(NumberPlayers.solo.ToString()) && !isConcentrateMode)
-            vsPlayerSelector.DeselectAll(true);
-        else if (isConcentrateMode && (vsPlayerSelector.CheckIfSelected(NumberPlayers.oneVsOne.ToString()) ||
-                                       vsPlayerSelector.CheckIfSelected("oneVsTree") ||
-                                       vsPlayerSelector.CheckIfSelected(NumberPlayers.twoVsTwo.ToString())))
             vsPlayerSelector.DeselectAll(true);
 
         if ((gameTypeSelector.CheckIfSelected(GameType.casual.ToString()) && isConcentrateMode) ||

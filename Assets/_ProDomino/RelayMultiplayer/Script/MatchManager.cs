@@ -44,6 +44,12 @@ public class MatchManager : NetworkBehaviour
     [SerializeField]
     private MenuControllerGameMode menuControllerGameMode;
 
+    // Scene instance never wires this (MenuControllerGameMode lives in GameModeSelectUI), so
+    // resolve it lazily instead of NRE-ing every frame in IsInMatch.
+    private MenuControllerGameMode MenuController => menuControllerGameMode
+        ? menuControllerGameMode
+        : menuControllerGameMode = FindFirstObjectByType<MenuControllerGameMode>(FindObjectsInactive.Include);
+
     [SerializeField]
     private NavigationPanelController navigationPanelController;
 
@@ -217,7 +223,7 @@ public class MatchManager : NetworkBehaviour
     /// Checks if the user is currently in a match session.
     /// First check for matchmanager's current game mode, then checks menu controller's game mode.
     /// </summary>
-    public bool IsInMatch => currentGameMode != null || menuControllerGameMode.IsInMatch;
+    public bool IsInMatch => currentGameMode != null || (MenuController && MenuController.IsInMatch);
 
     /// <summary>
     /// Checks if the user is authenticated via Unity Gaming Services or any provider.
@@ -821,9 +827,9 @@ public class MatchManager : NetworkBehaviour
             Debug.Log($"<color={Consts.Colors.Process}><b>[{nameof(MatchManager)}]</b> Sending party members to lobby. They surrender?: {areSurrender}</color>");
 
             if (areSurrender)
-                menuControllerGameMode.ToLobby(false);
+                MenuController.ToLobby(false);
             else
-                menuControllerGameMode.ToLobbyWithoutGiveUp();
+                MenuController.ToLobbyWithoutGiveUp();
         }
 
         // Else, disconnect the player if is not the host
@@ -1097,7 +1103,7 @@ public class MatchManager : NetworkBehaviour
     private void CreateGameMode(int expectedClients, GameModeData gameModeData = null, bool usingBotsToFill = false)
     {
         // Create or generate the current game mode
-        currentGameMode = menuControllerGameMode.GenerateGameMode(gameModeData);
+        currentGameMode = MenuController.GenerateGameMode(gameModeData);
 
         // Check if the DeckController is of type ExtendedDeckController to override skins
         if (currentGameMode.ExtendedGameController?.DeckController is ExtendedDeckController extendedDeckController)
@@ -3147,7 +3153,7 @@ public class MatchManager : NetworkBehaviour
         Debug.Log($"<color={Consts.Colors.Process}><b>[{nameof(MatchManager)}]</b> ExitTheGameAndGoToMainMenu_ClientRpc: Exiting game and going to main menu for client {localPlayerMatchID}...</color>");
 
         // Use the menu controller to go back to the lobby
-        menuControllerGameMode.ToLobbyWithoutGiveUp();
+        MenuController.ToLobbyWithoutGiveUp();
     }
     #endregion
 
@@ -4103,10 +4109,10 @@ public class MatchManager : NetworkBehaviour
     {
         Debug.Log($"<color={Consts.Colors.Process}><b>[{nameof(MatchManager)}]</b> Resetting client...</color>");
 
-        if (menuControllerGameMode)
+        if (MenuController)
         { 
             Debug.Log($"<color={Consts.Colors.Process}><b>[{nameof(MatchManager)}]</b> Returning to lobby...</color>");
-            menuControllerGameMode.ToLobbyWithoutGiveUp();
+            MenuController.ToLobbyWithoutGiveUp();
         }
 
         else if (currentGameMode)
@@ -4179,7 +4185,7 @@ public class MatchManager : NetworkBehaviour
 
         yield return new WaitForEndOfFrame(); // Wait for the end of the frame to ensure everything is initialized
 
-        menuControllerGameMode.EnablePlayGameModeButton(enableState: true);
+        MenuController.EnablePlayGameModeButton(enableState: true);
         // Safe to continue with match session creation
         //CreateOrJoinMatchSession(gameModeData).Forget();
     }
@@ -4353,7 +4359,7 @@ public class MatchManager : NetworkBehaviour
                 var wasMatchComppleted = currentGameMode.ExtendedGameController.GameIsCompleteAndFinished;
 
                 // Trigger the give up event if the match was not completed, to save the match result in the leaderboard
-                menuControllerGameMode.ToLobby(!wasMatchComppleted);
+                MenuController.ToLobby(!wasMatchComppleted);
             }
         }
         else
@@ -4598,12 +4604,12 @@ public class MatchManager : NetworkBehaviour
         MatchState.OnMatchStateDespawned -= OnMatchStateDespawned;
 
         // Set game search status to none and reset the client
-        if (menuControllerGameMode._GameModeConfig._GameSearchStatus != GameSearchStatus.none)
+        if (MenuController._GameModeConfig._GameSearchStatus != GameSearchStatus.none)
             ResetClient();
 
         // If the status is already none, just enable the play button
         else
-            menuControllerGameMode._GameModeConfig.EnablePlayButtonAfterCancelingSearch();
+            MenuController._GameModeConfig.EnablePlayButtonAfterCancelingSearch();
 
         // Trigger leave events for the local player
         TriggerLeaveEvents(default, default).Forget();
@@ -4614,8 +4620,8 @@ public class MatchManager : NetworkBehaviour
         NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
 
         // If the player was searching for a game, restart the matchmaking process
-        if (menuControllerGameMode._GameModeConfig._GameSearchStatus == GameSearchStatus.SearchingGame)
-            StartCoroutine(menuControllerGameMode._GameModeConfig.RestartMatchmaking());
+        if (MenuController._GameModeConfig._GameSearchStatus == GameSearchStatus.SearchingGame)
+            StartCoroutine(MenuController._GameModeConfig.RestartMatchmaking());
     }
 
     private void OnMatchStateSpawned(MatchState state)
