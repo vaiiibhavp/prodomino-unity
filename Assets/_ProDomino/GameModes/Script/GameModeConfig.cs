@@ -288,7 +288,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             else if (matchmakinStartTime.HasValue)
             {
                 var timeElapsed = (DateTime.Now - matchmakinStartTime.Value).ToString(@"mm\:ss");
-                playNavigationButton.SetMainText($"<size=+15>Finding Game\n({timeElapsed})");
+                playNavigationButton.SetMainText($"Finding {timeElapsed}");
             }
 
             // But, if we are not in a match and there is no matchmaking in progress, reset the play button text to the default value
@@ -602,6 +602,10 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         async UniTask TryToCancelMatchMaking()
         {
             matchmakinStartTime = null;
+
+            // Reset the nav button now: the dashboard deactivates this object on cancel, so Update() won't do it
+            if (playNavigationButton && (!IsPartyRelay || IsLocaPlayerHost))
+                playNavigationButton.SetMainText(playNavigationDefaultText);
 
             try
             {

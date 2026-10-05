@@ -711,7 +711,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 514, y: 143}
+  m_SizeDelta: {x: 514, y: 168}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &320720711358296084
 GameObject:
@@ -1167,21 +1167,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &7419385620193847261
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 561538244557872515}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c3e9a41d2b84f6e9a1c5d08b4e2f913, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::ProDomino.Dashboard.DashboardStatsController
-  gamesPlayedTodayLabel: {fileID: 8968677918712509714}
-  usersPlayingNowLabel: {fileID: 1116930627767027433}
-  activePlayersLabel: {fileID: 3316595382608275747}
 --- !u!224 &6500029555912721990
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1204,6 +1189,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -384}
   m_SizeDelta: {x: 0, y: 113}
   m_Pivot: {x: 0.5, y: 1}
+--- !u!114 &7419385620193847261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561538244557872515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3e9a41d2b84f6e9a1c5d08b4e2f913, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProDomino.Dashboard.DashboardStatsController
+  gamesPlayedTodayLabel: {fileID: 8968677918712509714}
+  usersPlayingNowLabel: {fileID: 1116930627767027433}
+  activePlayersLabel: {fileID: 3316595382608275747}
 --- !u!1 &614014629759821750
 GameObject:
   m_ObjectHideFlags: 0
@@ -2386,8 +2386,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -114}
-  m_SizeDelta: {x: 514, y: 29}
+  m_AnchoredPosition: {x: 0, y: -110}
+  m_SizeDelta: {x: 514, y: 58}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &4640121680197015193
 CanvasRenderer:
@@ -3170,7 +3170,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 57, y: 24}
+  m_SizeDelta: {x: 80, y: 22}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &2296190871546986468
 CanvasRenderer:
@@ -3849,6 +3849,7 @@ GameObject:
   - component: {fileID: 1113757859167007185}
   - component: {fileID: 4343424948553002691}
   - component: {fileID: 1111000000000000101}
+  - component: {fileID: 1111000000000000102}
   m_Layer: 0
   m_Name: ChallengeBanner
   m_TagString: Untagged
@@ -3946,13 +3947,25 @@ MonoBehaviour:
   - background: {fileID: 21300000, guid: d575d8f6ad474493a7daebdeb70fc22f, type: 3}
     title: 
     subtitle: 
+    showProgress: 0
+    progress: 0
+    progressText: 
+    rewardText: 
   - background: {fileID: 21300000, guid: e55d47591f7fdaf4f93e2d2e123819f8, type: 3}
     title: 
     subtitle: 
+    showProgress: 0
+    progress: 0
+    progressText: 
+    rewardText: 
   backgroundImage: {fileID: 855224101602773867}
   titleLabel: {fileID: 1054051422475549000}
   subtitleLabel: {fileID: 2305487225341875517}
   paginationDots: {fileID: 1719749812171587240}
+  progressRow: {fileID: 8397521226447352454}
+  progressFill: {fileID: 6398532720822796894}
+  progressLabel: {fileID: 131796831953063275}
+  rewardLabel: {fileID: 4451210651343284714}
   slideDuration: 5
   fadeDuration: 0.35
   swipeThreshold: 60
@@ -3960,6 +3973,29 @@ MonoBehaviour:
   inactiveDotColor: {r: 0.003921569, g: 0.003921569, b: 0.047058824, a: 0.7}
   activeDotSize: 12
   inactiveDotSize: 10
+--- !u!114 &1111000000000000102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753656828309568478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ba127ce8f364cb08c25308679cf2333, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  carousel: {fileID: 1111000000000000101}
+  weeklyBackground: {fileID: -2189920981035698478, guid: a85d7ee06f5295944ba9e80d7a8c274d, type: 3}
+  dailyBackground: {fileID: 21300000, guid: b11f95b4df3c48f4ab0b467c91eeba17, type: 3}
+  weeklyTitle: 'Complete Your
+
+    Weekly Challenge!!'
+  dailyTitle: 'Complete Your
+
+    Daily Challenge!!'
+  subtitleFormat: '{0} and earn big rewards!'
+  refreshInterval: 0.5
 --- !u!1 &1797741242804572796
 GameObject:
   m_ObjectHideFlags: 0
@@ -6743,7 +6779,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 500, y: 38}
+  m_SizeDelta: {x: 506, y: 44}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &3337504480271493782
 GameObject:
@@ -7047,7 +7083,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 48, y: -38}
-  m_SizeDelta: {x: 617, y: 284}
+  m_SizeDelta: {x: 617, y: 293}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &3604729289550999176
 GameObject:
@@ -8677,15 +8713,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.99215686, g: 0.7764706, b: 0.3254902, a: 1}
+  m_Color: {r: 1, g: 0.4392157, b: 0.3529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: d1049265bce1a934dacf717765754014, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -8693,7 +8729,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 1.6
 --- !u!1 &4859420629832977163
 GameObject:
   m_ObjectHideFlags: 0
@@ -8856,8 +8892,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -34}
-  m_SizeDelta: {x: 500, y: 4}
+  m_AnchoredPosition: {x: 0, y: -26}
+  m_SizeDelta: {x: 506, y: 14}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &5364612619583967473
 CanvasRenderer:
@@ -8880,15 +8916,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.003921569, g: 0.003921569, b: 0.047058824, a: 0.5}
+  m_Color: {r: 0.17254902, g: 0.019607844, b: 0.05490196, a: 0.85}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: d1049265bce1a934dacf717765754014, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -8896,7 +8932,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 1.6
 --- !u!1 &5091765621163235495
 GameObject:
   m_ObjectHideFlags: 0
@@ -8986,7 +9022,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
   m_AspectMode: 4
-  m_AspectRatio: 1.8156028
+  m_AspectRatio: 3.1944444
 --- !u!1 &5135488509554306389
 GameObject:
   m_ObjectHideFlags: 0
@@ -9981,8 +10017,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 43, y: -7}
-  m_SizeDelta: {x: 47, y: 29}
+  m_AnchoredPosition: {x: 38, y: -5}
+  m_SizeDelta: {x: 44, y: 30}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7610288699602714622
 CanvasRenderer:
@@ -10039,8 +10075,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -12915,8 +12951,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 520, y: -0}
-  m_SizeDelta: {x: 97, y: 44}
+  m_AnchoredPosition: {x: 516, y: -2}
+  m_SizeDelta: {x: 84, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &8703437186312375934
 CanvasRenderer:
@@ -12939,14 +12975,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.2}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 57d487fafebbdd447b66a78afd844202, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d1049265bce1a934dacf717765754014, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -13301,8 +13337,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -163}
-  m_SizeDelta: {x: 617, y: 44}
+  m_AnchoredPosition: {x: 0, y: -180}
+  m_SizeDelta: {x: 600, y: 44}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &8530580549677831609
 GameObject:
@@ -14090,8 +14126,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 7, y: -6}
-  m_SizeDelta: {x: 32, y: 32}
+  m_AnchoredPosition: {x: 6, y: -6}
+  m_SizeDelta: {x: 28, y: 28}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &6080526170676870356
 CanvasRenderer:
@@ -14384,7 +14420,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -227}
+  m_AnchoredPosition: {x: 0, y: -236}
   m_SizeDelta: {x: 217, y: 57}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7582227854875666238

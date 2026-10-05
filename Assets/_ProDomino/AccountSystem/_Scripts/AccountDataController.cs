@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using ProDomino.AchievementSystem;
 using ProDomino.Authentication;
 using ProDomino.CustomizationSystem;
@@ -37,6 +38,7 @@ namespace ProDomino.AccountSystem
         [SerializeField] private Button leftArrow, rightArrow;
         [SerializeField] private Button backButton;
         [SerializeField] private Button editProfileButton;
+        [SerializeField] private Button logoutButton;
         [SerializeField] private CustomizationController customizationController;
 
         private GameManager gameManager;
@@ -59,6 +61,35 @@ namespace ProDomino.AccountSystem
             rightArrow?.onClick.AddListener(() => ChangePage(true));
             backButton?.onClick.AddListener(() => SetVisibility(false));
             editProfileButton?.onClick.AddListener(OpenCustomization);
+            logoutButton?.onClick.AddListener(() => Logout().Forget());
+        }
+
+        /// <summary>
+        /// Hides the profile and signs the player out. AuthManager falls back to an anonymous session afterwards, the
+        /// same flow the options menu sign out uses.
+        /// </summary>
+        private async UniTaskVoid Logout()
+        {
+            if (!authManager)
+            {
+                Debug.LogError($"Missing reference: {nameof(authManager)}");
+                return;
+            }
+
+            if (logoutButton)
+                logoutButton.interactable = false;
+
+            SetVisibility(false);
+
+            try
+            {
+                await authManager.SignOut();
+            }
+            finally
+            {
+                if (logoutButton)
+                    logoutButton.interactable = true;
+            }
         }
 
         /// <summary>

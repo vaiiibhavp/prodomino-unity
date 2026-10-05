@@ -52,7 +52,9 @@ namespace ProDomino.AchievementSystem
 
         private void Start()
         {
-            SwitchTab(Tab.Achievements);
+            // CurrentTab defaults to Achievements; an external SwitchTab before first enable (e.g. dashboard
+            // Play & Win opening Challenges) must not be overwritten here.
+            SwitchTab(CurrentTab);
         }
 
         public void SwitchTab(Tab tab)

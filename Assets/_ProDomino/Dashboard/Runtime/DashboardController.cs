@@ -1,3 +1,4 @@
+using ProDomino.AchievementSystem;
 using ProDomino.Authentication;
 using ProDomino.FriendSystem;
 using ProDomino.GameSystem;
@@ -43,6 +44,10 @@ namespace ProDomino.Dashboard
 
         [Header("Cards")]
         [SerializeField] private Button playAndWinButton;
+        [Tooltip("Label of the Play & Win button. Found in the button's children if unassigned.")]
+        [SerializeField] private TMP_Text playAndWinLabel;
+        [SerializeField] private string playAndWinLoggedInText = "Play & Win";
+        [SerializeField] private string playAndWinLoggedOutText = "Register Now";
         [SerializeField] private Button aiMatchButton;
         [SerializeField] private Button randomPlayersButton;
         [SerializeField] private Button competitiveButton;
@@ -60,6 +65,7 @@ namespace ProDomino.Dashboard
 
         [Tooltip("Used to switch to the Games tab for the Block/Concentrate cards. Found at runtime if unassigned.")]
         [SerializeField] private NavigationPanelController navigationPanelController;
+        [SerializeField] private AchievementsTabController achievementsTabController;
 
         private static readonly DifficultyLevel[] AiDifficulties = { DifficultyLevel.Easy, DifficultyLevel.Medium, DifficultyLevel.Pro };
 
@@ -80,7 +86,7 @@ namespace ProDomino.Dashboard
             authManager = ServiceLocator.Instance.GetService<AuthManager>();
             promptFadeController = ServiceLocator.Instance.GetService<PromptFadeController>();
 
-            playAndWinButton?.onClick.AddListener(() => StartOnline(GameMode.block, GameType.casual, "Block · Online · 1 vs 1"));
+            playAndWinButton?.onClick.AddListener(OnPressPlayAndWin);
             aiMatchButton?.onClick.AddListener(StartAiMatch);
             randomPlayersButton?.onClick.AddListener(() => StartOnline(GameMode.french, GameType.casual, "Random players · 1 vs 1"));
             competitiveButton?.onClick.AddListener(StartCompetitiveMatch);
@@ -89,10 +95,51 @@ namespace ProDomino.Dashboard
             cancelMatchmakingButton?.onClick.AddListener(CancelMatchmaking);
 
             SetOverlayVisible(false);
+
+            if (!playAndWinLabel && playAndWinButton)
+                playAndWinLabel = playAndWinButton.GetComponentInChildren<TMP_Text>(true);
+
+            // "Register Now" is longer than "Play & Win": keep it on one line and shrink to fit the button.
+            if (playAndWinLabel)
+            {
+                playAndWinLabel.textWrappingMode = TextWrappingModes.NoWrap;
+                playAndWinLabel.fontSizeMax = playAndWinLabel.fontSize;
+                playAndWinLabel.fontSizeMin = playAndWinLabel.fontSize * 0.6f;
+                playAndWinLabel.enableAutoSizing = true;
+            }
+
+            gameManager?.HandleOnSignIn(RefreshPlayAndWinLabel);
+            gameManager?.HandleOnSignOut(RefreshPlayAndWinLabel);
+        }
+
+        // Sign-in/out can happen while the dashboard is inactive, so resync whenever it is shown.
+        private void OnEnable() => RefreshPlayAndWinLabel();
+
+        private void OnDestroy()
+        {
+            gameManager?.UnHandleOnSignIn(RefreshPlayAndWinLabel);
+            gameManager?.UnHandleOnSignOut(RefreshPlayAndWinLabel);
+        }
+
+        private bool? lastLoggedIn;
+
+        private void RefreshPlayAndWinLabel()
+        {
+            if (!playAndWinLabel)
+                return;
+            bool isLoggedIn = gameManager && gameManager.IsAuthenticated;
+            if (lastLoggedIn == isLoggedIn)
+                return;
+            lastLoggedIn = isLoggedIn;
+            playAndWinLabel.text = isLoggedIn ? playAndWinLoggedInText : playAndWinLoggedOutText;
         }
 
         private void LateUpdate()
         {
+            // onSignedIn can fire before IsAuthenticated turns true (sessionActive/init flags set later),
+            // so the event alone leaves a stale label; this cached check catches the real transition.
+            RefreshPlayAndWinLabel();
+
             if (!gameModeConfig)
                 return;
 
@@ -162,6 +209,39 @@ namespace ProDomino.Dashboard
             }
 
             Launch(GameMode.french, GameType.competitive, NumberPlayers.oneVsOne, null, null, "Competitive · 1 vs 1");
+        }
+
+        // Logged out the button reads "Register Now": open the same auth pop-up as the Options login button.
+        private void OnPressPlayAndWin()
+        {
+            if (gameManager is not { IsAuthenticated: true })
+            {
+                if (authManager)
+                    authManager.SetActiveAuthUI(true);
+                return;
+            }
+
+            OpenChallenges();
+        }
+
+        // Logged in: switch to the Achievements tab and show its Challenges section.
+        private void OpenChallenges()
+        {
+            if (!navigationPanelController)
+                navigationPanelController = FindAnyObjectByType<NavigationPanelController>(FindObjectsInactive.Include);
+
+            if (navigationPanelController)
+                navigationPanelController.ExternalActivateNavigationPanel(NavigationPanelType.Achievements);
+            else
+                Debug.LogWarning($"[{nameof(DashboardController)}] NavigationPanelController not found; cannot open Achievements.");
+
+            if (!achievementsTabController)
+                achievementsTabController = FindAnyObjectByType<AchievementsTabController>(FindObjectsInactive.Include);
+
+            if (achievementsTabController)
+                achievementsTabController.SwitchTab(AchievementsTabController.Tab.Challenges);
+            else
+                Debug.LogWarning($"[{nameof(DashboardController)}] AchievementsTabController not found; Challenges tab not selected.");
         }
 
         private void StartOnline(GameMode mode, GameType type, string details)

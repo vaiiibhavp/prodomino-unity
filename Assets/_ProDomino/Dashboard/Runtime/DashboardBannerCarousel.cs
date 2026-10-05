@@ -21,6 +21,12 @@ namespace ProDomino.Dashboard
             public Sprite background;
             public string title;
             public string subtitle;
+
+            [Tooltip("Shows the progress row (bar, count and reward chip) for this slide.")]
+            public bool showProgress;
+            [Range(0f, 1f)] public float progress;
+            public string progressText;
+            public string rewardText;
         }
 
         [Header("Slides")]
@@ -32,6 +38,13 @@ namespace ProDomino.Dashboard
         [SerializeField] private TMP_Text subtitleLabel;
         [Tooltip("Parent of the pagination dots. Each child is one dot.")]
         [SerializeField] private Transform paginationDots;
+
+        [Header("Progress")]
+        [SerializeField] private GameObject progressRow;
+        [Tooltip("Fill of the progress track. Its anchorMax.x is driven by the slide progress.")]
+        [SerializeField] private RectTransform progressFill;
+        [SerializeField] private TMP_Text progressLabel;
+        [SerializeField] private TMP_Text rewardLabel;
 
         [Header("Behaviour")]
         [Tooltip("Seconds each slide stays on screen. Set to 0 to disable auto sliding.")]
@@ -55,6 +68,9 @@ namespace ProDomino.Dashboard
         private bool isDragging;
         private float dragDelta;
         private Sprite fadeFromSprite;
+        private List<Slide> defaultSlides;
+        private string defaultTitle;
+        private string defaultSubtitle;
 
         /// <summary>
         /// Amount of slides currently configured.
@@ -63,7 +79,19 @@ namespace ProDomino.Dashboard
 
         private void Awake()
         {
+            CacheDefaults();
             CacheDots();
+        }
+
+        // Slides and copy authored in the prefab, restored by ResetSlides
+        private void CacheDefaults()
+        {
+            if (defaultSlides != null)
+                return;
+
+            defaultSlides = new List<Slide>(slides);
+            defaultTitle = titleLabel ? titleLabel.text : null;
+            defaultSubtitle = subtitleLabel ? subtitleLabel.text : null;
         }
 
         private void OnEnable()
@@ -117,20 +145,62 @@ namespace ProDomino.Dashboard
             ApplySlide(currentIndex, isImmediate: true);
         }
 
+        /// <summary>
+        /// Replaces the slide content but keeps the current slide and timer, so live data
+        /// (for example challenge progress) can refresh without restarting the carousel.
+        /// </summary>
+        public void UpdateSlides(IReadOnlyList<Slide> newSlides)
+        {
+            slides.Clear();
+            if (newSlides != null)
+                slides.AddRange(newSlides);
+
+            if (slides.Count > 0)
+                currentIndex = Mathf.Clamp(currentIndex, 0, slides.Count - 1);
+
+            ApplySlide(currentIndex, isImmediate: false);
+        }
+
+        /// <summary>
+        /// Restores the slides authored in the prefab.
+        /// </summary>
+        public void ResetSlides()
+        {
+            CacheDefaults();
+            SetSlides(defaultSlides);
+        }
+
         private void ApplySlide(int index, bool isImmediate)
         {
             SyncDots();
 
             if (slides.Count is 0 || index < 0 || index >= slides.Count)
+            {
+                SetProgressVisible(false);
                 return;
+            }
 
             var slide = slides[index];
 
-            if (titleLabel && !string.IsNullOrEmpty(slide.title))
-                titleLabel.text = slide.title;
+            if (titleLabel)
+            {
+                var title = string.IsNullOrEmpty(slide.title) ? defaultTitle : slide.title;
+                if (!string.IsNullOrEmpty(title))
+                    titleLabel.text = title;
+            }
 
-            if (subtitleLabel && !string.IsNullOrEmpty(slide.subtitle))
-                subtitleLabel.text = slide.subtitle;
+            if (subtitleLabel)
+            {
+                var subtitle = string.IsNullOrEmpty(slide.subtitle) ? defaultSubtitle : slide.subtitle;
+                if (!string.IsNullOrEmpty(subtitle))
+                    subtitleLabel.text = subtitle;
+            }
+
+            ApplyProgress(slide);
+
+            // A running fade towards this same sprite keeps going (live data refresh)
+            if (isFading && backgroundImage && backgroundImage.sprite == slide.background)
+                return;
 
             if (backgroundImage && slide.background)
             {
@@ -148,7 +218,46 @@ namespace ProDomino.Dashboard
                     isFading = fadeFromSprite != slide.background;
                     SetBackgroundAlpha(isFading ? 0f : 1f);
                 }
+
+                MatchBackgroundAspect(slide.background);
             }
+        }
+
+        // Slides use art of different aspect ratios. The envelope fitter must follow the current sprite, or the art stretches and crops
+        private void MatchBackgroundAspect(Sprite sprite)
+        {
+            if (!backgroundImage.TryGetComponent<AspectRatioFitter>(out var fitter))
+                return;
+
+            var rect = sprite.rect;
+            if (rect.height > 0f)
+                fitter.aspectRatio = rect.width / rect.height;
+        }
+
+        private void ApplyProgress(Slide slide)
+        {
+            SetProgressVisible(slide.showProgress);
+            if (!slide.showProgress)
+                return;
+
+            if (progressFill)
+            {
+                var anchorMax = progressFill.anchorMax;
+                anchorMax.x = Mathf.Clamp01(slide.progress);
+                progressFill.anchorMax = anchorMax;
+            }
+
+            if (progressLabel)
+                progressLabel.text = slide.progressText ?? string.Empty;
+
+            if (rewardLabel)
+                rewardLabel.text = slide.rewardText ?? string.Empty;
+        }
+
+        private void SetProgressVisible(bool isVisible)
+        {
+            if (progressRow && progressRow.activeSelf != isVisible)
+                progressRow.SetActive(isVisible);
         }
 
         private void UpdateFade()
