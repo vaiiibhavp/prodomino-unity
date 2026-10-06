@@ -253,16 +253,10 @@ namespace ProDomino.Options
                 return;
             }
 
-            // Verified players go straight to the My Profile screen. Unverified players still need
-            // the menu for email verification and sign out.
-            if (gameManager.IsAuthenticatedAndVerified)
-            {
-                OnPressOpenAccountPopUpButton();
-                return;
-            }
-
-            // Toggle the profile menu
-            SetActiveInterface(optionsInterface, optionsInterface.alpha is 0);
+            // Every authenticated player goes straight to the My Profile screen. The legacy dropdown
+            // (optionsInterface) is never shown; My Profile owns logout and unverified accounts are
+            // prompted through the email verification alert popup.
+            OnPressOpenAccountPopUpButton();
         }
         
         private void OnPressOpenFriendListPopUpButton()

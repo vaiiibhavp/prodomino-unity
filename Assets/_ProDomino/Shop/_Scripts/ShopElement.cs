@@ -245,8 +245,22 @@ namespace ProDomino.Shop
             if (rarityBadgeLabel != null)
             {
                 rarityBadgeLabel.text = rarity.ToString();
+                // Reset badge to neutral pill; rarities without a dedicated sprite tint it instead
+                if (rarityBadgeImage)
+                {
+                    rarityBadgeImage.color = Color.white;
+                    if (badgeCommonSprite) rarityBadgeImage.sprite = badgeCommonSprite;
+                }
                 switch (rarity)
                 {
+                    case Enums.CosmeticRarity.Uncommon:
+                        rarityBadgeLabel.color = Color.white;
+                        if (rarityBadgeImage) rarityBadgeImage.color = new Color32(249, 115, 22, 255);
+                        break;
+                    case Enums.CosmeticRarity.Rare:
+                        rarityBadgeLabel.color = Color.white;
+                        if (rarityBadgeImage) rarityBadgeImage.color = new Color32(59, 130, 246, 255);
+                        break;
                     case Enums.CosmeticRarity.Common:
                         rarityBadgeLabel.color = new Color32(15, 23, 42, 255);
                         if (rarityBadgeImage && badgeCommonSprite) rarityBadgeImage.sprite = badgeCommonSprite;
@@ -264,7 +278,7 @@ namespace ProDomino.Shop
                         if (rarityBadgeImage && badgeSpecialSprite) rarityBadgeImage.sprite = badgeSpecialSprite;
                         break;
                     default:
-                        rarityBadgeLabel.color = Color.white;
+                        rarityBadgeLabel.color = new Color32(15, 23, 42, 255);
                         break;
                 }
             }
