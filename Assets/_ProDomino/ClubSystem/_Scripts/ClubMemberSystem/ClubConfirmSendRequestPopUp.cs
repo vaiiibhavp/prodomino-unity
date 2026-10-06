@@ -4,6 +4,7 @@ using System;
 using Timba.Utils;
 using TMPro;
 using UnityEngine;
+using static ProDomino.ClubSystem.ClubIconDataSelectorController;
 
 namespace ProDomino.ClubSystem
 {
@@ -17,6 +18,8 @@ namespace ProDomino.ClubSystem
         [SerializeField] private CustomButtonUI confirmSendRequestButton;
         [SerializeField] private CustomButtonUI cancelSendRequestButton;
         [SerializeField] private TMP_Text descriptionLabel;
+        [SerializeField] private ClubIconDataSelectorController.Preview clubIconPreview;
+        [SerializeField] private CustomButtonUI closeButton;
 
         private AsyncFuncHandler<bool, FirestoreClubData> tryToSendRequestToClub;
         internal FirestoreClubData FirestoreClubData { get; private set; }
@@ -34,6 +37,10 @@ namespace ProDomino.ClubSystem
                 cancelSendRequestButton.onClick.AddListener(CancelSendClubRequest);
             else
                 Debug.LogError("Deny Change Button is not assigned in the inspector.", this);
+
+            // The close (X) button behaves like cancel
+            if (closeButton)
+                closeButton.onClick.AddListener(CancelSendClubRequest);
 
             // Initially hide the rank prompt
             Hide();
@@ -58,11 +65,21 @@ namespace ProDomino.ClubSystem
         {
             FirestoreClubData = firestoreClubData ?? throw new ArgumentNullException(nameof(firestoreClubData));
 
+            // Show the same club icon the search entry shows
+            if (clubIconPreview != null)
+            {
+                var iconData = FirestoreClubData.iconData;
+                clubIconPreview.SetPreviewData(ClubDataSelectableType.BaseShield, iconData?.shieldId, iconData?.shieldColorId, Preview.byDefaultShieldSprite, Preview.byDefaultShieldColor);
+                clubIconPreview.SetPreviewData(ClubDataSelectableType.Texture, iconData?.textureId, iconData?.textureColorId, Preview.byDefaultTextureSprite, Preview.byDefaultTextureColor);
+                clubIconPreview.SetPreviewData(ClubDataSelectableType.CentralImage, iconData?.centralImageId, iconData?.centralImageColorId, Preview.byDefaultCentralImageSprite, Preview.byDefaultCentralImageColor);
+                clubIconPreview.SetPreviewData(ClubDataSelectableType.Background, default, iconData?.backgroundColorId, default, Preview.byDefaultbackgroundColor);
+            }
+
             // Update the description label with the member's name
             if (descriptionLabel)
             {
                 var descriptionText = await LocalizationHelper.Get(Consts.LocalizationKeys.SendClubJoiningRequest);
-                descriptionLabel.text = descriptionText?.Replace("{CLUB}", FirestoreClubData.clubName);
+                descriptionLabel.text = descriptionText?.Replace("\n", " ").Replace("{CLUB}", $"<b>{FirestoreClubData.clubName}</b>");
             }
             else
                 Debug.LogError("Remove Description Label is not assigned in the inspector.", this);

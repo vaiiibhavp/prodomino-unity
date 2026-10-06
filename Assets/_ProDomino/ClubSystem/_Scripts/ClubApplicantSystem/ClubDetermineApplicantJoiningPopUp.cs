@@ -3,6 +3,7 @@ using System;
 using Timba.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ProDomino.ClubSystem
 {
@@ -16,6 +17,9 @@ namespace ProDomino.ClubSystem
         [SerializeField] private CustomButtonUI confirmButton;
         [SerializeField] private CustomButtonUI cancelButton;
         [SerializeField] private TMP_Text descriptionLabel;
+        [SerializeField] private TMP_Text titleLabel;
+        [SerializeField] private Image applicantImage;
+        [SerializeField] private CustomButtonUI closeButton;
 
         private bool isAccepting;
         private AsyncActionHandler<FirestoreClubData.ApplicantData> tryToAcceptMemberRequest;
@@ -37,6 +41,10 @@ namespace ProDomino.ClubSystem
                 cancelButton.onClick.AddListener(Cancel);
             else
                 Debug.LogError("Deny Change Button is not assigned in the inspector.", this);
+
+            // The close (X) button behaves like cancel
+            if (closeButton)
+                closeButton.onClick.AddListener(Cancel);
 
             // Initially hide the rank prompt
             Hide();
@@ -91,16 +99,26 @@ namespace ProDomino.ClubSystem
             // Set the currently selected member entry
             SelectedApplicantEntry = clubApplicantEntry;
 
-            // Reset all rank entries
+            var applicantName = SelectedApplicantEntry.ApplicantData.applicantName;
+
+            if (titleLabel)
+                titleLabel.text = this.isAccepting ? "Accept Request?" : "Decline Request?";
+
             if (descriptionLabel)
-            { 
+            {
                 if (this.isAccepting)
-                    descriptionLabel.text = $"Are you sure you want to accept {SelectedApplicantEntry.ApplicantData.applicantName} joining club request?";
+                    descriptionLabel.text = $"Are you sure you want to accept <b>{applicantName}</b>'s request to join the club? They will get access to the club chat, member list, and club activities.";
                 else
-                    descriptionLabel.text = $"Are you sure you want to decline {SelectedApplicantEntry.ApplicantData.applicantName} joining club request?";
+                    descriptionLabel.text = $"Are you sure you want to decline <b>{applicantName}</b>'s request to join the club? They can send a new request later.";
             }
             else
                 Debug.LogError("Description Label is not assigned in the inspector.", this);
+
+            if (applicantImage)
+                applicantImage.sprite = SelectedApplicantEntry.ProfileIconSprite;
+
+            if (confirmButton)
+                confirmButton.SetMainText(this.isAccepting ? "Accept" : "Decline");
         }
 
         /// <summary>

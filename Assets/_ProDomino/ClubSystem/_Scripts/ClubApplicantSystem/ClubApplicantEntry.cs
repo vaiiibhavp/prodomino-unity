@@ -37,6 +37,7 @@ namespace ProDomino.ClubSystem
 
         internal ConfigData ConfigData => getConfigData?.Invoke();
         internal FirestoreClubData.ApplicantData ApplicantData { get; private set; }
+        internal Sprite ProfileIconSprite { get; private set; }
         internal FirestoreClubData.MemberData CurrentPlayerMemberData => getCurrentPlayerMemberData?.Invoke();
 
         /// <summary>
@@ -84,6 +85,7 @@ namespace ProDomino.ClubSystem
         internal void Configure(FirestoreClubData.ApplicantData applicantData, Sprite profileIconSprite, int clubIndex)
         {
             ApplicantData = applicantData;
+            ProfileIconSprite = profileIconSprite;
 
             // Set the text label of club position
             if (clubPosition)
