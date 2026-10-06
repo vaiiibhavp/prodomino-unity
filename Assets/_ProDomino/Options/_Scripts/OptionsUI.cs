@@ -28,6 +28,7 @@ namespace ProDomino.Options
         [SerializeField] private CanvasGroup optionsInterface;
         [SerializeField] private CanvasGroup notLoginButtonInterface;
         [SerializeField] private CanvasGroup loginButtonInterface;
+        [SerializeField] private GameObject[] notificationButtons;
         [SerializeField]
         private TMP_Text
             usernameLabel,
@@ -181,6 +182,10 @@ namespace ProDomino.Options
             }
             SetActiveInterface(loginButtonInterface, isLogin);
             SetActiveInterface(notLoginButtonInterface, !isLogin);
+            if (notificationButtons != null)
+                foreach (var notificationButton in notificationButtons)
+                    if (notificationButton != null)
+                        notificationButton.SetActive(isLogin);
         }
 
         private void SetActiveInterface(CanvasGroup canvasGroup, bool isActive)
