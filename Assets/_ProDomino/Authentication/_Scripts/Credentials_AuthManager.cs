@@ -159,9 +159,17 @@ namespace ProDomino.Authentication
                         return;
                     }
 
+                    // A restored session can belong to a player that already has username/password linked,
+                    // which makes the backend fail with LINKED_ACCOUNT_LIMIT_EXCEEDED. Drop it to get a fresh anonymous player
+                    if (IsUGSAuthenticated && !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerInfo?.Username))
+                    {
+                        AuthenticationService.Instance.SignOut(true);
+                        AuthenticationService.Instance.ClearSessionToken();
+                    }
+
                     // If the user is not authenticated, sign in anonymously to be able to call the Cloud Code function
                     if (!IsUGSAuthenticated)
-                    { 
+                    {
                         await SignInAnonmously();
 
                         // If the user still is not authenticated, return

@@ -31,7 +31,7 @@ namespace ProDomino.FriendSystem
         }
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.FriendsList;
-        public bool RequiresAuthentication => false;
+        public bool RequiresAuthentication => true;
 
         [Header("State Containers")]
         [SerializeField] private GameObject emptyStateContainer;

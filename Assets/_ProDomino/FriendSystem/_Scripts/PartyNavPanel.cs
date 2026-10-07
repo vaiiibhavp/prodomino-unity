@@ -19,7 +19,7 @@ namespace ProDomino.FriendSystem
         private Action onOverlayClosed;
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.Party;
-        public bool RequiresAuthentication => false;
+        public bool RequiresAuthentication => true;
         public bool IsOverlay => true;
 
         public CanvasGroup RootCanvasGroup => rootCanvasGroup ? rootCanvasGroup : rootCanvasGroup = GetComponent<CanvasGroup>();
