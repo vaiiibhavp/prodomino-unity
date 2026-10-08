@@ -86,6 +86,8 @@ namespace ProDomino.Dashboard
         private bool wasSearching;
         private float? matchFoundAt;
         private string pendingDetails;
+        private bool cancelWhenSearchStarts;
+        private float cancelRequestedAt;
 
         private void Awake()
         {
@@ -296,7 +298,7 @@ namespace ProDomino.Dashboard
             }
 
             // RunGameMode cancels an ongoing search, so never call it while one is running.
-            if (gameModeConfig.IsInMatch || gameModeConfig.IsInOnlineMatch || gameModeConfig.IsMatchMaking || launchRequestedAt.HasValue || matchFoundAt.HasValue)
+            if (gameModeConfig.IsInMatch || gameModeConfig.IsInOnlineMatch || gameModeConfig.IsMatchMaking || launchRequestedAt.HasValue || matchFoundAt.HasValue || cancelWhenSearchStarts)
                 return false;
 
             return true;
@@ -336,7 +338,12 @@ namespace ProDomino.Dashboard
             }
             else
             {
-                launchRequestedAt = null;
+                // Cancelled during "Setting up the session…": the search may still begin a moment later
+                // (TryToStartMatch is async), so remember to cancel it as soon as it does.
+                cancelWhenSearchStarts = launchRequestedAt.HasValue;
+                cancelRequestedAt = Time.unscaledTime;
+                ResetMatchmakingState();
+                SetOverlayVisible(false);
             }
 
             if (isVisible && gameModeConfig.gameObject.activeSelf)
@@ -350,6 +357,20 @@ namespace ProDomino.Dashboard
         private void UpdateMatchmakingOverlay(bool gameOnScreen)
         {
             bool searching = gameModeConfig.IsMatchMaking;
+
+            if (cancelWhenSearchStarts)
+            {
+                if (searching && !isCancelling)
+                {
+                    cancelWhenSearchStarts = false;
+                    isCancelling = true;
+                    gameModeConfig.RunGameMode(); // toggles: cancels the search the user already cancelled
+                }
+                else if (gameOnScreen || Time.unscaledTime - cancelRequestedAt > startTimeoutSeconds)
+                {
+                    cancelWhenSearchStarts = false;
+                }
+            }
 
             if (searching && !searchStartedAt.HasValue)
                 searchStartedAt = Time.unscaledTime;
@@ -399,7 +420,7 @@ namespace ProDomino.Dashboard
                 matchmakingTimer.text = $"{(int)elapsed.TotalMinutes:00}:{elapsed.Seconds:00}";
             }
             if (cancelMatchmakingButton)
-                cancelMatchmakingButton.interactable = searching && !isCancelling;
+                cancelMatchmakingButton.interactable = (searching || launchRequestedAt.HasValue) && !isCancelling;
         }
 
         // Clears every matchmaking flag so the next CanStart()/Launch() opens the overlay from a clean state.
