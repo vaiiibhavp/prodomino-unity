@@ -805,7 +805,12 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     /// transparency.</param>
     public void SetSelectionUIInteractivity(bool isInteractable)
     {
-        selectionUICanvasGroup.SetActive(isInteractable, isSettingAlpha: false, optionalForcedAlpha: isInteractable ? 1 : .5f);
+        // Set alpha first: CanvasGroupExtensions.SetActive derives interactable/blocksRaycasts from the
+        // alpha *before* applying optionalForcedAlpha, so coming back from the mid-search dim (0.5) or the
+        // dashboard force-hide (0) it left the group visible at alpha 1 but dead to clicks.
+        selectionUICanvasGroup.alpha = isInteractable ? 1f : .5f;
+        selectionUICanvasGroup.interactable = isInteractable;
+        selectionUICanvasGroup.blocksRaycasts = isInteractable;
     }
 
     /// <summary>
@@ -838,7 +843,11 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     /// </summary>
     public void SetSelectionUIRestoreAfterCover()
     {
-        selectionUICanvasGroup.SetActive(true, isSettingAlpha: false, optionalForcedAlpha: IsMatchMaking ? 0.5f : 1f);
+        // Same alpha-ordering trap as SetSelectionUIInteractivity: set alpha first, then input flags.
+        bool selectorsLive = !IsMatchMaking;
+        selectionUICanvasGroup.alpha = selectorsLive ? 1f : 0.5f;
+        selectionUICanvasGroup.interactable = selectorsLive;
+        selectionUICanvasGroup.blocksRaycasts = selectorsLive;
         selectionUICanvasGroup.transform.RefreshLayoutGroupsImmediateAndRecursive();
 
         if (gamesGridCanvasGroup)
@@ -860,6 +869,27 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     public void OpenGameModal(string gameModeName)
     {
         isForcingBlockPlayButtonInteraction = false;
+
+        // Activate first: the popup ships inactive, so its CustomButtonUI/CustomButtonToggleGroupUI Awake
+        // only runs here. Awake deselects every button and re-applies its serialized isInteractable,
+        // which would wipe the selection and unlock done below if the popup were activated afterwards.
+        if (gamesModalRoot)
+            gamesModalRoot.SetActive(true);
+
+        // A search started from the Dashboard locks every selector (ForceSelectorsInteractivity(false)),
+        // and only MatchManager_OnCancelMatchmaking unlocks them. A cancel during "Setting session…",
+        // or one finishing after the Dashboard deactivated this panel, never gets there, which leaves the
+        // popup's options dead. Nothing is running now, so unlock -- with ignoreDefault, since several
+        // option buttons are serialized non-interactable and SetButtonInteractable(true) alone keeps them
+        // locked. ValidateGameModeFullData re-applies the per-button visibility rules below.
+        if (!IsMatchMaking && !IsInMatch && !IsInOnlineMatch)
+        {
+            gameModeSelector?.SetAllButtonsInteractable(true, ignoreDefault: true);
+            gameTypeSelector?.SetAllButtonsInteractable(true, ignoreDefault: true);
+            vsPlayerSelector?.SetAllButtonsInteractable(true, ignoreDefault: true);
+            difficultySelector?.SetAllButtonsInteractable(true, ignoreDefault: true);
+            numberOfTilesSelector?.SetAllButtonsInteractable(true, ignoreDefault: true);
+        }
 
         if (Enum.TryParse<GameMode>(gameModeName, true, out var mode) && mode != GameMode.none)
         {
@@ -913,6 +943,11 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         ValidateGameModeFullData();
 
+        // ValidateGameModeFullData skips SetSelectionUIInteractivity on its early exits (e.g. a relay
+        // left over from the cancelled search), so make sure the popup's options take input.
+        if (!IsMatchMaking && !IsInMatch && !IsInOnlineMatch && !(PartyController.IsRelay && IsPartyRelay && !IsLocaPlayerHost))
+            SetSelectionUIInteractivity(true);
+
         // Ensure play button is fully interactable and ready to click
         if (playGameModeButton)
         {
@@ -926,9 +961,6 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
                 cg.alpha = 1f;
             }
         }
-
-        if (gamesModalRoot)
-            gamesModalRoot.SetActive(true);
     }
 
     /// <summary>

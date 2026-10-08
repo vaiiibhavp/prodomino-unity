@@ -178,13 +178,15 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
     /// Enables or disables interaction for all buttons in the group.
     /// </summary>
     /// <param name="isInteractable"></param>
-    public void SetAllButtonsInteractable(bool isInteractable)
+    /// <param name="ignoreDefault">Also overwrite each button's IsInteractableByDefault, so buttons serialized
+    /// as non-interactable can be unlocked.</param>
+    public void SetAllButtonsInteractable(bool isInteractable, bool ignoreDefault = false)
     {
         if (buttons is null or { Count: 0 })
             return;
 
         foreach (var button in buttons)
-            button.SetButtonInteractable(isInteractable);
+            button.SetButtonInteractable(isInteractable, ignoreDefault: ignoreDefault);
     }
 
     /// <summary>
