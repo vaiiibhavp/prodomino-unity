@@ -19,6 +19,11 @@ namespace ProDomino.Shared
         public List<AudioEntry> audioLibrary = new List<AudioEntry>();
         private Dictionary<IDAudioClip, AudioClip> clipMap;
 
+        // Same keys as SettingsController.
+        private const string MasterVolumeKey = "MasterVolume";
+        private const string SfxVolumeKey = "SFXVolume";
+        private const string BgmVolumeKey = "BGMVolume";
+
         private void Awake()
         {
             if (Instance == null)
@@ -49,7 +54,18 @@ namespace ProDomino.Shared
                     }
 
                     clipMap.Add(entry.id, entry.clip);
+
+                    // PlayOneShot on a clip whose data isn't loaded yet is silent, so load it up front.
+                    if (entry.clip != null && entry.clip.loadState == AudioDataLoadState.Unloaded)
+                        entry.clip.LoadAudioData();
                 }
+
+                // Apply the volumes saved by SettingsController; otherwise they only take effect once settings is opened.
+                float master = PlayerPrefs.GetFloat(MasterVolumeKey, 0.3f);
+                sfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, master);
+                musicVolume = PlayerPrefs.GetFloat(BgmVolumeKey, master);
+                sfxSource.mute = false;
+                musicSource.mute = false;
             }
             else
             {
