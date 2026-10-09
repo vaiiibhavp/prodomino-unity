@@ -238,6 +238,19 @@
 
       document.querySelector("#unity-loading-bar").style.display = "block";
 
+      // Browser extensions (e.g. chrome-extension://...) throw errors into the page.
+      // Unity's loader treats any window error as fatal, so swallow foreign ones first.
+      function isExtensionError(e) {
+        var src = (e && (e.filename || (e.error && e.error.stack) || (e.reason && e.reason.stack))) || "";
+        return /(chrome|moz|safari(-web)?)-extension:\/\//.test(src);
+      }
+      window.addEventListener("error", function (e) {
+        if (isExtensionError(e)) { e.preventDefault(); e.stopImmediatePropagation(); }
+      }, true);
+      window.addEventListener("unhandledrejection", function (e) {
+        if (isExtensionError(e)) { e.preventDefault(); e.stopImmediatePropagation(); }
+      }, true);
+
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
