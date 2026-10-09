@@ -102,10 +102,16 @@ namespace ProDomino.ReplaySystem
             
             RectTransform auxCurrentGameHolder = auxReplayGameMode.ExtendedGameController.GetRect();
 
+            // Stretch to fill the container before parenting, same as MenuControllerGameMode:
+            // offsets alone don't fill the parent unless the anchors are the stretch preset.
+            auxCurrentGameHolder.anchorMin = Vector2.zero;
+            auxCurrentGameHolder.anchorMax = Vector2.one;
+            auxCurrentGameHolder.pivot = new Vector2(0.5f, 0.5f);
+            auxCurrentGameHolder.offsetMin = Vector2.zero;
+            auxCurrentGameHolder.offsetMax = Vector2.zero;
+
             auxCurrentGameHolder.SetParent(replayGameModeContainer, false);
             auxCurrentGameHolder.localScale = Vector3.one;
-            auxCurrentGameHolder.offsetMin = new Vector2(0, 0);
-            auxCurrentGameHolder.offsetMin = new Vector2(0, 0);
 
             return auxReplayGameMode;
         }
