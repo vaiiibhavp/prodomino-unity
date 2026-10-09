@@ -32,7 +32,7 @@ namespace HelperSharedLibrary
                     if (errorResponse.title == "RESOURCE_NOT_FOUND")
                         throw new UGSException("Invalid credentials. Please check your credentials", this, content);
 
-                    foreach (var error in this.errorResponse.details)
+                    foreach (var error in this.errorResponse.details ?? Enumerable.Empty<UGSErrorDetail>())
                         throw error.code switch
                         {
                             "INVALID_CREDENTIALS" or "Invalid Credentials" or "RESOURCE_NOT_FOUND" => new UGSException("Invalid credentials. Please check your credentials", this, content),
@@ -45,7 +45,10 @@ namespace HelperSharedLibrary
                         };
                 }
 
-                throw new UGSException($"Unexpected Sign-In failure. {JsonConvert.SerializeObject(this, Formatting.Indented)}", this, this?.content);
+                // No parsable UGS error body: surface the original message instead of dumping the
+                // serialized exception (the client UI only shows its first line, i.e. "{").
+                var reason = errorResponse?.detail ?? errorResponse?.title ?? Message;
+                throw new UGSException(string.IsNullOrWhiteSpace(reason) ? "Unexpected Sign-In failure." : reason, this, this?.content);
             }
         }
         

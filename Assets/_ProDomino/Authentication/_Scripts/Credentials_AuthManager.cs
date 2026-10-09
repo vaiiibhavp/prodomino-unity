@@ -100,6 +100,7 @@ namespace ProDomino.Authentication
         {
             UnHandleOnPressCredentialsLoginButton(TryToSignIn);
             UnHandleOnPressCredentialsCreateAccountButton(TryToCreateAccount);
+            UnHandleOnPressCredentialsRecoveryButton(TryToRecoverPassword);
 
             UnHandleOnSignUpCredentialsUpdate(OnSignUpCredentialsUpdate);
             UnHandleOnSignInCredentialsUpdate(OnSignInCredentialsUpdate);
@@ -153,19 +154,20 @@ namespace ProDomino.Authentication
             {
                 try
                 {
-                    if (IsUserAuthenticatedWithCredentials || IsUserAuthenticatedWithProvider)
-                    { 
+                    if (IsUserAuthenticatedWithProvider)
+                    {
                         Debug.LogWarning("Already authenticated with provider");
                         return;
                     }
 
-                    // A restored session can belong to a player that already has username/password linked,
-                    // which makes the backend fail with LINKED_ACCOUNT_LIMIT_EXCEEDED. Drop it to get a fresh anonymous player
-                    if (IsUGSAuthenticated && !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerInfo?.Username))
-                    {
-                        AuthenticationService.Instance.SignOut(true);
-                        AuthenticationService.Instance.ClearSessionToken();
-                    }
+                    // A restored session (e.g. an unverified account kept by 'Remember me') already has username/password linked,
+                    // which makes the backend fail with LINKED_ACCOUNT_LIMIT_EXCEEDED. Drop it (without deleting it) to get a fresh anonymous player
+                    // The cached PlayerInfo can be stale (e.g. an earlier sign-up linked username/password server-side and then failed),
+                    // so ask the server whether this player already has a username before reusing it as the sign-up caller
+                    if (IsUGSAuthenticated
+                        && (IsUserAuthenticatedWithCredentials
+                            || !string.IsNullOrEmpty((await AuthenticationService.Instance.GetPlayerInfoAsync())?.Username)))
+                        await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
 
                     // If the user is not authenticated, sign in anonymously to be able to call the Cloud Code function
                     if (!IsUGSAuthenticated)
@@ -208,7 +210,7 @@ namespace ProDomino.Authentication
                             password,
                             gameObject.name,
                             nameof(OnSignUpWithCredentialsSuccessfully),
-                            nameof(OnSignUpWithCredentialsFailed));
+                            nameof(OnFirebaseSignUpWithCredentialsFailed));
                     else
                         OnSignUpWithCredentialsSuccessfully();
 
@@ -241,6 +243,12 @@ namespace ProDomino.Authentication
                 {
                     Debug.LogWarning($"SignUp failed Firebase: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignUpWithCredentialsFailed($"<b>*</b> {exception.Message}");
+                }
+                // Thrown by the local UGS SDK sign-in (AuthenticationException derives from it)
+                catch (RequestFailedException exception)
+                {
+                    Debug.LogWarning($"SignUp failed UGS SDK [{exception.ErrorCode}]: {exception.Message}");
+                    OnSignUpWithCredentialsFailed("<b>*</b> Your account was created but signing in failed. Please sign in again.");
                 }
                 catch (Exception exception)
                 {
@@ -277,11 +285,16 @@ namespace ProDomino.Authentication
             {
                 try
                 {
-                    if (IsUserAuthenticatedWithCredentials || IsUserAuthenticatedWithProvider)
+                    if (IsUserAuthenticatedWithProvider)
                     {
                         Debug.Log("Already authenticated with provider");
                         return;
                     }
+
+                    // A restored credentials session (e.g. an unverified account kept by 'Remember me') would make the
+                    // press silently do nothing. Drop it (without deleting it) so the player can sign in with the typed credentials
+                    if (IsUserAuthenticatedWithCredentials)
+                        await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
 
                     // If the user is not authenticated, sign in anonymously to be able to call the Cloud Code function
                     if (!IsUGSAuthenticated)
@@ -340,7 +353,7 @@ namespace ProDomino.Authentication
                             password, 
                             gameObject.name, 
                             nameof(OnSignInWithCredentialsSuccessfully),
-                            nameof(OnSignInWithCredentialsFailed));
+                            nameof(OnFirebaseSignInWithCredentialsFailed));
                     else
                         OnSignInWithCredentialsSuccessfully();
 
@@ -374,6 +387,12 @@ namespace ProDomino.Authentication
                 {
                     Debug.LogWarning($"SignIn failed Firebase: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignInWithCredentialsFailed($"<b>*</b> {exception.Message}");
+                }
+                // Thrown by the local UGS SDK sign-in (AuthenticationException derives from it)
+                catch (RequestFailedException exception)
+                {
+                    Debug.LogWarning($"SignIn failed UGS SDK [{exception.ErrorCode}]: {exception.Message}");
+                    OnSignInWithCredentialsFailed("<b>*</b> Invalid credentials. Please check your credentials");
                 }
                 catch (Exception exception)
                 { 
@@ -804,6 +823,29 @@ namespace ProDomino.Authentication
             AuthUI?.CallOnCredentialsSignInEvent(false);
             AuthUI?.SetFeedbackDirectly(true, $"<color=red>{response}</color>");
             Debug.LogError($"Sign-In failed: {response}");
+        }
+
+        /// <summary>
+        /// [WebGL] jslib callback when the local Firebase sign-in fails after UGS already signed the player in.
+        /// Drops the UGS session too, so the player is not left half signed-in behind an error message.
+        /// </summary>
+        /// <param name="response">The error message received from the Firebase jslib.</param>
+        private async void OnFirebaseSignInWithCredentialsFailed(string response)
+        {
+            await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
+            OnSignInWithCredentialsFailed($"<b>*</b> {response}");
+        }
+
+        /// <summary>
+        /// [WebGL] jslib callback when the local Firebase sign-in fails right after the account was created.
+        /// The account exists on the backend, so drop the half-open UGS session and ask the player to sign in.
+        /// </summary>
+        /// <param name="response">The error message received from the Firebase jslib.</param>
+        private async void OnFirebaseSignUpWithCredentialsFailed(string response)
+        {
+            Debug.LogWarning($"Sign-Up local Firebase sign-in failed: {response}");
+            await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
+            OnSignUpWithCredentialsFailed("<b>*</b> Your account was created but signing in failed. Please sign in again.");
         }
 
         /// <summary>

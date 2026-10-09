@@ -400,8 +400,8 @@ namespace ProDomino.Authentication
 
                 var hasLower = passwordToUse.Any(char.IsLower);
                 var hasUpper = passwordToUse.Any(char.IsUpper);
-                var hasNumber = passwordToUse.Any(char.IsNumber);
-                var hasSymbol = passwordToUse.Any(char.IsSymbol);
+                // Mirror CredentialsValidator.IsValidPassword: punctuation (!, @, #, ...) counts as a symbol and numbers are not required
+                var hasSymbol = passwordToUse.Any(x => char.IsSymbol(x) || char.IsPunctuation(x));
 
                 if (!hasLower)
                 {
@@ -412,11 +412,6 @@ namespace ProDomino.Authentication
                 {
                     TryToAddLineJump();
                     denyMessage += $"<b>*</b> {target} must contains at least <b>1</b> uppercase letter";
-                }
-                if (!hasNumber) 
-                {
-                    TryToAddLineJump();
-                    denyMessage += $"<b>*</b> {target} must contains at least <b>1</b> number";
                 }
                 if (!hasSymbol)
                 {
@@ -496,10 +491,11 @@ namespace ProDomino.Authentication
         /// Determines whether the provided credentials string is likely a username rather than an email address.
         /// </summary>
         /// <param name="credentials">The credentials string to evaluate.</param>
-        /// <returns>True if the credentials string does not contain both '@' and '.' characters; otherwise, false.</returns>
+        /// <returns>True if the credentials string does not contain '@'; otherwise, false.</returns>
         private bool IsCredentialUsername(string credentials)
         {
-            return !credentials.Contains('@') || !credentials.Contains('.');
+            // Same rule AuthManager uses to pick the validator, so the feedback matches the failing checks
+            return !credentials.Contains('@');
         }
 
         /// <summary>

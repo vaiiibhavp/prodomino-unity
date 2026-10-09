@@ -545,6 +545,20 @@ internal class FirebaseApiHelper
     /// <summary>Sign-Up function for Firebase using email and password</summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
+    /// <summary>
+    /// Deletes the Firebase Auth user that owns the given ID token. Used to roll back a sign-up that failed on UGS.
+    /// </summary>
+    /// <param name="idToken">The ID token of the Firebase user to delete.</param>
+    /// <returns>True if the user was deleted; otherwise, false.</returns>
+    internal static async Task<bool> DeleteUserByIdTokenAsync(string idToken)
+    {
+        if (string.IsNullOrEmpty(idToken))
+            return false;
+
+        var response = await ExecuteRequestAsync($"v1/accounts:delete?key={FirebaseBackend._firebaseConfigData.apiKey}", new { idToken });
+        return response.IsSuccessful;
+    }
+
     internal static async Task<FirebaseAuthResponseData> SignUpByCredentials(string email, string password)
     {
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))

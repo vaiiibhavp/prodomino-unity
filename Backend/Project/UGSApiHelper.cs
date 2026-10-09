@@ -353,14 +353,14 @@ internal class UGSApiHelper
         try
         {
             UsersData = JsonConvert.DeserializeObject<ListUsersResponse>(response.Content);
-
-            if (UsersData is null or { results: null or { Length: 0 } })
-                throw new UGSException($"Invalid response format from Player Auth API.");
         }
         catch (Exception ex)
         {
             throw new UGSException($"Unable to deserialize data: \n\n{response.Content} \n\n{ex.Message}", ex, response.Content);
         }
+
+        if (UsersData is null or { results: null or { Length: 0 } })
+            throw new UGSException("User not exists. Check your credentials.");
 
         // Check if any user was found with the specified username
         var user = UsersData.results.FirstOrDefault();
@@ -381,7 +381,8 @@ internal class UGSApiHelper
     /// <exception cref="ArgumentNullException">Thrown if the execution context is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the new password is null, empty, or does not meet strength requirements.</exception>
     /// <exception cref="UGSException">Thrown if the password change request fails or an error occurs during the operation.</exception>
-    internal static async Task ChangePassword(IGameApiClient gameApiClient, IExecutionContext executionContext, string? newPassword)
+    /// <param name="alternativePlayerID">Optional. The player whose password changes, when it is not the caller (e.g. sign-in runs as an anonymous player).</param>
+    internal static async Task ChangePassword(IGameApiClient gameApiClient, IExecutionContext executionContext, string? newPassword, string? alternativePlayerID = null)
     {
         // Validate that the execution context is not null
         if (executionContext is null)
@@ -402,7 +403,8 @@ internal class UGSApiHelper
         var authHeader = await UGSConfigData.GetAuthHeader(gameApiClient, executionContext);
 
         // Initialize REST client for the Unity Player Identity endpoint to change password
-        using var restClient = new RestClient($"https://services.api.unity.com/player-identity/v1/projects/{executionContext.ProjectId}/users/{executionContext.PlayerId}/change-password");
+        var targetPlayerId = alternativePlayerID ?? executionContext.PlayerId;
+        using var restClient = new RestClient($"https://services.api.unity.com/player-identity/v1/projects/{executionContext.ProjectId}/users/{targetPlayerId}/change-password");
 
         // Prepare the request with necessary headers and body content
         var request = new RestRequest
@@ -423,7 +425,7 @@ internal class UGSApiHelper
 
             // Check if the request was successful
             if (!response.IsSuccessful)
-                throw new UGSException($"Failed to change password to {executionContext.PlayerId}. Status code: {response.StatusCode}\n\nContent:\n{response.Content}\n", response.ErrorException, response.Content);
+                throw new UGSException($"Failed to change password to {targetPlayerId}. Status code: {response.StatusCode}\n\nContent:\n{response.Content}\n", response.ErrorException, response.Content);
         }
         catch (Exception ex)
         {
@@ -671,6 +673,12 @@ internal class UGSApiHelper
             // Check if the response content is null or empty
             if (string.IsNullOrEmpty(response.Content))
                 throw new UGSException("Empty response received from Player Auth API.");
+        }
+        // Keep UGSException (and its parsed errorResponse) intact: SignInInUGS relies on the
+        // WRONG_USERNAME_PASSWORD title to sync the UGS password with the already-validated Firebase one
+        catch (UGSException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

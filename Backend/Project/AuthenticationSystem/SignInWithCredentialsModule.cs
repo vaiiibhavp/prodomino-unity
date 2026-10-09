@@ -170,8 +170,9 @@ public class SignInWithCredentialsModule(ILogger<SignInWithCredentialsModule> lo
             _logger: _logger);
 
         // Save the email in UGS protected data
+        // The caller is the throwaway anonymous player, so target the signed-in account explicitly
         if (payload.Count > 0)
-            await UGSApiHelper.ProtectedSaveData(_gameApiClient, executionContext, payload);
+            await UGSApiHelper.ProtectedSaveData(_gameApiClient, executionContext, payload, alternativePlayerID: playerId);
 
         // Use the base player ID for encryption instead of the one used to sign in.
         // This is to ensure that the data can be decrypted by the client.
@@ -259,7 +260,7 @@ public class SignInWithCredentialsModule(ILogger<SignInWithCredentialsModule> lo
 
             // Check if the password is using the correct structure
             if (!CredentialsValidator.IsValidPassword(data["password"] is string password ? password : string.Empty))
-                throw new UGSException($"The password {data["password"]} is not strong enough");
+                throw new UGSException("The password is not strong enough");
         }
 
         // This method try to sign in in Firebase using the email and password, then it will try to Sign-in in UGS using the username got from Firebase and password.
@@ -382,7 +383,9 @@ public class SignInWithCredentialsModule(ILogger<SignInWithCredentialsModule> lo
             // NOTE: only change the password if previously the user was signed in in Firebase
             if (ex is not null and { errorResponse: not null and { status: 400 } and { title: "WRONG_USERNAME_PASSWORD" } })
             { 
-                await UGSApiHelper.ChangePassword(_gameApiClient, executionContext, password);
+                // The execution context belongs to the anonymous caller, so resolve the account that owns this username
+                var targetUser = await UGSApiHelper.GetUserByUsernameAsync(_gameApiClient, executionContext, username).ConfigureAwait(false);
+                await UGSApiHelper.ChangePassword(_gameApiClient, executionContext, password, alternativePlayerID: targetUser.id);
             
                 // Once the password is changed, try to sign in again
                 var signInDataResponse = await UGSApiHelper.SignInByCredentials(executionContext, username, password).ConfigureAwait(false);

@@ -109,11 +109,24 @@ public class SignUpWithCredentialsModule(ILogger<SignUpWithCredentialsModule> lo
         // Check if the user already exists in UGS and Firebase before signing up
         await CheckIfUserExists(username, email).ConfigureAwait(false);
 
-        // Sign up the user in UGS and Firebase, getting the necessary data from both platforms to link the accounts and update the user data in UGS with the Firebase information obtained
-        var playerAuthResponseData = await SignUpInUGS(username, password);
-
-        // Sign up in Firebase using the credentials and update the Firebase user profile with the username to link it to UGS, getting the necessary data from Firebase to link the accounts and update the user data in UGS with the Firebase information obtained
+        // Sign up in Firebase FIRST. CheckIfUserExists can't detect an existing email registered with a different password
+        // (Firebase answers INVALID_LOGIN_CREDENTIALS for both cases), so Firebase's EMAIL_EXISTS is the authoritative duplicate check.
+        // Doing it before UGS prevents linking username/password to this player and then failing, which left the username taken by an orphan
         var firebaseAuthResponseData = await SignUpInFirebase(email, password, username);
+
+        // Sign up the user in UGS; if it fails, roll back the Firebase user so the email can be used again
+        UGSAuthResponseData playerAuthResponseData;
+        try
+        {
+            playerAuthResponseData = await SignUpInUGS(username, password);
+        }
+        catch
+        {
+            var wasRolledBack = await FirebaseApiHelper.DeleteUserByIdTokenAsync(firebaseAuthResponseData.idToken).ConfigureAwait(false);
+            if (!wasRolledBack)
+                _logger?.LogError("Failed to roll back Firebase user {LocalId} after UGS sign-up failure", firebaseAuthResponseData.localId);
+            throw;
+        }
 
         // Try to ensure the user exists in Realtime Database
         await AuthenticationSystem_Helper.TryToEnsureUserExistsInRTDB(executionContext, _gameApiClient,
@@ -184,7 +197,7 @@ public class SignUpWithCredentialsModule(ILogger<SignUpWithCredentialsModule> lo
 
             // Check if the password is using the correct structure
             if (!CredentialsValidator.IsValidPassword(data["password"] is string password ? password : string.Empty))
-                throw new ArgumentException($"The password {data["password"]} is not strong enough");
+                throw new ArgumentException("The password is not strong enough");
         }
 
         /// Try to get the user by username in UGS and by email in Firebase to check if they already exist before signing up. 
