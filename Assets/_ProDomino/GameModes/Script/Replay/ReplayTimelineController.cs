@@ -196,7 +196,11 @@ namespace ProDomino.ReplaySystem
 
             float auxCurrentTimerCounter = 0;
             int auxLineIndex = 0;
-            
+
+            // Fit markers to the actual track so they never run past the slider when the layout resizes
+            Canvas.ForceUpdateCanvases();
+            float trackLength = timelineContainer.rect.width > 0 ? timelineContainer.rect.width : lineLength;
+
             foreach (TurnData turn in currentReplay.turns)
             {
 
@@ -222,7 +226,7 @@ namespace ProDomino.ReplaySystem
 
                 RectTransform rect = lineObj.GetComponent<RectTransform>();
 
-                Vector2 pos = new Vector2((auxCurrentTimerCounter * lineLength) / totalDuration, 9);
+                Vector2 pos = new Vector2((auxCurrentTimerCounter * trackLength) / totalDuration, 9);
 
                 rect.anchoredPosition = pos;
 

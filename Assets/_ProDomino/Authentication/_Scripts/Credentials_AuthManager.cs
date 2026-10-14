@@ -228,8 +228,12 @@ namespace ProDomino.Authentication
                         var exceptionMessageExtracted = match.Groups[2].Value;
 
                         if (exceptionType is nameof(UGSException) or nameof(FirebaseException))
-                            message = $"<b>*</b> {exceptionMessageExtracted}";
+                            message = $"<b>*</b> {exceptionMessageExtracted.TrimEnd(' ', '{')}";
                     }
+
+                    // UGS rate-limits sign-ups (HTTP 429); the backend wraps it as a generic sign-in failure
+                    if (exception.Message.Contains("TooManyRequests") || exception.Message.Contains("\"StatusCode\": 429"))
+                        message = "<b>*</b> Too many sign-up attempts. Please wait a few minutes and try again.";
 
                     Debug.LogWarning($"SignUp failed Cloud Code: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignUpWithCredentialsFailed(message);
