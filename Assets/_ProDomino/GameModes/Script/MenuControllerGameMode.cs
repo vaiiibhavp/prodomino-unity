@@ -45,7 +45,13 @@ namespace ProDomino.GameModes
         private GameManager gameManager => _gameManager
             ? _gameManager
             : (_gameManager = ServiceLocator.Instance?.GetService<GameManager>());
-        private AdManager adManager;
+        private AdManager _adManager;
+        // Resolved lazily: the main scene ships this GameObject inactive, so when a match is started from
+        // the dashboard Awake never runs and a cached field stays null, which silently skipped the whole
+        // To Lobby callback (selection grid never reopened, sidebar stayed blocked).
+        private AdManager adManager => _adManager
+            ? _adManager
+            : (_adManager = ServiceLocator.Instance?.GetService<AdManager>());
 
         private PostMatchResultController _postMatchResultController;
         private RectTransform _currentGameHolder;
@@ -82,7 +88,7 @@ namespace ProDomino.GameModes
         private void Awake()
         {
             _gameManager = ServiceLocator.Instance.GetService<GameManager>();
-            adManager = ServiceLocator.Instance.GetService<AdManager>();
+            _adManager = ServiceLocator.Instance.GetService<AdManager>();
         }
 
         private void OnDestroy()
@@ -320,27 +326,44 @@ namespace ProDomino.GameModes
 
             EndGame();
 
-            // Once the match is ended, show an interstitial ad before going to lobby
-            adManager?.ShowInterstitialAd(async () =>
+            ShowInterstitialThenReturnToLobby();
+        }
+
+        /// <summary>
+        /// Once the match is ended, shows an interstitial ad and then reopens the game mode selection.
+        /// The lobby restore must run even when no AdManager is available, otherwise the player is left
+        /// on an empty, non-interactive screen.
+        /// </summary>
+        private void ShowInterstitialThenReturnToLobby()
+        {
+            if (adManager)
+                adManager.ShowInterstitialAd(ReturnToLobbyAfterAd);
+            else
             {
-                // This will close inGameMenu;
-                _inGameMenu.SetActive(false);
-                _inGameMenuStuff.gameObject.SetActive(false);
-                FullScreenController?.SetFullscreen(false);
+                Debug.LogWarning($"[{nameof(MenuControllerGameMode)}] AdManager service not found, returning to lobby without interstitial.");
+                ReturnToLobbyAfterAd();
+            }
+        }
 
-                OpenMainMenu();
+        private async void ReturnToLobbyAfterAd()
+        {
+            // This will close inGameMenu;
+            _inGameMenu.SetActive(false);
+            _inGameMenuStuff.gameObject.SetActive(false);
+            FullScreenController?.SetFullscreen(false);
 
-                // Wait until the match is fully closed
-                await gameManager.HandleProcess_GameManagerProxy
-                    (uniTask: () => UniTask.WaitUntil(() => !IsInMatch).TimeoutWithoutException(TimeSpan.FromSeconds(3)),
-                    taskId: "Wait until match is completely end",
-                    showLoading: true,
-                    shouldIgnoreTryAgainProcess: true,
-                    shouldRetrySomeTimes: false);
+            OpenMainMenu();
 
-                // Validate the game mode full data in case something was changed during the match
-                _gameModeConfig.ValidateGameModeFullData();
-            });
+            // Wait until the match is fully closed
+            await gameManager.HandleProcess_GameManagerProxy
+                (uniTask: () => UniTask.WaitUntil(() => !IsInMatch).TimeoutWithoutException(TimeSpan.FromSeconds(3)),
+                taskId: "Wait until match is completely end",
+                showLoading: true,
+                shouldIgnoreTryAgainProcess: true,
+                shouldRetrySomeTimes: false);
+
+            // Validate the game mode full data in case something was changed during the match
+            _gameModeConfig.ValidateGameModeFullData();
         }
 
         /// <summary>
@@ -363,27 +386,7 @@ namespace ProDomino.GameModes
 
             EndGame();
 
-            // Once the match is ended, show an interstitial ad before going to lobby
-            adManager?.ShowInterstitialAd(async () =>
-            {
-                // This will close inGameMenu;
-                _inGameMenu.SetActive(false);
-                _inGameMenuStuff.gameObject.SetActive(false);
-                FullScreenController?.SetFullscreen(false);
-
-                OpenMainMenu();
-
-                // Wait until the match is fully closed
-                await gameManager.HandleProcess_GameManagerProxy
-                    (uniTask: () => UniTask.WaitUntil(() => !IsInMatch).TimeoutWithoutException(TimeSpan.FromSeconds(3)),
-                    taskId: "Wait until match is completely end",
-                    showLoading: true,
-                    shouldIgnoreTryAgainProcess: true,
-                    shouldRetrySomeTimes: false);
-
-                // Validate the game mode full data in case something was changed during the match
-                _gameModeConfig.ValidateGameModeFullData();
-            });
+            ShowInterstitialThenReturnToLobby();
         }
 
         /// <summary>

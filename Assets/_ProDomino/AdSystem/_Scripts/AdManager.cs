@@ -46,9 +46,14 @@ namespace ProDomino.AdSystem
         /// <param name="isConsideringIntervals">Indicates whether to enforce interval checks before showing the ad.</param>
         public void ShowInterstitialAd(Action onInterstitialClosed = null, bool isConsideringIntervals = false)
         {
+            // Callers continue their flow (e.g. To Lobby) inside the callback, so every path that skips
+            // the ad must still invoke it, otherwise the caller is left stuck on a half-torn-down screen.
+            gameManager = gameManager ? gameManager : ServiceLocator.Instance.GetService<GameManager>();
+
             if (!gameManager)
             {
                 Debug.LogWarning("[AdManager] GameManager service not found. Cannot show interstitial ad.");
+                onInterstitialClosed?.Invoke();
                 return;
             }
 
@@ -59,6 +64,7 @@ namespace ProDomino.AdSystem
                 if (ValidateIfSubscriptionIsActive())
                 {
                     Debug.Log("[AdManager] Player has an active subscription. Skipping interstitial ad.");
+                    onInterstitialClosed?.Invoke();
                     return;
                 }
 
@@ -66,6 +72,7 @@ namespace ProDomino.AdSystem
                 if ((DateTime.UtcNow - gameManager.PlayerAdData?.lastTimeAdDisabled)?.TotalSeconds <= (gameManager.GameBackendConfigData?.adsConfig?.secondsDisabled ?? 1200))
                 {
                     Debug.Log("[AdManager] Ads are temporarily disabled for the player. Skipping interstitial ad.");
+                    onInterstitialClosed?.Invoke();
                     return;
                 }
 
@@ -73,6 +80,7 @@ namespace ProDomino.AdSystem
                 if (isConsideringIntervals && (DateTime.UtcNow - gameManager.PlayerAdData?.lastTimeAdSaw)?.TotalSeconds <= (gameManager.GameBackendConfigData?.adsConfig?.secondsOmmited ?? 120))
                 {
                     Debug.Log("[AdManager] Not enough time has passed since the last ad was shown. Skipping interstitial ad.");
+                    onInterstitialClosed?.Invoke();
                     return;
                 }
 
