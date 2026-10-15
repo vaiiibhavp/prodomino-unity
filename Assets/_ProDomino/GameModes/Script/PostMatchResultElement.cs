@@ -241,6 +241,9 @@ namespace ProDomino.GameModes
 
             // Set the visibility of the element
             canvasGroup.SetActive(isVisible);
+
+            // Hidden rows must not keep their slot in the results table layout
+            gameObject.SetActive(isVisible);
         }
     }
 }

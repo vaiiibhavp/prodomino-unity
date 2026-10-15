@@ -254,12 +254,19 @@ namespace ProDomino.GameModes
             // Set the header text based on the game mode
             if (PlayerResultStateText)
             {
+                var gameModeName = gameMode.ToString().CapitalizeFirstLetter();
+
                 // Determine if the player is the winner
                 if (numberPlayers is not NumberPlayers.twoVsTwo)
                 {
-                    PlayerResultStateText.color = playerWinner == "Player" ? wonColor : playerWinner == "draw" ? drawColor : lostColor;
-                    PlayerResultStateText.text = playerWinner == "Player" ? "Winner" : playerWinner == "draw" ? "It’s a draw" : "You Lose";
-                } 
+                    // Only the subject ("You") is tinted, the rest keeps the label color (design: "You Won the Block Game!")
+                    PlayerResultStateText.text = playerWinner switch
+                    {
+                        "Player" => $"<color=#{ColorUtility.ToHtmlStringRGB(wonColor)}>You</color> Won the {gameModeName} Game!",
+                        "draw" => $"<color=#{ColorUtility.ToHtmlStringRGB(drawColor)}>It’s a draw</color>",
+                        _ => $"<color=#{ColorUtility.ToHtmlStringRGB(lostColor)}>You</color> Lost the {gameModeName} Game!",
+                    };
+                }
                 else
                 {
                     var orderAssignationLowerized = new List<string> { "player", "left", "top", "right" };
