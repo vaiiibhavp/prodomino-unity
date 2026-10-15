@@ -1431,10 +1431,14 @@ namespace ProDomino.GameModes
             Debug.Log("Data: " + dominoAI.GetBestMoveDraw);
             Debug.Log("Data: " + CurrentDisplayName);*/
 
-            // Register some AI events to be used
+            // Register some AI events to be used.
+            // Gameplay visibility is a no-op here: gameModeConfig is the Games panel's config, and its
+            // SetGameplayVisibility(true) (fired on every RestartGame) locks the sidebar and swaps the Games
+            // panel to its match view. A replay is not a match and lives inside the Review panel, whose own
+            // CanvasGroups (ReviewUI / ReplayTurnByTurn) already handle showing and hiding the board.
             extendedGameController.Initialize
                 (PostMatchResultController,
-                gameModeConfig.SetGameplayVisibility,
+                _ => { },
                 openMenuSettingsAction,
                 dominoAI.GetFirstTurnAvailableTilesDraw,
                 dominoAI.GetBestMoveDraw,
