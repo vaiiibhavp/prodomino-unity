@@ -47,7 +47,7 @@ namespace ProDomino.AccountSystem
                 Debug.LogError($"Missing reference: {nameof(oneVsOneLabel)}");
             
             if (oneVsThreeLabel)
-                oneVsThreeLabel.text = oneVsOneHigherTier.HasValue && oneVsOneHigherScore.HasValue
+                oneVsThreeLabel.text = oneVsThreeHigherTier.HasValue && oneVsThreeHigherScore.HasValue
                     ? $"{spacingFunc(oneVsThreeHigherTier.ToString())} ({oneVsThreeHigherScore})"
                     : "No Record";
             else

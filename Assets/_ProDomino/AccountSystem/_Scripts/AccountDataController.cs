@@ -276,10 +276,10 @@ namespace ProDomino.AccountSystem
                 totalGameTimeLabel.text = ToCompactString(timeSpan);
             }
             else
-                Debug.LogError($"Missing reference: {nameof(totalMatchPlayedLabel)}");
+                Debug.LogError($"Missing reference: {nameof(totalGameTimeLabel)}");
 
             var gameModes = Enum.GetValues(typeof(GameMode)).Cast<GameMode>()
-                ?.Where(x => x is not GameMode.none)
+                ?.Where(x => x is not GameMode.none and not GameMode.replay)
                 ?.ToArray();
 
             // Try to instantiate the lefting entries
@@ -328,7 +328,10 @@ namespace ProDomino.AccountSystem
                     }
 
                     // Try to get the records of the player to configure the entry
-                    var gameModeRecordData = recordsByGameMode?.ElementAtOrDefault(i).Value;
+                    // Look up by game mode: the dictionary order follows the records, not the enum
+                    var gameModeRecordData = recordsByGameMode is not null && recordsByGameMode.TryGetValue(currentGameMode, out var records)
+                        ? records
+                        : null;
                     var oneVsOneRecordData = gameModeRecordData?.FirstOrDefault(x => x.numberPlayers is Shared.NumberPlayers.oneVsOne);
                     var oneVsThreeRecordData = gameModeRecordData?.FirstOrDefault(x => x.numberPlayers is Shared.NumberPlayers.oneVsThree);
 
