@@ -3,11 +3,16 @@ using UnityEngine.UI;
 using TMPro; // Asegúrate de tener esta línea si usas TextMeshPro
 using UnityEngine.EventSystems;
 
-public class HoverTextColorChanger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class HoverTextColorChanger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
 {
     public TextMeshProUGUI textToChange;
     public Color normalColor = Color.white;
     public Color hoverColor = Color.black;
+    [Tooltip("Also apply hoverColor while this object is the EventSystem selection (e.g. the current dropdown option).")]
+    public bool applyOnSelect;
+
+    private bool isHovered;
+    private bool isSelected;
 
     void Start()
     {
@@ -20,17 +25,33 @@ public class HoverTextColorChanger : MonoBehaviour, IPointerEnterHandler, IPoint
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (textToChange != null)
-        {
-            textToChange.color = hoverColor;
-        }
+        isHovered = true;
+        Refresh();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        isHovered = false;
+        Refresh();
+    }
+
+    public void OnSelect(BaseEventData eventData)
+    {
+        isSelected = true;
+        if (applyOnSelect) Refresh();
+    }
+
+    public void OnDeselect(BaseEventData eventData)
+    {
+        isSelected = false;
+        if (applyOnSelect) Refresh();
+    }
+
+    private void Refresh()
+    {
         if (textToChange != null)
         {
-            textToChange.color = normalColor;
+            textToChange.color = isHovered || (applyOnSelect && isSelected) ? hoverColor : normalColor;
         }
     }
 }
