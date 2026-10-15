@@ -770,6 +770,26 @@ namespace ProDomino.Leaderboard
         }
 
         /// <summary>
+        /// Gets the best leaderboard score of the current client for the given game mode, across its 1v1 and 1v3
+        /// leaderboards.
+        /// </summary>
+        /// <param name="gameMode">The game mode to look up.</param>
+        /// <returns>The best score, or null when the client has no entry on any leaderboard of that mode.</returns>
+        public double? GetCurrentClientBestScore(GameMode gameMode)
+        {
+            if (currentClientLeaderboards is null or { Count: 0 })
+                return null;
+
+            var scores = new[] { NumberPlayers.oneVsOne, NumberPlayers.oneVsThree }
+                .Select(numberPlayers => currentClientLeaderboards.TryGetValue(GetLeaderboardID(gameMode, numberPlayers), out var entry) ? entry : null)
+                .Where(entry => entry is not null)
+                .Select(entry => entry.Score)
+                .ToArray();
+
+            return scores.Length > 0 ? scores.Max() : null;
+        }
+
+        /// <summary>
         /// Asynchronously caches profile icon sprites for players in the provided leaderboard data.
         /// </summary>
         /// <param name="playerLeaderboardDatas">An array of player leaderboard data containing profile icon information.</param>

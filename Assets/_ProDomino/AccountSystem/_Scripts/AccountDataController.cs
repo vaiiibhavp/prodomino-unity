@@ -39,11 +39,34 @@ namespace ProDomino.AccountSystem
         [SerializeField] private Button backButton;
         [SerializeField] private Button editProfileButton;
         [SerializeField] private Button logoutButton;
+        [SerializeField] private Button verifyEmailButton;
         [SerializeField] private CustomizationController customizationController;
+
+        [Header("Game Mode Tabs")]
+        [SerializeField] private GameModeTab[] gameModeTabs;
+        [SerializeField] private TMP_FontAsset selectedTabFont, unselectedTabFont;
+        [SerializeField] private Color selectedTabLabelColor = Color.white;
+        [SerializeField] private Color unselectedTabLabelColor = new(0.6901961f, 0.6901961f, 0.7058824f, 1f);
+        [SerializeField] private TMP_Text eloRatingLabel, winsLabel, placementLabel;
+
+        /// <summary>
+        /// A tab of the profile tab bar and the game mode whose stats it shows.
+        /// </summary>
+        [Serializable]
+        private class GameModeTab
+        {
+            public GameMode gameMode;
+            public Button button;
+            public Image background;
+            public TMP_Text label;
+        }
 
         private GameManager gameManager;
         private AuthManager authManager;
         private AchievementManager achievementManager;
+        private LeaderboardManager leaderboardManager;
+        private GameMode selectedGameMode = GameMode.block;
+        private PromptFadeController promptFadeController;
         private List<LeaderboardAccountEntry> leaderboardAccountEntries;
         private int currentPageIndex;
 
@@ -55,13 +78,91 @@ namespace ProDomino.AccountSystem
             gameManager = ServiceLocator.Instance.GetService<GameManager>();
             authManager = ServiceLocator.Instance.GetService<AuthManager>();
             achievementManager = ServiceLocator.Instance.GetService<AchievementManager>();
+            promptFadeController = ServiceLocator.Instance.GetService<PromptFadeController>();
+            leaderboardManager = ServiceLocator.Instance.GetService<LeaderboardManager>();
             leaderboardAccountEntries = new();
+
+            if (gameModeTabs is not null)
+                foreach (var tab in gameModeTabs)
+                {
+                    var gameMode = tab.gameMode;
+                    tab.button?.onClick.AddListener(() => SelectGameMode(gameMode));
+                }
 
             leftArrow?.onClick.AddListener(() => ChangePage(false));
             rightArrow?.onClick.AddListener(() => ChangePage(true));
             backButton?.onClick.AddListener(() => SetVisibility(false));
             editProfileButton?.onClick.AddListener(OpenCustomization);
             logoutButton?.onClick.AddListener(() => Logout().Forget());
+            verifyEmailButton?.onClick.AddListener(() => SendEmailVerification().Forget());
+
+            authManager?.HandleOnCheckEmailVerification(OnCheckEmailVerification);
+        }
+
+        private void OnDestroy()
+        {
+            authManager?.UnHandleOnCheckEmailVerification(OnCheckEmailVerification);
+        }
+
+        private void OnCheckEmailVerification(bool isVerified) => RefreshVerifyEmailButton();
+
+        /// <summary>
+        /// Shows the verify email button only for credential (email/password) accounts whose email is not verified
+        /// yet, the same rule the legacy options dropdown used.
+        /// </summary>
+        private void RefreshVerifyEmailButton()
+        {
+            if (!verifyEmailButton)
+                return;
+
+            bool shouldShow = authManager != null
+                && authManager.IsUserAuthenticatedWithCredentials
+                && !authManager.IsEmailVerified;
+
+            verifyEmailButton.interactable = shouldShow;
+            verifyEmailButton.gameObject.SetActive(shouldShow);
+        }
+
+        /// <summary>
+        /// Sends the verification email and reports the result through the prompt fade, mirroring the legacy options
+        /// dropdown flow.
+        /// </summary>
+        private async UniTaskVoid SendEmailVerification()
+        {
+            if (!authManager)
+            {
+                Debug.LogError($"Missing reference: {nameof(authManager)}");
+                return;
+            }
+
+            if (authManager.IsEmailVerified || authManager.IsUserAuthenticatedWithProvider)
+            {
+                Debug.LogWarning("The email is already verified or the user is authenticated with a provider.");
+                RefreshVerifyEmailButton();
+                return;
+            }
+
+            verifyEmailButton.interactable = false;
+
+            var promptMessage = "";
+            try
+            {
+                var emailWhoSentVerification = await authManager.SendEmailVerification();
+
+                promptMessage = !string.IsNullOrEmpty(emailWhoSentVerification)
+                    ? $"Email verification sent to <b>{emailWhoSentVerification}</b>"
+                    : "Failed to send email verification. Try again later.";
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Failed to send email verification: " + ex.Message);
+                promptMessage = "An error occurred while sending email verification. Please try again later.";
+            }
+            finally
+            {
+                promptFadeController?.Fade(promptMessage);
+                RefreshVerifyEmailButton();
+            }
         }
 
         /// <summary>
@@ -151,7 +252,9 @@ namespace ProDomino.AccountSystem
                 userIDLabel.text = authManager.UUID;
             else
                 Debug.LogError($"Missing reference: {nameof(userIDLabel)}");
-            
+
+            RefreshVerifyEmailButton();
+
             if (completedAchievementsLabel)
                 completedAchievementsLabel.text = (gameManager.AnalyticsData?.achievementsClaimedCount ?? 0).ToString();
             else
@@ -246,6 +349,9 @@ namespace ProDomino.AccountSystem
             // Show the elements correpondly to the current page
             ShowOnlyCurrentPage();
 
+            // Refresh the tab bar and the stats of the selected game mode
+            SelectGameMode(selectedGameMode);
+
             // Once everything is configure, turn on the visibility
             rootCanvasGroup.SetActive(true);
 
@@ -261,6 +367,48 @@ namespace ProDomino.AccountSystem
 
                 return string.Join(" ", parts);
             }
+        }
+
+        /// <summary>
+        /// Highlights the tab of the given game mode and shows its stats.
+        /// </summary>
+        /// <param name="gameMode">The game mode to show.</param>
+        private void SelectGameMode(GameMode gameMode)
+        {
+            selectedGameMode = gameMode;
+
+            if (gameModeTabs is not null)
+                foreach (var tab in gameModeTabs)
+                {
+                    var isSelected = tab.gameMode == gameMode;
+
+                    if (tab.background)
+                        tab.background.color = isSelected ? Color.white : Color.clear;
+
+                    if (tab.label)
+                    {
+                        var font = isSelected ? selectedTabFont : unselectedTabFont;
+                        if (font)
+                            tab.label.font = font;
+                        tab.label.color = isSelected ? selectedTabLabelColor : unselectedTabLabelColor;
+                    }
+                }
+
+            // Elo is tracked per game mode by its leaderboards
+            if (eloRatingLabel)
+            {
+                var bestScore = leaderboardManager?.GetCurrentClientBestScore(gameMode);
+                eloRatingLabel.text = bestScore.HasValue ? Mathf.RoundToInt((float)bestScore.Value).ToString() : "-";
+            }
+
+            // Wins and placements are only tracked across all game modes by the backend analytics
+            var analyticsData = gameManager?.AnalyticsData;
+
+            if (winsLabel)
+                winsLabel.text = (analyticsData?.competitiveVictoriesCount ?? 0).ToString();
+
+            if (placementLabel)
+                placementLabel.text = $"{analyticsData?.competitive2ndPositionCount ?? 0} / {analyticsData?.competitive3rdPositionCount ?? 0} / {analyticsData?.competitive4thPositionCount ?? 0}";
         }
 
         /// <summary>
