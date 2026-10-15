@@ -157,8 +157,15 @@ namespace ProDomino.ReplaySystem
 
         private void SelectedReplayData(int index)
         {
+            // Empty slot, nothing to review
+            if (index > ReplayManager.Instance.CurrentReplayList.Count)
+                return;
+
             indexMatchReplaySelected = index;
             replayTurnByTurn.titleNameLabel.text = ReplayManager.Instance.CurrentReplayList[indexMatchReplaySelected - 1].matchId;
+
+            // Clicking a saved game card opens the turn-by-turn review directly
+            OnClickOpenReviewTurnByTurn();
         }
 
         void INavigationPanel.SetActiveNavigationPanel(bool isActive)
