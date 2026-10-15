@@ -6592,6 +6592,7 @@ GameObject:
   - component: {fileID: 5786675601524112427}
   - component: {fileID: 1300077988055223290}
   - component: {fileID: 6993366167521408916}
+  - component: {fileID: 4815162342815162342}
   m_Layer: 0
   m_Name: Content_Challenges
   m_TagString: Untagged
@@ -6663,6 +6664,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!114 &4815162342815162342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931041031551425530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80ccdaf5c513490aa1a1e554e618ff5e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  rowTemplate: {fileID: 8408549042939445037}
+  dailyCategory: Daily Challenge
+  weeklyCategory: Weekly Challenge
+  bonusCategory: Bonus Challenge
+  refreshInterval: 0.5
 --- !u!1 &1935594916640443967
 GameObject:
   m_ObjectHideFlags: 0

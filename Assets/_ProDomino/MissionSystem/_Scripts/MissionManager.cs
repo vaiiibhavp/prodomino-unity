@@ -244,6 +244,12 @@ namespace ProDomino.MissionSystem
             await ValidateMissions();
         }
 
+        /// <summary>
+        /// Claims the reward of a completed daily, weekly or bonus mission. Used by UIs outside the
+        /// legacy <see cref="MissionUI"/> popup, such as the Achievements screen Challenges tab.
+        /// </summary>
+        public UniTask ClaimMissionReward(string missionID) => ClaimReward(missionID);
+
         private async UniTask ClaimReward(string missionID)
         {
             if (!IsAuthenticated)

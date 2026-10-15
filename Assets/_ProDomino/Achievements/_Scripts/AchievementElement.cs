@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using System;
 using System.Linq;
@@ -48,14 +49,32 @@ namespace ProDomino.AchievementSystem
         private Func<string, Sprite> getRewardIcon;
         private Func<string> getHightlightHex;
 
+        // Challenge (mission) mode, used by the Challenges tab rows
+        private AsyncActionHandler<string> claimMission;
+        private PlayerMissionData temporalPlayerMissionData;
+        private string missionCategory;
+
         internal PlayerAchievementData PlayerAchievementData { get; private set; }
         internal GameAchievementData GameAchievementData { get; private set; }
+        internal PlayerMissionData PlayerMissionData { get; private set; }
+        internal GameMissionData GameMissionData { get; private set; }
 
         internal bool IsAuthenticated => checkIfIsAuthenticated?.Invoke() ?? false;
         internal string HighlightHex => getHightlightHex?.Invoke() ?? "#FFD700"; // Default to golden yellow if not set
 
         private void Update()
         {
+            if (PlayerMissionData is not null)
+            {
+                // Mission progress changes in place (analytics), so refresh when the data differs from the local copy
+                if (PlayerMissionData == temporalPlayerMissionData)
+                    return;
+
+                temporalPlayerMissionData = (PlayerMissionData)PlayerMissionData.Clone();
+                ConfigureChallengeRow();
+                return;
+            }
+
             if (PlayerAchievementData is null)
                 return;
 
@@ -111,6 +130,101 @@ namespace ProDomino.AchievementSystem
                 temporalPlayerAchievementData = (PlayerAchievementData)PlayerAchievementData.Clone();
 
             ConfigurePopUp();
+        }
+
+        /// <summary>
+        /// Binds this row to a daily, weekly or bonus mission for the Challenges tab. The row then shows the mission
+        /// reward and progress, and its claim button claims the mission reward.
+        /// </summary>
+        /// <param name="playerMissionData">The player's progress on the mission.</param>
+        /// <param name="gameMissionData">The mission definition.</param>
+        /// <param name="category">Subtitle shown under the mission name (e.g. "Daily Challenge").</param>
+        /// <param name="checkIfIsAuthenticated">Function to determine if the user is authenticated.</param>
+        /// <param name="claimMission">Asynchronous handler that claims the reward of a mission by its id.</param>
+        internal void ConfigureChallenge
+            (PlayerMissionData playerMissionData,
+            GameMissionData gameMissionData,
+            string category,
+            Func<bool> checkIfIsAuthenticated,
+            AsyncActionHandler<string> claimMission)
+        {
+            // Subscribe once. Challenge rows never go through Initialize, so this is their only listener
+            if (this.claimMission is null && claimButton)
+                claimButton.onClick.AddListener(OnClaimReward);
+
+            this.checkIfIsAuthenticated = checkIfIsAuthenticated;
+            this.claimMission = claimMission;
+
+            PlayerMissionData = playerMissionData;
+            GameMissionData = gameMissionData;
+            missionCategory = category;
+            temporalPlayerMissionData = (PlayerMissionData)playerMissionData?.Clone();
+
+            ConfigureChallengeRow();
+        }
+
+        /// <summary>
+        /// Configures the row UI elements from the bound mission data.
+        /// </summary>
+        private void ConfigureChallengeRow()
+        {
+            if (PlayerMissionData is null || GameMissionData is null)
+                return;
+
+            var goalAmount = Math.Max(1, GameMissionData.goalAmount);
+            var isClaimed = PlayerMissionData.claimed;
+            var isCompleted = isClaimed || PlayerMissionData.completed || PlayerMissionData.progress >= goalAmount;
+            var notReadyYet = !isCompleted;
+            var readyToClaim = isCompleted && !isClaimed;
+
+            // 1. Column 1: Info (Name & category)
+            if (nameLabel)
+                nameLabel.text = GameMissionData.name.BoldNumbers();
+
+            if (descriptionLabel)
+                descriptionLabel.text = missionCategory ?? string.Empty;
+
+            if (achievementIcon && questBadgeSprite != null)
+            {
+                achievementIcon.sprite = questBadgeSprite;
+                achievementIcon.preserveAspect = true;
+            }
+
+            // 2. Column 2: Game. Missions are not bound to a mode, only concentrate tiles missions are concentrate specific
+            var isConcentrate = GameMissionData.analyticType is AnalyticType.ConcentrateMatchTiles
+                || (GameMissionData.name ?? string.Empty).IndexOf("Concentrate", StringComparison.OrdinalIgnoreCase) >= 0;
+            var gameSprite = isConcentrate && concentrateGameSprite != null ? concentrateGameSprite : blockGameSprite;
+
+            if (gameLabel != null) gameLabel.text = isConcentrate ? "Concentrate Game" : "Block Game";
+            if (gameIcon != null && gameSprite != null)
+            {
+                gameIcon.sprite = gameSprite;
+                gameIcon.color = Color.white;
+                gameIcon.preserveAspect = true;
+            }
+
+            // 3. Column 3: Reward. Keeps the coin icon authored on the row
+            if (pointsLabel != null)
+                pointsLabel.text = GameMissionData.rewardAmount.ToString();
+
+            // 4. Column 4: Progress Bar & Fraction
+            var curProgress = isCompleted ? goalAmount : (int)Math.Min(PlayerMissionData.progress, (uint)goalAmount);
+
+            if (progressFillRect != null)
+                progressFillRect.anchorMax = new Vector2(Mathf.Clamp01((float)curProgress / goalAmount), 1f);
+
+            if (requirementLabel != null)
+                requirementLabel.text = $"{curProgress}/{goalAmount}";
+
+            // 5. Column 5: Action Button States
+            if (completedContainer != null && completedContainer.activeSelf != isClaimed)
+                completedContainer.SetActive(isClaimed);
+
+            if (incompletedContainer != null && incompletedContainer.activeSelf != notReadyYet)
+                incompletedContainer.SetActive(notReadyYet);
+
+            if (claimButton != null && claimButton.gameObject.activeSelf != readyToClaim)
+                claimButton.gameObject.SetActive(readyToClaim);
         }
 
         /// <summary>
@@ -274,6 +388,12 @@ namespace ProDomino.AchievementSystem
                 return;
             }
 
+            if (PlayerMissionData is not null && claimMission is not null)
+            {
+                await ClaimChallengeReward();
+                return;
+            }
+
             if (PlayerAchievementData is not null && claimReward is not null)
             {
                 // Hide the achievement interface button if it exists
@@ -296,6 +416,29 @@ namespace ProDomino.AchievementSystem
             } 
             else
                 Debug.LogWarning("PlayerAchievementData is null or claimReward is not set. Cannot claim reward.");
+        }
+
+        /// <summary>
+        /// Claims the reward of the bound mission, keeping the claim button disabled while the request runs.
+        /// </summary>
+        private async UniTask ClaimChallengeReward()
+        {
+            var missionID = PlayerMissionData.id;
+
+            if (claimButton)
+                claimButton.interactable = false;
+
+            try
+            {
+                await claimMission.Invoke(missionID);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to claim reward for mission {missionID}: {ex.Message}");
+            }
+
+            if (claimButton)
+                claimButton.interactable = true;
         }
     }
 }
