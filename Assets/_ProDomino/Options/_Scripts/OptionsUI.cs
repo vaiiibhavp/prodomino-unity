@@ -83,9 +83,18 @@ namespace ProDomino.Options
             authManager?.HandleOnCheckEmailVerification(ValidateAndNotifyUnverifiedEmailAccounts);
 
             gameManager?.HandleOnSignOut(ResetShowEmailVerificationAlertProperty);
+            gameManager?.HandleOnSignOut(Configure);
 
             // Configure the UI based on the current authentication state
             Configure();
+        }
+
+        private void LateUpdate()
+        {
+            // onSignedIn can fire before IsAuthenticated turns true (sessionActive/init flags set later) and sign out can
+            // happen from other screens, so resync the header whenever the real auth state changes.
+            if (gameManager && lastLoggedIn != gameManager.IsAuthenticated)
+                Configure();
         }
 
         private void OnDestroy()
@@ -97,6 +106,7 @@ namespace ProDomino.Options
             authManager?.UnHandleOnCheckEmailVerification(ValidateAndNotifyUnverifiedEmailAccounts);
 
             gameManager?.UnHandleOnSignOut(ResetShowEmailVerificationAlertProperty);
+            gameManager?.UnHandleOnSignOut(Configure);
 
             analyticsManager?.Unsubscribe(UpdatePlayerIcon);
         }
@@ -104,8 +114,12 @@ namespace ProDomino.Options
         private void Configure(bool isSuccessfully) => Configure();
         private void ValidateAndNotifyUnverifiedEmailAccounts(bool isSuccessfully) => ValidateAndNotifyUnverifiedEmailAccounts();
 
+        private bool? lastLoggedIn;
+
         private void Configure()
         {
+            lastLoggedIn = gameManager.IsAuthenticated;
+
             SetButtonInteractivity(openFriendListPopUp);
             SetButtonInteractivity(openCustomizationPopUp);
             SetButtonInteractivity(openAccountPopUp);
