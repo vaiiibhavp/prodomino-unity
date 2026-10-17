@@ -4252,6 +4252,7 @@ RectTransform:
   m_Children:
   - {fileID: 7150006893382181873}
   - {fileID: 1596172828869890343}
+  - {fileID: 1111000000000000202}
   - {fileID: 1662107011018982733}
   - {fileID: 1719749812171587240}
   m_Father: {fileID: 1911441364687908040}
@@ -4326,20 +4327,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slides:
   - background: {fileID: 21300000, guid: d575d8f6ad474493a7daebdeb70fc22f, type: 3}
-    title: 
-    subtitle: 
+    icon: {fileID: 8295431040471653970, guid: 538e6bba715c50a4b87ec9436e817c62, type: 3}
+    title:
+    subtitle:
     showProgress: 0
     progress: 0
-    progressText: 
-    rewardText: 
+    progressText:
+    rewardText:
   - background: {fileID: 21300000, guid: e55d47591f7fdaf4f93e2d2e123819f8, type: 3}
-    title: 
+    icon: {fileID: -969025252416488473, guid: 92ebd3f68ce8a194f8073a19cae30d09, type: 3}
+    title:
     subtitle: 
     showProgress: 0
     progress: 0
     progressText: 
     rewardText: 
   backgroundImage: {fileID: 855224101602773867}
+  iconImage: {fileID: 1111000000000000204}
   titleLabel: {fileID: 1054051422475549000}
   subtitleLabel: {fileID: 2305487225341875517}
   paginationDots: {fileID: 1719749812171587240}
@@ -4367,14 +4371,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   carousel: {fileID: 1111000000000000101}
-  weeklyBackground: {fileID: -2189920981035698478, guid: a85d7ee06f5295944ba9e80d7a8c274d, type: 3}
-  dailyBackground: {fileID: 21300000, guid: b11f95b4df3c48f4ab0b467c91eeba17, type: 3}
-  weeklyTitle: 'Complete Your
-
-    Weekly Challenge!!'
+  dailyBackground: {fileID: 21300000, guid: a754d2f7c0c79884c98b1b4eb639238b, type: 3}
+  monthlyBackground: {fileID: 21300000, guid: 18ca4ebe131894c4a9e7cfabd34120ed, type: 3}
+  dailyIcon: {fileID: 5505018099236919732, guid: 7baefd99c4a7d354da12cb788df02d96, type: 3}
+  monthlyIcon: {fileID: 8295431040471653970, guid: 538e6bba715c50a4b87ec9436e817c62, type: 3}
   dailyTitle: 'Complete Your
 
     Daily Challenge!!'
+  monthlyTitle: 'Complete Your
+
+    Monthly Challenge!!'
   subtitleFormat: '{0} and earn big rewards!'
   refreshInterval: 0.5
 --- !u!1 &1797741242804572796
@@ -62326,3 +62332,78 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
+--- !u!1 &1111000000000000201
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1111000000000000202}
+  - component: {fileID: 1111000000000000203}
+  - component: {fileID: 1111000000000000204}
+  m_Layer: 0
+  m_Name: Icon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1111000000000000202
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000201}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4111791038926154860}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -245, y: 0}
+  m_SizeDelta: {x: 420, y: 280}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &1111000000000000203
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000201}
+  m_CullTransparentMesh: 1
+--- !u!114 &1111000000000000204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 8295431040471653970, guid: 538e6bba715c50a4b87ec9436e817c62, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1

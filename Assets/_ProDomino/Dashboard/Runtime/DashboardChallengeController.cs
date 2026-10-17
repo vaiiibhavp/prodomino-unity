@@ -6,11 +6,12 @@ using ProDomino.GameSystem;
 using ProDomino.MissionSystem;
 using Timba.Patterns;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProDomino.Dashboard
 {
     /// <summary>
-    /// Feeds the dashboard challenge banner with the signed in player's weekly and daily missions
+    /// Feeds the dashboard challenge banner with the signed in player's daily and monthly (weekly mission data) challenges
     /// from <see cref="MissionManager"/>. Each period shows its first unclaimed mission with a
     /// progress bar, count and reward. Signed out (or before missions load) the banner falls back
     /// to the slides authored in the prefab, without the progress row.
@@ -22,12 +23,16 @@ namespace ProDomino.Dashboard
         [SerializeField] private DashboardBannerCarousel carousel;
 
         [Header("Backgrounds")]
-        [SerializeField] private Sprite weeklyBackground;
         [SerializeField] private Sprite dailyBackground;
+        [SerializeField, FormerlySerializedAs("weeklyBackground")] private Sprite monthlyBackground;
+
+        [Header("Icons")]
+        [SerializeField] private Sprite dailyIcon;
+        [SerializeField, FormerlySerializedAs("weeklyIcon")] private Sprite monthlyIcon;
 
         [Header("Copy")]
-        [SerializeField] private string weeklyTitle = "Complete Your\nWeekly Challenge!!";
         [SerializeField] private string dailyTitle = "Complete Your\nDaily Challenge!!";
+        [SerializeField, FormerlySerializedAs("weeklyTitle")] private string monthlyTitle = "Complete Your\nMonthly Challenge!!";
         [SerializeField] private string subtitleFormat = "{0} and earn big rewards!";
 
         [Tooltip("Seconds between checks of the mission data. Mission progress changes in place, without an event.")]
@@ -98,11 +103,12 @@ namespace ProDomino.Dashboard
             if (!missionManager)
                 return;
 
-            TryAddSlide(missionManager.WeeklyMissionsDataCollection, weeklyBackground, weeklyTitle);
-            TryAddSlide(missionManager.DailyMissionsDataCollection, dailyBackground, dailyTitle);
+            // MissionManager has no monthly period, so the monthly banner tracks the long-period (weekly) missions
+            TryAddSlide(missionManager.DailyMissionsDataCollection, dailyBackground, dailyIcon, dailyTitle);
+            TryAddSlide(missionManager.WeeklyMissionsDataCollection, monthlyBackground, monthlyIcon, monthlyTitle);
         }
 
-        private void TryAddSlide(Dictionary<PlayerMissionData, GameMissionData> missions, Sprite background, string title)
+        private void TryAddSlide(Dictionary<PlayerMissionData, GameMissionData> missions, Sprite background, Sprite icon, string title)
         {
             var regularMissions = missions?.Where(x => x.Key is { isBonus: false } && x.Value is not null).ToList();
             if (regularMissions is null or { Count: 0 })
@@ -119,6 +125,7 @@ namespace ProDomino.Dashboard
             slides.Add(new DashboardBannerCarousel.Slide
             {
                 background = background,
+                icon = icon,
                 title = title,
                 subtitle = string.Format(subtitleFormat, (game.name ?? string.Empty).TrimEnd('.', '!', ' ')),
                 showProgress = true,

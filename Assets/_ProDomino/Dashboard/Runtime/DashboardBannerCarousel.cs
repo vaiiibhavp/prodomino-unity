@@ -19,6 +19,8 @@ namespace ProDomino.Dashboard
         public struct Slide
         {
             public Sprite background;
+            [Tooltip("Art shown on the right side of the banner. The icon hides when empty.")]
+            public Sprite icon;
             public string title;
             public string subtitle;
 
@@ -34,6 +36,7 @@ namespace ProDomino.Dashboard
 
         [Header("References")]
         [SerializeField] private Image backgroundImage;
+        [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private TMP_Text subtitleLabel;
         [Tooltip("Parent of the pagination dots. Each child is one dot.")]
@@ -197,6 +200,7 @@ namespace ProDomino.Dashboard
             }
 
             ApplyProgress(slide);
+            ApplyIcon(slide.icon);
 
             // A running fade towards this same sprite keeps going (live data refresh)
             if (isFading && backgroundImage && backgroundImage.sprite == slide.background)
@@ -232,6 +236,15 @@ namespace ProDomino.Dashboard
             var rect = sprite.rect;
             if (rect.height > 0f)
                 fitter.aspectRatio = rect.width / rect.height;
+        }
+
+        private void ApplyIcon(Sprite icon)
+        {
+            if (!iconImage)
+                return;
+
+            iconImage.sprite = icon;
+            iconImage.enabled = icon;
         }
 
         private void ApplyProgress(Slide slide)
@@ -272,12 +285,19 @@ namespace ProDomino.Dashboard
 
         private void SetBackgroundAlpha(float alpha)
         {
-            if (!backgroundImage)
-                return;
+            if (backgroundImage)
+                SetAlpha(backgroundImage, alpha);
 
-            var color = backgroundImage.color;
+            // The icon fades in together with its slide background
+            if (iconImage)
+                SetAlpha(iconImage, alpha);
+        }
+
+        private static void SetAlpha(Graphic graphic, float alpha)
+        {
+            var color = graphic.color;
             color.a = alpha;
-            backgroundImage.color = color;
+            graphic.color = color;
         }
 
         private void CacheDots()
