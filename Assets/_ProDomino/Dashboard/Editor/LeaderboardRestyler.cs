@@ -47,19 +47,6 @@ namespace ProDomino.Dashboard.Editor
             Debug.Log("[LeaderboardRestyler] SUCCESS: Leaderboard completely restyled to Figma design!");
         }
 
-        [InitializeOnLoadMethod]
-        private static void AutoRunOnce()
-        {
-            if (!SessionState.GetBool("PD_LeaderboardRestyler_Ran_v5", false))
-            {
-                SessionState.SetBool("PD_LeaderboardRestyler_Ran_v5", true);
-                EditorApplication.delayCall += () =>
-                {
-                    ApplyAndRender();
-                };
-            }
-        }
-
         private static void PrepareAssets()
         {
             fRegular = LoadFont("Montserrat-Regular");

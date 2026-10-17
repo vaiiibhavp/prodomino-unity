@@ -66,19 +66,6 @@ namespace ProDomino.Dashboard.Editor
             Debug.Log("[ShopRestyler] SUCCESS: Shop screen completely restyled to Figma design and hidden by default!");
         }
 
-        [InitializeOnLoadMethod]
-        private static void AutoRunOnce()
-        {
-            if (!SessionState.GetBool("PD_ShopRestyler_Ran_v4", false))
-            {
-                SessionState.SetBool("PD_ShopRestyler_Ran_v4", true);
-                EditorApplication.delayCall += () =>
-                {
-                    ApplyAndRender();
-                };
-            }
-        }
-
         private static void PrepareAssets()
         {
             fRegular = LoadFont("Montserrat-Regular");

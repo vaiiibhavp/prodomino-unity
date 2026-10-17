@@ -141,19 +141,6 @@ namespace ProDomino.Dashboard.Editor
             }
         }
 
-        [InitializeOnLoadMethod]
-        private static void AutoRunOnce()
-        {
-            if (!SessionState.GetBool("PD_AchievementsRestyler_Ran_v5", false))
-            {
-                SessionState.SetBool("PD_AchievementsRestyler_Ran_v5", true);
-                EditorApplication.delayCall += () =>
-                {
-                    ApplyAndRender();
-                };
-            }
-        }
-
         private static void PrepareAssets()
         {
             fRegular = LoadFont("Montserrat-Regular");
