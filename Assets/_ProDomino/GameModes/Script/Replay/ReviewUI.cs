@@ -46,11 +46,28 @@ namespace ProDomino.ReplaySystem
             }
 
             gameManager?.HandleOnSignIn(SetButtonsInteractivity);
+            gameManager?.HandleOnSignOut(OnSignOut);
         }
 
         private void OnDestroy()
         {
-            gameManager?.HandleOnSignOut(SetButtonsInteractivity);
+            gameManager?.UnHandleOnSignIn(SetButtonsInteractivity);
+            gameManager?.UnHandleOnSignOut(OnSignOut);
+        }
+
+        /// <summary>
+        /// Review stays reachable for guests, so on sign-out drop any open replay (it was built with
+        /// the previous user's cosmetics) and show the saved games list again.
+        /// </summary>
+        private void OnSignOut()
+        {
+            if (!panelInitialized)
+                return;
+
+            indexMatchReplaySelected = -1;
+            OpenConfirmDeletePanel(false);
+            TurnByTurnBackToSavedGames();
+            LoadReplaySlots();
         }
 
         private void Update()

@@ -788,12 +788,13 @@ namespace ProDomino.GameModes
         /// </summary>
         private void SetPlayerUI()
         {
-            // Wait until the GameManager is initialized. Guests are not blocked here: without a
-            // signed in profile the GameManager getters below already fall back to the default
-            // cosmetics, and returning early left the board and its frame with no sprite at all.
-            if (gameManager is null or { IsAlreadyInitialized: false })
+            // Guests are not blocked here: without a signed in profile the GameManager getters below
+            // fall back to the default cosmetics from the local sprite dictionary. IsAlreadyInitialized
+            // is not checked on purpose: sign-out resets the protected data flag, so gating on it left
+            // the board (e.g. in Review) as a plain white quad after logging out.
+            if (gameManager is null)
             {
-                Debug.LogWarning("GameManager is not initialized. Cannot set UI.");
+                Debug.LogWarning("GameManager is missing. Cannot set UI.");
                 return;
             }
 
