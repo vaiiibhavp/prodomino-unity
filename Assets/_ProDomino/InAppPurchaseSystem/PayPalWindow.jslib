@@ -19,6 +19,13 @@ mergeInto(LibraryManager.library, {
 
         if (!window._paypalWindow) {
             console.error("Failed to open PayPal window (popup blocked?)");
+
+            // Notify Unity so the purchase loading screen is released (deferred: avoid re-entering Unity during this call)
+            setTimeout(function () {
+                if (typeof unityInstance !== "undefined") {
+                    unityInstance.SendMessage(objectName, callback, "PAYPAL_BLOCKED");
+                }
+            }, 0);
             return;
         }
 

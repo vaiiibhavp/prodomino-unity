@@ -33,6 +33,7 @@ namespace ProDomino.InAppPurchaseSystem
 
         private string activeExternalOrderId;
         private bool isCurrentPurchasingDone;
+        private string currentPurchaseFailReason;
         private Coroutine pollingPurchasesCoroutine;
 
         private MonthlySubscriptionPopUp monthlySubscriptionPopUp;
@@ -68,6 +69,14 @@ namespace ProDomino.InAppPurchaseSystem
             if (!gameManager.IsAuthenticatedAndVerified)
             {
                 Debug.LogWarning("Player is not authenticated and verified. Cannot proceed with purchase.");
+                return;
+            }
+
+            // A previous PayPal payment is still being awaited in the background
+            if (pollingPurchasesCoroutine is not null && !isCurrentPurchasingDone)
+            {
+                Debug.LogWarning("A purchase is already waiting for the PayPal result. Cannot proceed with purchase.");
+                ShowPrompt($"You already have an active subscription pending process. Wait until is done");
                 return;
             }
 
@@ -195,9 +204,10 @@ namespace ProDomino.InAppPurchaseSystem
                 // Register the id of the receipt to purchase
                 activeExternalOrderId = tryToRequestPurchaseResponse.externalOrderId;
 
-                // Using the approval URL, open the purchase window
-#if UNITY_EDITOR
-                Application.OpenURL(tryToRequestPurchaseResponse.approvalUrl);
+                // Main flag to inform the purchase still active.
+                // Must be reset before the polling starts, otherwise a previous purchase's "done" state ends the new polling instantly.
+                isCurrentPurchasingDone = false;
+                currentPurchaseFailReason = null;
 
                 // If there is a polling coroutine, stop it
                 if (pollingPurchasesCoroutine is not null)
@@ -206,15 +216,18 @@ namespace ProDomino.InAppPurchaseSystem
                     pollingPurchasesCoroutine = null;
                 }
 
-                // Start a polling coroutine to check each few seconds if the purchases status is changed
-                pollingPurchasesCoroutine = StartCoroutine(PollingPurchases());
+                // Using the approval URL, open the purchase window
+#if UNITY_EDITOR
+                Application.OpenURL(tryToRequestPurchaseResponse.approvalUrl);
 #else
                 OpenPayPalWindow(tryToRequestPurchaseResponse.approvalUrl, gameObject.name, nameof(OnPayPalWindowClosed));
 #endif
-                // Main flag to inform the purchase still active
-                isCurrentPurchasingDone = false;
+                // Start a polling coroutine to check each few seconds if the purchases status is changed.
+                // Also runs on WebGL as a fallback: the PayPal return page can lose window.opener, so its postMessage may never arrive.
+                pollingPurchasesCoroutine = StartCoroutine(PollingPurchases());
 
-                // Show the loading screen until the process is done
+                // Wait for the PayPal result in the background. The loading screen only covers the purchase request above:
+                // the user completes (or abandons) the payment in an external window, which can take up to the pending TTL.
                 await gameManager.HandleProcess_GameManagerProxy
                     (uniTask: async () =>
                     {
@@ -224,6 +237,10 @@ namespace ProDomino.InAppPurchaseSystem
                             // Wait until the purchased status is changed to done
                             await UniTask.WaitUntil(() => isCurrentPurchasingDone)
                                 .Timeout(TimeSpan.FromMinutes(gameManager?.GameBackendConfigData?.purchaseConfig?.subscriptionPendingTtlMinutes ?? 180));
+
+                            // Cancelled, blocked or rejected purchases end the wait too, but must not report success
+                            if (currentPurchaseFailReason is not null)
+                                throw new Exception(currentPurchaseFailReason);
 
                             // Turn off the opUp when the subscriptions is done
                             MonthlySubscriptionPopUp?.SetActive(false);
@@ -255,7 +272,7 @@ namespace ProDomino.InAppPurchaseSystem
                         }
                     },
                     taskId: nameof(module.RequestPurchase),
-                    showLoading: true,
+                    showLoading: false,
                     shouldIgnoreTryAgainProcess: true,
                     shouldRetrySomeTimes: false,
                     isUsingTimeOut: false);
@@ -307,28 +324,49 @@ namespace ProDomino.InAppPurchaseSystem
 
         /// <summary>
         /// Polling use to refresh RTDB purchases data each 5 seconds<br></br>
-        /// Used only in editor
+        /// Ends when the active receipt leaves the Pending status or the purchase is flagged as done elsewhere
         /// </summary>
         private IEnumerator PollingPurchases()
         {
-            while (!isCurrentPurchasingDone) 
+            var isReceiptResolved = false;
+
+            try
             {
-                yield return new WaitForSeconds(5);
-                yield return gameManager.RefreshRealtimeDatabasePurchasesData();
-
-                // Search teh receipt with the same external order id that the active one
-                var currentPurchaseReceipt = PlayerPurchasesData.receipts
-                    ?.FirstOrDefault(x => x.externalOrderId == activeExternalOrderId);
-
-                // Check if the active purchase receipt still pending or not
-                if (currentPurchaseReceipt is not null and { status: not PurchaseStatus.Pending }) 
+                while (!isCurrentPurchasingDone)
                 {
-                    Debug.Log($"Recipt with external order id finish with a status of {currentPurchaseReceipt.status.ToString()}");
-                    break;
+                    yield return new WaitForSeconds(5);
+
+                    // Wait for the refresh to really finish (yielding the UniTask struct directly only skips one frame,
+                    // while the purchases data is still reset to null)
+                    // Silent refresh: a background poll must not flash the loading screen every few seconds
+                    yield return gameManager.RefreshRealtimeDatabasePurchasesData(showLoading: false).ToCoroutine();
+
+                    // Search the receipt with the same external order id that the active one
+                    var currentPurchaseReceipt = PlayerPurchasesData?.receipts
+                        ?.FirstOrDefault(x => x.externalOrderId == activeExternalOrderId);
+
+                    // Check if the active purchase receipt still pending or not
+                    if (currentPurchaseReceipt is not null and { status: not PurchaseStatus.Pending })
+                    {
+                        Debug.Log($"Recipt with external order id finish with a status of {currentPurchaseReceipt.status.ToString()}");
+
+                        if (currentPurchaseReceipt.status is not PurchaseStatus.Completed)
+                            currentPurchaseFailReason ??= $"Purchase finished with status {currentPurchaseReceipt.status}";
+
+                        isReceiptResolved = true;
+                        break;
+                    }
                 }
             }
+            finally
+            {
+                // The polling died before resolving the receipt (exception), so the purchase can't be reported as successful
+                if (!isReceiptResolved && !isCurrentPurchasingDone)
+                    currentPurchaseFailReason ??= "Purchase status polling stopped unexpectedly";
 
-            isCurrentPurchasingDone = true;
+                // Always release the waiting loading screen
+                isCurrentPurchasingDone = true;
+            }
         }
 
         /// <summary>
@@ -339,6 +377,12 @@ namespace ProDomino.InAppPurchaseSystem
         public void OnPayPalWindowClosed(string result)
         {
             Debug.Log($"PayPal window closed with result: {result}");
+
+            if (result is "PAYPAL_CANCEL" or "PAYPAL_BLOCKED")
+                currentPurchaseFailReason ??= result == "PAYPAL_CANCEL"
+                    ? "Purchase was cancelled"
+                    : "PayPal window could not be opened (popup blocked)";
+
             isCurrentPurchasingDone = true;
         }
     }

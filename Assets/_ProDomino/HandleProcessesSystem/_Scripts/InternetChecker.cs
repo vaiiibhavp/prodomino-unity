@@ -22,6 +22,14 @@ namespace ProDomino.HandleProcessesSystem
         // Stores the last known connection status
         private InternetStatus lastStatus;
 
+        // Consecutive failed pings required before reporting Lost (one slow ping is not an outage)
+        [SerializeField] private int failuresBeforeLost = 2;
+
+        // Delay before re-checking after a failed ping, so a real outage is still detected quickly
+        [SerializeField] private float failureRecheckInterval = 1f;
+
+        private int consecutiveFailures;
+
         /// <summary>
         /// Returns the last internet status detected.
         /// </summary>
@@ -94,7 +102,7 @@ namespace ProDomino.HandleProcessesSystem
             while (true)
             {
                 yield return StartCoroutine(CheckInternet());
-                yield return new WaitForSeconds(checkInterval);
+                yield return new WaitForSeconds(consecutiveFailures > 0 ? failureRecheckInterval : checkInterval);
             }
         }
 
@@ -119,7 +127,10 @@ namespace ProDomino.HandleProcessesSystem
                 if (www.result == UnityWebRequest.Result.Success && www.responseCode.ToString().StartsWith("20"))
                     isOnline = true;
 
-                var newStatus = isOnline ? InternetStatus.Online : InternetStatus.Lost;
+                consecutiveFailures = isOnline ? 0 : consecutiveFailures + 1;
+
+                var newStatus = isOnline ? InternetStatus.Online
+                    : consecutiveFailures >= failuresBeforeLost ? InternetStatus.Lost : lastStatus;
 
                 // Trigger event only if the state changed
                 if (newStatus != lastStatus)

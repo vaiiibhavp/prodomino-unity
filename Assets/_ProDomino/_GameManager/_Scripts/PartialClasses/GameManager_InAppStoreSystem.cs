@@ -23,7 +23,8 @@ namespace ProDomino.GameSystem
         /// <summary>
         /// Refreshes the Realtime Database player purchases data if the player belongs to a purchases.
         /// </summary>
-        public async UniTask RefreshRealtimeDatabasePurchasesData()
+        /// <param name="showLoading">False for background polling, so the loading screen isn't shown on every refresh</param>
+        public async UniTask RefreshRealtimeDatabasePurchasesData(bool showLoading = true)
         {
             // Check if already waiting for a previous request
             if (waitingDictionary.TryGetValue(Consts.CollectionKeys.GetPurchasesData, out var isWaitingGetPurchasesData) && isWaitingGetPurchasesData)
@@ -63,7 +64,7 @@ namespace ProDomino.GameSystem
                 await HandleProcess_GameManagerProxy
                      (uniTask: getDocumentWrapper,
                      taskId: nameof(getDocumentWrapper),
-                     showLoading: true);
+                     showLoading: showLoading);
 
                 // Force a reset to avoid waiting loops
                 waitingDictionary[Consts.CollectionKeys.GetPurchasesData] = false;
@@ -75,7 +76,7 @@ namespace ProDomino.GameSystem
                 var purchasesEncryptedData = await HandleProcess_GameManagerProxy
                     (uniTask: () => module.TryToGetPurchasesData().AsUniTask(),
                     taskId: nameof(module.TryToGetPurchasesData),
-                    showLoading: true);
+                    showLoading: showLoading);
 
                 var purchasesDataResponse = default(PurchaseDataResponse);
 

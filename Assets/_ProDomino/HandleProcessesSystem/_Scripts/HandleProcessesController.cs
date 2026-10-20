@@ -61,6 +61,12 @@ namespace ProDomino.HandleProcessesSystem
         private int currentAsyncTasks;
 
         /// <summary>
+        /// Counts active tasks that requested the loading screen (showLoading = true).
+        /// Background tasks must not keep the overlay visible.
+        /// </summary>
+        private int currentLoadingTasks;
+
+        /// <summary>
         /// List of process entries that failed after automatic retries.
         /// These entries contain non-generic wrappers so TryAgain can re-run them.
         /// </summary>
@@ -208,7 +214,7 @@ namespace ProDomino.HandleProcessesSystem
             string displayId = taskId ?? Guid.NewGuid().ToString();
             Debug.Log($"{class_key_id} {displayId} <color=green>Running...</color>");
 
-            IncrementPending();
+            IncrementPending(showLoading);
 
             if (showLoading)
                 DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen);
@@ -341,7 +347,7 @@ namespace ProDomino.HandleProcessesSystem
             finally
             {
                 // Final cleanup
-                DecrementPending();
+                DecrementPending(showLoading);
 
                 // Hide loading for this task only if it had requested loading.
                 DetermineHandleProcessErrorUI(RecalculateGlobalErrorState());
@@ -378,8 +384,29 @@ namespace ProDomino.HandleProcessesSystem
             return Math.Max(0.1, sec + jitter);
         }
 
-        private void IncrementPending() => Interlocked.Increment(ref currentAsyncTasks);
-        private void DecrementPending() => Interlocked.Decrement(ref currentAsyncTasks);
+        private void IncrementPending(bool showLoading)
+        {
+            Interlocked.Increment(ref currentAsyncTasks);
+            if (showLoading)
+                Interlocked.Increment(ref currentLoadingTasks);
+        }
+
+        private void DecrementPending(bool showLoading)
+        {
+            Interlocked.Decrement(ref currentAsyncTasks);
+            if (showLoading)
+                Interlocked.Decrement(ref currentLoadingTasks);
+        }
+
+        /// <summary>
+        /// True when a failed entry requested the loading screen. Failures of background
+        /// (showLoading = false) tasks are retried silently and never block the UI.
+        /// </summary>
+        private bool HasVisibleFailedEntries()
+        {
+            lock (failedEntries)
+                return failedEntries.Exists(e => e.ShowLoadingScreen);
+        }
 
         /// <summary>
         /// Replaces the Try Again popup: waits briefly, then re-runs the failed entries while the loading
@@ -392,7 +419,8 @@ namespace ProDomino.HandleProcessesSystem
                 return;
             isAutoRecoveryScheduled = true;
 
-            DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen, isForced: true);
+            if (HasVisibleFailedEntries())
+                DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen, isForced: true);
 
             await UniTask.Delay(TimeSpan.FromSeconds(autoRecoveryDelaySeconds));
             isAutoRecoveryScheduled = false;
@@ -434,8 +462,9 @@ namespace ProDomino.HandleProcessesSystem
                 return;
             }
 
-            // Show the loading screen until the task are finished
-            DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen, true);
+            // Show the loading screen until the task are finished (only for tasks that asked for it)
+            if (toRetry.Exists(e => e.ShowLoadingScreen))
+                DetermineHandleProcessErrorUI(HandleProcessType.LoadingScreen, true);
 
             Debug.Log($"{class_key_id} Re-attempting {toRetry.Count} failed entries via TryAgain...");
 
@@ -512,14 +541,12 @@ namespace ProDomino.HandleProcessesSystem
 
             // Step 2: Read external conditions
             bool internetDisconnected = CurrentHandleProcessErrorType == HandleProcessType.InternetDisconnected;
-            bool anyFailed;
-            lock (failedEntries)
-                anyFailed = failedEntries.Count > 0;
+            bool anyVisibleFailed = HasVisibleFailedEntries();
 
             // Errors no longer open the Try Again popup; they show the same "Loading..." overlay
-            // while ScheduleAutoRecovery re-runs the failed work.
-            bool isRecovering = CurrentHandleProcessErrorType == HandleProcessType.CloudCodeException || anyFailed || isAutoRecoveryScheduled;
-            bool loadingActive = (CurrentHandleProcessErrorType == HandleProcessType.LoadingScreen && currentAsyncTasks > 0) || isRecovering;
+            // while ScheduleAutoRecovery re-runs the failed work. Background task failures recover silently.
+            bool isRecovering = CurrentHandleProcessErrorType == HandleProcessType.CloudCodeException || anyVisibleFailed;
+            bool loadingActive = (CurrentHandleProcessErrorType == HandleProcessType.LoadingScreen && currentLoadingTasks > 0) || isRecovering;
 
             // Step 3: Apply UI state
             SetsVisibleRootCanvas(CurrentHandleProcessErrorType != HandleProcessType.None || isRecovering);
@@ -551,17 +578,13 @@ namespace ProDomino.HandleProcessesSystem
             var internetDisconnected = internetChecker != null &&
                                         internetChecker.LastInternetStatus != InternetStatus.Online;
 
-            var anyFailed = false;
-            lock (failedEntries)
-                anyFailed = failedEntries.Count > 0;
-
-            if (anyFailed)
+            if (HasVisibleFailedEntries())
                 return HandleProcessType.CloudCodeException;
 
             if (internetDisconnected)
                 return HandleProcessType.InternetDisconnected;
 
-            if (currentAsyncTasks > 0)
+            if (currentLoadingTasks > 0)
                 return HandleProcessType.LoadingScreen;
 
             return HandleProcessType.None;
