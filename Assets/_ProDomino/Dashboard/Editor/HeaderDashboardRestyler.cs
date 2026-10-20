@@ -215,7 +215,7 @@ namespace ProDomino.Dashboard.Editor
             var cg = GetOrAdd<CanvasGroup>(hidden);
             cg.alpha = 0f; cg.interactable = false; cg.blocksRaycasts = false;
 
-            foreach (var n in new[] { "GamesPlayedToday_Scalable", "UsersPlayingNow_Scalable", "MonthlySubscription_Button", "Missions_Scalable" })
+            foreach (var n in new[] { "GamesPlayedToday_Scalable", "UsersPlayingNow_Scalable", "Missions_Scalable" })
             {
                 var t = ucc.Find(n);
                 if (t != null) t.SetParent(hidden, false);
