@@ -27,7 +27,7 @@ namespace ProDomino.Authentication
         internal void HandleOnPressFacebookLoginButton(UnityAction onPressFacebookLoginButton)
         {
             if (facebookLoginButton)
-                facebookLoginButton.onClick.AddListener(onPressFacebookLoginButton);
+                facebookLoginButton.AddListenerOnce(onPressFacebookLoginButton);
         }
 
         /// <summary>

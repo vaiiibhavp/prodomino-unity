@@ -33,7 +33,8 @@ namespace ProDomino.Authentication
             OnStart_Credentials();
             SetActive(false);
 
-            signInDenyFeedback.text = string.Empty;
+            if (signInDenyFeedback)
+                signInDenyFeedback.text = string.Empty;
         }
 
         /// <summary>
@@ -104,5 +105,20 @@ namespace ProDomino.Authentication
         /// <param name="wasSignOutSuccessfully">Indicates whether the sign-out was successful.</param>
         internal void CallOnSignOutEvent(bool wasSignOutSuccessfully) => onSignOut?.Invoke(wasSignOutSuccessfully);
 
+    }
+
+    internal static class AuthUIButtonExtensions
+    {
+        /// <summary>
+        /// Adds the listener only once. The AuthManager OnAwake_* methods can be re-run by the HandleProcesses
+        /// auto-recovery, which would otherwise stack listeners and send one request per stacked listener on a click.
+        /// </summary>
+        /// <param name="button">The button to register the listener on.</param>
+        /// <param name="listener">The listener to add.</param>
+        internal static void AddListenerOnce(this Button button, UnityAction listener)
+        {
+            button.onClick.RemoveListener(listener);
+            button.onClick.AddListener(listener);
+        }
     }
 }

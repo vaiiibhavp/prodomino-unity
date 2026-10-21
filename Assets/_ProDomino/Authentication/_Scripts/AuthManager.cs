@@ -392,43 +392,51 @@ namespace ProDomino.Authentication
             }
 
             // If the user is authenticated, check if the user has logged in today to update the days streak
+            // Best effort: a network error here must not mark the whole cached sign-in as failed
             if (IsAuthenticated)
             {
-                Debug.Log("Checking if the player has logged in today to update the days streak");
-
-                var dataEncrypted = SerializeAndEncryptData(new()
+                try
                 {
-                    ["keys"] = new string[]
-                    {
-                        "Analytics"
-                    }
-                });
+                    Debug.Log("Checking if the player has logged in today to update the days streak");
 
-                var loadDataRequest = await module.LoadProtectedData(dataEncrypted);
-                if (loadDataRequest != null)
-                {
-                    var responseData = DeserializeAndDecryptData(loadDataRequest);
-                    if (responseData != null && responseData.Length > 0)
+                    var dataEncrypted = SerializeAndEncryptData(new()
                     {
-                        var analyticsData = responseData.FirstOrDefault(x => x.key is "Analytics")?.value?.ToObject<AnalyticsData>();
-                        if (analyticsData != null)
+                        ["keys"] = new string[]
                         {
-                            var currentDate = DateTime.UtcNow.Date;
+                            "Analytics"
+                        }
+                    });
 
-                            // Check if the last login date is today
-                            if (analyticsData.lastLoginDate.Date != currentDate)
-                            { 
-                                await module.UpdateDaysStreak();
-                                Debug.Log("The player has logged in today, updating the last login date");
-                            }
-                            else
-                                Debug.Log("The player has already logged in today");
+                    var loadDataRequest = await module.LoadProtectedData(dataEncrypted);
+                    if (loadDataRequest != null)
+                    {
+                        var responseData = DeserializeAndDecryptData(loadDataRequest);
+                        if (responseData != null && responseData.Length > 0)
+                        {
+                            var analyticsData = responseData.FirstOrDefault(x => x.key is "Analytics")?.value?.ToObject<AnalyticsData>();
+                            if (analyticsData != null)
+                            {
+                                var currentDate = DateTime.UtcNow.Date;
+
+                                // Check if the last login date is today
+                                if (analyticsData.lastLoginDate.Date != currentDate)
+                                { 
+                                    await module.UpdateDaysStreak();
+                                    Debug.Log("The player has logged in today, updating the last login date");
+                                }
+                                else
+                                    Debug.Log("The player has already logged in today");
+                            } else
+                                Debug.LogWarning("Could not find Analytics data");
                         } else
-                            Debug.LogWarning("Could not find Analytics data");
+                            Debug.LogWarning("Could not deserialize and decrypt the generic data");
                     } else
-                        Debug.LogWarning("Could not deserialize and decrypt the generic data");
-                } else
-                    Debug.LogWarning("Could not load the protected data");
+                        Debug.LogWarning("Could not load the protected data");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Could not update the days streak: {ex.Message}");
+                }
             }
 
             // Check if the player is signed in
@@ -453,6 +461,14 @@ namespace ProDomino.Authentication
             if (!IsAlreadyInitialized)
             {
                 Debug.LogWarning($"<b>[SignInAnonmously]</b> Couldn't be called. Unity services is not initialized");
+                return;
+            }
+
+            // SignInAnonymouslyAsync throws when a player is already signed in, which turned the fallback in Awake
+            // (after a cached sign-in that failed later on) into retries and an endless auto-recovery loading
+            if (AuthenticationService.Instance.IsSignedIn)
+            {
+                Debug.Log("<b>[SignInAnonmously]</b> The player is already signed in");
                 return;
             }
 
@@ -1300,6 +1316,9 @@ namespace ProDomino.Authentication
         {
             providerUsername = null;
             ProviderIcon = null;
+
+            // Otherwise the polling keeps running for the previous account and blocks a new one from starting it
+            StopCheckingForVerifiedEmail();
         }
 
         /// <summary>

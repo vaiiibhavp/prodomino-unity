@@ -28,6 +28,14 @@ namespace ProDomino.Authentication
         [SerializeField] private bool isEmailVerificated_onlyEditor;
         private Coroutine checkEmailVerificationCoroutine;
 
+        /// <summary>
+        /// True while a credentials sign-in or sign-up is running, to block a second concurrent request
+        /// </summary>
+        private bool isCredentialsRequestInProgress;
+
+        private const string noInternetFeedback = "<b>*</b> No internet connection. Please check your connection and try again.";
+        private const string tooManyRequestsFeedback = "<b>*</b> Too many attempts. Please wait a few minutes and try again.";
+
         private CredentialsDenyState
             _signUp_UsernameState,
             _signUp_EmailState,
@@ -70,10 +78,10 @@ namespace ProDomino.Authentication
 
             // Just in case, try to initialize Unity services if not already initialized
             await HandleProcess_AuthManagerProxy(TryToInitializeUnityServices, nameof(TryToInitializeUnityServices));
-            await HandleProcess_AuthManagerProxy
-                (uniTask: () => new UnityCredentialsValidator().Initialize().AsUniTask(), 
-                taskId: $"{nameof(UnityCredentialsValidator)}_{nameof(UnityCredentialsValidator.Initialize)}",
-                showLoading: true);
+
+            // UnityCredentialsValidator.Initialize waits for IsUGSAuthenticated, which only becomes true after Awake finishes
+            // awaiting this method. It is started from OnStart_Credentials instead, otherwise it always hits the timeout
+            // and the auto-recovery re-runs this method, registering the button listeners again.
         }
 
         /// <summary>
@@ -87,6 +95,13 @@ namespace ProDomino.Authentication
 
             OnSignUpCredentialsUpdate(string.Empty);
             OnSignInCredentialsUpdate(string.Empty);
+
+            // Start already waited for the UGS session, so the blocked domains can be fetched now
+            HandleProcess_AuthManagerProxy
+                (uniTask: () => new UnityCredentialsValidator().Initialize().AsUniTask(),
+                taskId: $"{nameof(UnityCredentialsValidator)}_{nameof(UnityCredentialsValidator.Initialize)}",
+                showLoading: true)
+                .Forget();
 
             // Check for once if the email is verified
             if (IsUserAuthenticatedWithCredentials)
@@ -141,13 +156,23 @@ namespace ProDomino.Authentication
                 return;
             }
 
+            // Ignore repeated presses while a request is still running
+            if (isCredentialsRequestInProgress)
+            {
+                Debug.LogWarning($"<b>[{nameof(TryToCreateAccount)}]</b> A credentials request is already in progress");
+                return;
+            }
+
             // Check if the username and password are valid, then try to create an account
-            if (IsValidToSignUp())
-                await HandleProcess_AuthManagerProxy
-                    (uniTask: () => CustomSignUp(AuthUI.UserName_SignUp, AuthUI.Email_SignUp, AuthUI.Password_SignUp), 
-                    taskId: nameof(CustomSignUp),
-                    showLoading: true,
-                    shouldIgnoreTryAgainProcess: true);
+            if (!IsValidToSignUp())
+                return;
+
+            isCredentialsRequestInProgress = true;
+            await HandleProcess_AuthManagerProxy
+                (uniTask: () => CustomSignUp(AuthUI.UserName_SignUp, AuthUI.Email_SignUp, AuthUI.Password_SignUp),
+                taskId: nameof(CustomSignUp),
+                showLoading: true,
+                shouldIgnoreTryAgainProcess: true);
 
             // Make an custom sign up that will sign-up the user in UGS as well as in Firebase
             async UniTask CustomSignUp(string username, string email, string password)
@@ -232,8 +257,11 @@ namespace ProDomino.Authentication
                     }
 
                     // UGS rate-limits sign-ups (HTTP 429); the backend wraps it as a generic sign-in failure
-                    if (exception.Message.Contains("TooManyRequests") || exception.Message.Contains("\"StatusCode\": 429"))
-                        message = "<b>*</b> Too many sign-up attempts. Please wait a few minutes and try again.";
+                    if (IsTooManyRequests(exception))
+                        message = tooManyRequestsFeedback;
+
+                    if (IsNetworkFailure(exception))
+                        message = noInternetFeedback;
 
                     Debug.LogWarning($"SignUp failed Cloud Code: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignUpWithCredentialsFailed(message);
@@ -252,12 +280,20 @@ namespace ProDomino.Authentication
                 catch (RequestFailedException exception)
                 {
                     Debug.LogWarning($"SignUp failed UGS SDK [{exception.ErrorCode}]: {exception.Message}");
-                    OnSignUpWithCredentialsFailed("<b>*</b> Your account was created but signing in failed. Please sign in again.");
+                    OnSignUpWithCredentialsFailed(IsNetworkFailure(exception)
+                        ? noInternetFeedback
+                        : "<b>*</b> Your account was created but signing in failed. Please sign in again.");
                 }
                 catch (Exception exception)
                 {
                     Debug.LogWarning($"SignUp failed Basic Exception: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignUpWithCredentialsFailed($"<b>*</b> Unknow exception.");
+                }
+                finally
+                {
+                    // A failure after the anonymous caller was signed out would leave the game without any UGS session
+                    await RestoreAnonymousSessionIfSignedOut();
+                    isCredentialsRequestInProgress = false;
                 }
             }
         }
@@ -275,14 +311,24 @@ namespace ProDomino.Authentication
                 return;
             }
 
+            // Ignore repeated presses while a request is still running
+            if (isCredentialsRequestInProgress)
+            {
+                Debug.LogWarning($"<b>[{nameof(TryToSignIn)}]</b> A credentials request is already in progress");
+                return;
+            }
+
             // Check if the username and password are valid, then try to sign in
-            if (IsValidToSignIn())
-                await HandleProcess_AuthManagerProxy
-                    (uniTask: () => CustomSignIn(AuthUI.Credentials_SignIn, AuthUI.Password_SignIn), 
-                    taskId: nameof(CustomSignIn),
-                    showLoading: true,
-                    shouldIgnoreTryAgainProcess: true,
-                    resultValidator: () => IsUserAuthenticatedWithCredentials);
+            if (!IsValidToSignIn())
+                return;
+
+            isCredentialsRequestInProgress = true;
+            await HandleProcess_AuthManagerProxy
+                (uniTask: () => CustomSignIn(AuthUI.Credentials_SignIn, AuthUI.Password_SignIn),
+                taskId: nameof(CustomSignIn),
+                showLoading: true,
+                shouldIgnoreTryAgainProcess: true,
+                resultValidator: () => IsUserAuthenticatedWithCredentials);
 
             // Make an custom sign up that will sign-up the user in UGS as well as in Firebase
             async UniTask CustomSignIn(string credentials, string password)
@@ -330,7 +376,9 @@ namespace ProDomino.Authentication
 
                     if (responseEncryptedData is null)
                     {
+                        // Returning silently here used to stop the loading with no feedback at all
                         Debug.LogWarning("Response encrypted data is null");
+                        OnSignInWithCredentialsFailed("<b>*</b> Sign-in failed. Please try again.");
                         return;
                     }
 
@@ -379,6 +427,12 @@ namespace ProDomino.Authentication
                             message = $"<b>*</b> {exceptionMessageExtracted}";
                     }
 
+                    if (IsTooManyRequests(exception))
+                        message = tooManyRequestsFeedback;
+
+                    if (IsNetworkFailure(exception))
+                        message = noInternetFeedback;
+
                     Debug.LogWarning($"SignIn failed Cloud Code: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignInWithCredentialsFailed(message);
                 }
@@ -396,15 +450,61 @@ namespace ProDomino.Authentication
                 catch (RequestFailedException exception)
                 {
                     Debug.LogWarning($"SignIn failed UGS SDK [{exception.ErrorCode}]: {exception.Message}");
-                    OnSignInWithCredentialsFailed("<b>*</b> Invalid credentials. Please check your credentials");
+                    OnSignInWithCredentialsFailed(IsNetworkFailure(exception)
+                        ? noInternetFeedback
+                        : "<b>*</b> Invalid credentials. Please check your credentials");
                 }
                 catch (Exception exception)
-                { 
+                {
                     Debug.LogWarning($"SignIn failed Basic Exception: {JsonConvert.SerializeObject(exception.Message, Formatting.Indented)}");
                     OnSignInWithCredentialsFailed($"<b>*</b> Unknow exception.");
                 }
+                finally
+                {
+                    // The anonymous caller is deleted before the local sign-in, so a failure there leaves no UGS session at all
+                    await RestoreAnonymousSessionIfSignedOut();
+                    isCredentialsRequestInProgress = false;
+                }
             }
         }
+
+        /// <summary>
+        /// Signs in anonymously again when a failed credentials flow left the player without any UGS session.
+        /// </summary>
+        private async UniTask RestoreAnonymousSessionIfSignedOut()
+        {
+            if (!IsAlreadyInitialized || IsUGSAuthenticated)
+                return;
+
+            try
+            {
+                await SignInAnonmously();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not restore the anonymous session: {exception.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the exception was caused by a missing or timed-out connection rather than by the credentials.
+        /// </summary>
+        /// <param name="exception">The exception thrown by Cloud Code or the UGS SDK.</param>
+        /// <returns>True if the request failed at transport level; otherwise, false.</returns>
+        private static bool IsNetworkFailure(Exception exception) => exception switch
+        {
+            CloudCodeException cloudCodeException => cloudCodeException.Reason is CloudCodeExceptionReason.NoInternetConnection,
+            RequestFailedException requestFailedException => requestFailedException.ErrorCode is CommonErrorCodes.TransportError or CommonErrorCodes.Timeout,
+            _ => false
+        };
+
+        /// <summary>
+        /// Determines whether the Cloud Code exception wraps a UGS rate limit (HTTP 429).
+        /// </summary>
+        /// <param name="exception">The exception thrown by Cloud Code.</param>
+        /// <returns>True if the request was rate limited; otherwise, false.</returns>
+        private static bool IsTooManyRequests(CloudCodeException exception) =>
+            exception.Message.Contains("TooManyRequests") || exception.Message.Contains("\"StatusCode\": 429");
 
         /// <summary>
         /// Attempts to initiate the password recovery process by sending a recovery email if Unity services are
@@ -453,9 +553,10 @@ namespace ProDomino.Authentication
             // If the response is positive, call the success event; otherwise, the failed one
             if (wasSentSuccessfully)
             {
+                // Notify before closing: closing the UI clears the recovery field the success prompt reads the email from
+                OnRecoveryPasswordSuccessfully();
                 SetActiveAuthUI(false);
 
-                OnRecoveryPasswordSuccessfully();
                 Debug.Log("<color=cyan><b>Password Recovery</b> was started successfully</color>");
             } 
             
@@ -590,6 +691,19 @@ namespace ProDomino.Authentication
                 // Once the checking is done, call the event one last time to inform the UI
                 AuthUI?.CallOnCheckEmailVerificationEvent(IsEmailVerified);
             }
+        }
+
+        /// <summary>
+        /// Stops the email verification polling, so it doesn't keep running for a signed-out account.
+        /// </summary>
+        private void StopCheckingForVerifiedEmail()
+        {
+            if (checkEmailVerificationCoroutine == null)
+                return;
+
+            StopCoroutine(checkEmailVerificationCoroutine);
+            checkEmailVerificationCoroutine = null;
+            Debug.Log("[Credentials] Stopped checking for email verification (signed out)");
         }
 
         /// <summary>
@@ -837,6 +951,7 @@ namespace ProDomino.Authentication
         private async void OnFirebaseSignInWithCredentialsFailed(string response)
         {
             await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
+            await RestoreAnonymousSessionIfSignedOut();
             OnSignInWithCredentialsFailed($"<b>*</b> {response}");
         }
 
@@ -849,6 +964,7 @@ namespace ProDomino.Authentication
         {
             Debug.LogWarning($"Sign-Up local Firebase sign-in failed: {response}");
             await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
+            await RestoreAnonymousSessionIfSignedOut();
             OnSignUpWithCredentialsFailed("<b>*</b> Your account was created but signing in failed. Please sign in again.");
         }
 

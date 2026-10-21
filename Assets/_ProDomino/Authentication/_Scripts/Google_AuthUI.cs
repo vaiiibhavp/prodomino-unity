@@ -27,7 +27,7 @@ namespace ProDomino.Authentication
         internal void HandleOnPressGoogleLoginButton(UnityAction onPressGoogleLoginButton)
         {
             if (GoogleLoginButton)
-                GoogleLoginButton.onClick.AddListener(onPressGoogleLoginButton);
+                GoogleLoginButton.AddListenerOnce(onPressGoogleLoginButton);
         }
 
         /// <summary>

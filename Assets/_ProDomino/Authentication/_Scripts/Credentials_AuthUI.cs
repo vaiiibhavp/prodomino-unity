@@ -59,7 +59,8 @@ namespace ProDomino.Authentication
         [SerializeField, Space(5)] private UnityEvent<bool> onRecoveryPassword;
 
         private PromptFadeController promptFadeController;
-        private Func<bool> 
+        private bool isRecoveryEmailValid;
+        private Func<bool>
             isValidToSignIn, 
             isValidToSignUp;
 
@@ -91,6 +92,7 @@ namespace ProDomino.Authentication
             rememberMeToggle?.onValueChanged.AddListener(OnPressRememberMeToggle);
             signInCredentialsInputField?.onValueChanged.AddListener(OnSignInValueChanged);
             signInPasswordInputField?.onValueChanged.AddListener(OnSignInValueChanged);
+            recoveryEmailInputField?.onValueChanged.AddListener(OnRecoveryEmailValueChanged);
 
             openSignUpScreenButton?.onClick.AddListener(OnOpenSignUpScreen);
             openRecoveryScreenButton?.onClick.AddListener(OnOpenRecoveryScreen);
@@ -161,7 +163,7 @@ namespace ProDomino.Authentication
                 signUpButton.interactable = isValidToSignUp?.Invoke() ?? false;
 
             if (recoveryButton)
-                recoveryButton.interactable = !string.IsNullOrEmpty(recoveryEmailInputField?.text);
+                recoveryButton.interactable = isRecoveryEmailValid;
         }
 
         /// <summary>
@@ -176,6 +178,7 @@ namespace ProDomino.Authentication
 
             signInCredentialsInputField?.onValueChanged.RemoveListener(OnSignInValueChanged);
             signInPasswordInputField?.onValueChanged.RemoveListener(OnSignInValueChanged);
+            recoveryEmailInputField?.onValueChanged.RemoveListener(OnRecoveryEmailValueChanged);
         }
 
         /// <summary>
@@ -517,7 +520,7 @@ namespace ProDomino.Authentication
         internal void HandleOnPressCredentialsSignInButton(UnityAction onPressCredentialsSignInButton)
         {
             if (signInButton)
-                signInButton.onClick.AddListener(onPressCredentialsSignInButton);
+                signInButton.AddListenerOnce(onPressCredentialsSignInButton);
         }
 
         /// <summary>
@@ -539,7 +542,7 @@ namespace ProDomino.Authentication
         internal void HandleOnPressCredentialsSignUpButton(UnityAction onPressCredentialsSignUpButton)
         {
             if (signUpButton)
-                signUpButton.onClick.AddListener(onPressCredentialsSignUpButton);
+                signUpButton.AddListenerOnce(onPressCredentialsSignUpButton);
         }
 
         /// <summary>
@@ -561,7 +564,7 @@ namespace ProDomino.Authentication
         internal void HandleOnPressCredentialsRecoveryButton(UnityAction onPressCredentialsRecoveryButton)
         {
             if (recoveryButton)
-                recoveryButton.onClick.AddListener(onPressCredentialsRecoveryButton);
+                recoveryButton.AddListenerOnce(onPressCredentialsRecoveryButton);
         }
 
         /// <summary>
@@ -727,6 +730,16 @@ namespace ProDomino.Authentication
         {
             onSignInCredentialsValueChanged?.Invoke(newValue);
             transform.RefreshLayoutGroupsImmediateAndRecursive();
+        }
+
+        /// <summary>
+        /// Caches whether the recovery email has a valid format, so the recovery button is not enabled for any non-empty text.
+        /// </summary>
+        /// <param name="newValue">The updated recovery email.</param>
+        private void OnRecoveryEmailValueChanged(string newValue)
+        {
+            var recoveryEmailState = default(CredentialsDenyState);
+            isRecoveryEmailValid = IsValidEmail(newValue ?? string.Empty, ref recoveryEmailState);
         }
 
         /// <summary>
