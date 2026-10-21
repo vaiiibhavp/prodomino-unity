@@ -167,8 +167,6 @@ namespace ProDomino.Shop
                 ?.Where(x => x.Key.isAvailable || x.Value is not null)
                 ?.ToDictionary(x => x.Key, x => x.Value);
 
-            CosmeticDataCollection = RemoveDuplicateSprites(CosmeticDataCollection);
-
             CosmeticDataCollection ??= new();
             if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Tiles))
             {
@@ -180,11 +178,7 @@ namespace ProDomino.Shop
                     ("tiles_black", "Black Tile", CosmeticRarity.Legendary, 105),
                     ("tiles_rainbow", "Special Tile", CosmeticRarity.Special, 250),
                 };
-                foreach (var t in tileCosmetics)
-                {
-                    var gcd = new GameCosmeticData(t.id, t.name, t.name, CosmeticType.Tiles, t.rarity, true, t.price, Currency.Token);
-                    CosmeticDataCollection[gcd] = t.price == 0 ? new PlayerCosmeticData(t.id, 0, 0, Currency.None, CosmeticPurchaseMethod.Default) : null;
-                }
+                AddFallbackCosmetics(CosmeticType.Tiles, tileCosmetics);
             }
 
             if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Boards))
@@ -197,12 +191,58 @@ namespace ProDomino.Shop
                     ("table_orange", "Amber Board", CosmeticRarity.Legendary, 120),
                     ("table_pink", "Ruby Board", CosmeticRarity.Mythic, 200),
                 };
-                foreach (var b in boardCosmetics)
-                {
-                    var gcd = new GameCosmeticData(b.id, b.name, b.name, CosmeticType.Boards, b.rarity, true, b.price, Currency.Token);
-                    CosmeticDataCollection[gcd] = b.price == 0 ? new PlayerCosmeticData(b.id, 0, 0, Currency.None, CosmeticPurchaseMethod.Default) : null;
-                }
+                AddFallbackCosmetics(CosmeticType.Boards, boardCosmetics);
             }
+
+            // Frames tab (CosmeticType.Fund): board felt skins
+            if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Fund))
+            {
+                var fundCosmetics = new (string id, string name, CosmeticRarity rarity, uint price)[]
+                {
+                    ("Fund_Default", "Classic Frame", CosmeticRarity.Common, 0),
+                    ("tablefund_grey", "Slate Frame", CosmeticRarity.Common, 10),
+                    ("tablefund_orange", "Amber Frame", CosmeticRarity.Rare, 30),
+                    ("tablefund_red", "Ruby Frame", CosmeticRarity.Legendary, 90),
+                    ("tablefund_darkgrey", "Graphite Frame", CosmeticRarity.Mythic, 150),
+                    ("tablefund_lightblue", "Sky Frame", CosmeticRarity.Special, 220),
+                };
+                AddFallbackCosmetics(CosmeticType.Fund, fundCosmetics);
+            }
+
+            // Icons: every profile picture in the sprite dictionary, the two default avatars owned for free
+            if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Icons))
+            {
+                var iconCosmetics = dictionaryService?.GetSpriteDataCollection(CosmeticType.Icons.ToString())
+                    ?.Keys
+                    .Select(id =>
+                    {
+                        var isDefault = id.StartsWith($"{CosmeticType.Icons}_{Consts.CollectionKeys.Default}");
+                        var gender = id.Contains("_f_") || id.EndsWith("Female") ? "Female" : "Male";
+                        var name = isDefault ? $"Default {gender} Avatar" : $"{gender} Avatar {id.Substring(id.LastIndexOf('_') + 1)}";
+                        return (id, name, CosmeticRarity.Common, isDefault ? 0u : 10u);
+                    })
+                    .ToArray();
+
+                if (iconCosmetics is not null and { Length: > 0 })
+                    AddFallbackCosmetics(CosmeticType.Icons, iconCosmetics);
+            }
+
+            // Badges are earned through achievements, never bought: completed ones show as owned, the rest stay locked
+            if (!CosmeticDataCollection.Keys.Any(x => x.type == CosmeticType.Badges) && gameManager.GameAchievementData is not null)
+                foreach (var gameAchievementData in gameManager.GameAchievementData)
+                {
+                    if (gameAchievementData is null or { achievementType: AchievementType.None })
+                        continue;
+
+                    var id = gameAchievementData.achievement.ToString();
+                    var playerAchievementData = gameManager.PlayerAchievementDatas?.FirstOrDefault(x => x.achievement == gameAchievementData.achievement);
+                    var gcd = new GameCosmeticData(id, gameAchievementData.name ?? id, gameAchievementData.description, CosmeticType.Badges, CosmeticRarity.Common, false, 0, Currency.None);
+                    CosmeticDataCollection[gcd] = playerAchievementData is { completed: true }
+                        ? new PlayerCosmeticData(id, playerAchievementData.completedTime ?? 0, 0, Currency.None, CosmeticPurchaseMethod.Achievement)
+                        : null;
+                }
+
+            CosmeticDataCollection = RemoveDuplicateSprites(CosmeticDataCollection);
 
             var currenciesCollection = gameManager.PlayerCurrencyCollection;
             if (currenciesCollection is not null && currenciesCollection.TryGetValue(Currency.Token, out var tokens))
@@ -226,6 +266,19 @@ namespace ProDomino.Shop
 
         }
         /// <summary>
+        /// Adds locally defined cosmetics for a category the backend returned nothing for, so its tab is not empty.
+        /// Free entries are granted as defaults.
+        /// </summary>
+        private void AddFallbackCosmetics(CosmeticType type, (string id, string name, CosmeticRarity rarity, uint price)[] cosmetics)
+        {
+            foreach (var c in cosmetics)
+            {
+                var gcd = new GameCosmeticData(c.id, c.name, c.name, type, c.rarity, true, c.price, Currency.Token);
+                CosmeticDataCollection[gcd] = c.price == 0 ? new PlayerCosmeticData(c.id, 0, 0, Currency.None, CosmeticPurchaseMethod.Default) : null;
+            }
+        }
+
+        /// <summary>
         /// Several cosmetics resolve to the same sprite, most notably the "*_Default" entry, which points at
         /// the same asset as the first real skin of its category. The shop listed both, so the same artwork
         /// appeared twice in a tab. Keep one entry per sprite: the one the player already owns, otherwise the
@@ -237,7 +290,8 @@ namespace ProDomino.Shop
                 return collection;
 
             return collection
-                .GroupBy(entry => (entry.Key.type, sprite: dictionaryService.GetSprite(entry.Key.type.ToString(), entry.Key.id)))
+                // Badges are one per achievement, never duplicates, even when two achievements share an icon
+                .GroupBy(entry => (entry.Key.type, sprite: entry.Key.type is CosmeticType.Badges ? null : dictionaryService.GetSprite(entry.Key.type.ToString(), entry.Key.id)))
                 .SelectMany(group => group.Key.sprite == null
                     ? group
                     : group

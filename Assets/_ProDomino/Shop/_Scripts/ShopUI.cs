@@ -45,6 +45,10 @@ namespace ProDomino.Shop
         private AsyncFuncHandler<PurchaseCosmeticResponse, string> purchaseShopElement;
         private ShopElement lastRegisteredShopElement;
         private uint? lastRegisteredPlayerTokenAmount;
+        private bool isPurchaseInProgress;
+
+        private const string NotEnoughTokensText = "Not enough tokens";
+        private const string NotAvailableText = "Earn via achievements";
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.Shop;
         internal CosmeticRarity CurrentRarityFilter { get; private set; } = CosmeticRarity.None;
@@ -139,15 +143,37 @@ namespace ProDomino.Shop
 
                 // Check if the current selected shop element can be purchased.
                 // First check if the cosmetic is already purchased or not, then check if the player has enough tokens to purchase it
-                CouldPurchaseCosmetic = CurrentSelectedShopElement.PlayerCosmeticData is null 
+                CouldPurchaseCosmetic = CurrentSelectedShopElement.PlayerCosmeticData is null
+                    && CurrentSelectedShopElement.GameCosmeticData.isAvailable
                     && CurrentSelectedShopElement.GameCosmeticData.price <= PlayerTokenCurrencyAmount;
 
-                // Update the purchase button state based on the current selected shop element and player token amount
+                // Update the purchase button state based on the current selected shop element and player token amount.
+                // A purchase in flight keeps the button locked, so a token refresh can't re-enable it mid request
                 if (confirmPurchaseButton)
-                    confirmPurchaseButton.SetButtonInteractable(CouldPurchaseCosmetic);
+                    confirmPurchaseButton.SetButtonInteractable(CouldPurchaseCosmetic && !isPurchaseInProgress);
                 else
                     Debug.LogWarning("Confirm purchase button is not assigned in the ShopUI");
+
+                UpdateConfirmPurchaseButtonText();
             }
+        }
+
+        /// <summary>
+        /// Shows the price on the confirm button, or a "Not enough tokens" message when the player can't afford the selected cosmetic.
+        /// </summary>
+        private void UpdateConfirmPurchaseButtonText()
+        {
+            if (!confirmPurchaseButtonText || !CurrentSelectedShopElement || CurrentSelectedShopElement.GameCosmeticData is null)
+                return;
+
+            var price = CurrentSelectedShopElement.GameCosmeticData.price;
+            var cannotAfford = !CurrentSelectedShopElement.IsAlreadyPurchased && price > PlayerTokenCurrencyAmount;
+
+            // Badges are earned through achievements, so a locked one has nothing to buy
+            if (!CurrentSelectedShopElement.IsAlreadyPurchased && !CurrentSelectedShopElement.GameCosmeticData.isAvailable)
+                confirmPurchaseButtonText.text = NotAvailableText;
+            else
+                confirmPurchaseButtonText.text = cannotAfford ? NotEnoughTokensText : $"Purchase {price}";
         }
 
         /// <summary>
@@ -168,6 +194,12 @@ namespace ProDomino.Shop
             this.getPlayerTokenAmount = getPlayerTokenAmount;
             this.purchaseShopElement = purchaseShopElement ?? throw new ArgumentNullException(nameof(purchaseShopElement));
         }
+
+        /// <summary>
+        /// Sprite dictionary holding the artwork of a cosmetic type. Badges reuse the achievement icons.
+        /// </summary>
+        internal static string GetSpriteDictionaryName(CosmeticType type) =>
+            type is CosmeticType.Badges ? Consts.CollectionKeys.Achievements : type.ToString();
 
         internal void SelectFirstCategory()
         {
@@ -205,11 +237,27 @@ namespace ProDomino.Shop
 
             var leftingInstancesCount = shopGameCosmeticCollection.Count - shopElements.Count;
             if (leftingInstancesCount > 0)
+            {
+                // Without a prefab, clone one of the cards already placed under the elements parent.
+                // Instantiate(null) used to throw here and abort the whole configuration, leaving every tab empty
+                var shopElementTemplate = shopElementPrefab
+                    ? shopElementPrefab
+                    : shopElements.FirstOrDefault(x => x && !x.IsAlreadyPurchased) ?? shopElements.FirstOrDefault(x => x);
+                if (!shopElementTemplate)
+                {
+                    Debug.LogError("Shop element prefab is not assigned and there is no element to clone in the ShopUI");
+                    return;
+                }
+
+                if (!shopElementPrefab)
+                    Debug.LogWarning("Shop element prefab is not assigned in the ShopUI; cloning an existing element instead");
+
                 for (int i = 0; i < leftingInstancesCount; i++)
                 {
-                    var shopElement = Instantiate(shopElementPrefab, elementsParent);
+                    var shopElement = Instantiate(shopElementTemplate, elementsParent);
                     shopElements.Add(shopElement);
                 }
+            }
 
             // If there are more shop elements than game cosmetic data, remove the excess elements
             else if (leftingInstancesCount < 0)
@@ -232,7 +280,7 @@ namespace ProDomino.Shop
                     }
 
                     // Try to get the sprite from the dictionary service using the cosmetic ID
-                    var searchedCosmeticSprite = dictionaryService.GetSprite(gameCosmeticData.type.ToString(), gameCosmeticData.id);
+                    var searchedCosmeticSprite = dictionaryService.GetSprite(GetSpriteDictionaryName(gameCosmeticData.type), gameCosmeticData.id);
 
                     // Initialize the shop element with the cosmetic data and sprite
                     shopElement.Initialize
@@ -279,8 +327,7 @@ namespace ProDomino.Shop
                 Debug.LogWarning("Confirm purchase preview name label is not assigned in the ShopUI");
 
             // Update confirm button text
-            if (confirmPurchaseButtonText)
-                confirmPurchaseButtonText.text = $"Purchase {CurrentSelectedShopElement.GameCosmeticData.price}";
+            UpdateConfirmPurchaseButtonText();
 
             // Set the confirm purchase pop-up preview description
             if (confirmPurchasePreviewDescriptionLabel)
@@ -364,7 +411,9 @@ namespace ProDomino.Shop
             {
                 var canPurchase = element.GameCosmeticData is not null
                     && !element.IsAlreadyPurchased
-                    && element.GameCosmeticData.price <= PlayerTokenCurrencyAmount;
+                    && element.GameCosmeticData.isAvailable
+                    && element.GameCosmeticData.price <= PlayerTokenCurrencyAmount
+                    && !isPurchaseInProgress;
                 confirmPurchaseButton.SetButtonInteractable(canPurchase, ignoreDefault: true);
 #if UNITY_EDITOR
                 Debug.Log($"[ShopUI] OpenConfirmationPopUp: canPurchase={canPurchase}, price={element.GameCosmeticData?.price}, tokens={PlayerTokenCurrencyAmount}, alreadyPurchased={element.IsAlreadyPurchased}, buttonInteractable={confirmPurchaseButton.Button?.interactable}");
@@ -548,7 +597,27 @@ namespace ProDomino.Shop
                 return;
             }
 
-            var purchaseResponse = await CurrentSelectedShopElement.Purchase();
+            // Ignore repeated clicks while a purchase request is in flight, so the cosmetic is charged only once
+            if (isPurchaseInProgress)
+                return;
+
+            isPurchaseInProgress = true;
+            if (confirmPurchaseButton)
+                confirmPurchaseButton.SetButtonInteractable(false, ignoreDefault: true);
+
+            PurchaseCosmeticResponse purchaseResponse;
+            try
+            {
+                purchaseResponse = await CurrentSelectedShopElement.Purchase();
+            }
+            finally
+            {
+                isPurchaseInProgress = false;
+
+                // Force Update_ShopUI to re-evaluate the button for the popup's current state (still open after a failed purchase)
+                lastRegisteredPlayerTokenAmount = null;
+            }
+
             if (purchaseResponse is null)
             {
                 Debug.LogWarning("Purchase response is null. Cannot proceed with purchase.");
