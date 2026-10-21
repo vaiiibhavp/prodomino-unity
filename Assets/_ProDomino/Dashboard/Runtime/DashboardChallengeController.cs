@@ -38,6 +38,10 @@ namespace ProDomino.Dashboard
         [Tooltip("Seconds between checks of the mission data. Mission progress changes in place, without an event.")]
         [SerializeField] private float refreshInterval = 0.5f;
 
+        // Signatures of the authored (non-challenge) slides: all of them signed in, only the first one signed out
+        private const string DefaultSignature = "<default>";
+        private const string SignedOutSignature = "<signed-out>";
+
         private readonly List<DashboardBannerCarousel.Slide> slides = new();
         private GameManager gameManager;
         private MissionManager missionManager;
@@ -79,11 +83,12 @@ namespace ProDomino.Dashboard
             if (signature == lastSignature)
                 return;
 
-            var wasShowingChallenges = !string.IsNullOrEmpty(lastSignature);
+            var wasShowingChallenges = lastSignature is not null and not DefaultSignature and not SignedOutSignature;
             lastSignature = signature;
 
+            // Signed out the banner only shows its first authored slide (the "Register Now" call to action)
             if (slides.Count is 0)
-                carousel.ResetSlides();
+                carousel.ResetSlides(maxSlides: signature is SignedOutSignature ? 1 : 0);
             else if (wasShowingChallenges)
                 carousel.UpdateSlides(slides);
             else
@@ -138,7 +143,7 @@ namespace ProDomino.Dashboard
         private string BuildSignature()
         {
             if (slides.Count is 0)
-                return null;
+                return gameManager is { IsAuthenticated: true } ? DefaultSignature : SignedOutSignature;
 
             var builder = new StringBuilder();
             foreach (var slide in slides)

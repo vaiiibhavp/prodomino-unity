@@ -167,10 +167,11 @@ namespace ProDomino.Dashboard
         /// <summary>
         /// Restores the slides authored in the prefab.
         /// </summary>
-        public void ResetSlides()
+        /// <param name="maxSlides">Limits how many of the authored slides are shown. 0 or less shows all of them.</param>
+        public void ResetSlides(int maxSlides = 0)
         {
             CacheDefaults();
-            SetSlides(defaultSlides);
+            SetSlides(maxSlides > 0 ? defaultSlides.GetRange(0, Mathf.Min(maxSlides, defaultSlides.Count)) : defaultSlides);
         }
 
         private void ApplySlide(int index, bool isImmediate)

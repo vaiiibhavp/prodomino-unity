@@ -101,6 +101,21 @@ namespace ProDomino.AchievementSystem
 
             // Refresh the achievement data when the game starts
             await RefreshData(false);
+
+            // Start only runs once: a later sign-in (or another account) kept showing the first session's data
+            gameManager.HandleOnSignIn(OnSignIn);
+        }
+
+        /// <summary>
+        /// Reloads the achievements of the account that just signed in.
+        /// </summary>
+        private async void OnSignIn()
+        {
+            // onSignedIn can fire before IsAuthenticated turns true
+            if (await UniTask.WaitUntil(() => IsAuthenticated, cancellationToken: destroyCancellationToken).SuppressCancellationThrow())
+                return;
+
+            await RefreshData();
         }
 
 
@@ -110,6 +125,8 @@ namespace ProDomino.AchievementSystem
             // Unsubscribe from the analytics manager to avoid memory leaks
             if (analyticsManager)
                 analyticsManager.Unsubscribe(UpdatePlayerAchievementData);
+
+            gameManager?.UnHandleOnSignIn(OnSignIn);
         }
 
         // Try to update progress when the application quits

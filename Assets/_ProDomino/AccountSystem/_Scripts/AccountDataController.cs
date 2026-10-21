@@ -255,13 +255,19 @@ namespace ProDomino.AccountSystem
 
             RefreshVerifyEmailButton();
 
+            // Same rule as the Achievements screen summary cards, so both screens always show the same numbers
+            var completedAchievements = achievementManager.PlayerAchievementsDataCollection
+                ?.Where(x => x.Key is not null && x.Value is { completed: true })
+                .ToList();
+
             if (completedAchievementsLabel)
-                completedAchievementsLabel.text = (gameManager.AnalyticsData?.achievementsClaimedCount ?? 0).ToString();
+                completedAchievementsLabel.text = Mathf.Max(completedAchievements?.Count ?? 0, gameManager.AnalyticsData?.achievementsClaimedCount ?? 0).ToString();
             else
                 Debug.LogError($"Missing reference: {nameof(completedAchievementsLabel)}");
 
+            // Only the points of completed achievements are earned; summing every achievement showed the total available instead
             if (achievementPointsLabel)
-                achievementPointsLabel.text = (achievementManager.PlayerAchievementsDataCollection?.Keys?.Sum(x => x.points) ?? 0).ToString();
+                achievementPointsLabel.text = (completedAchievements?.Sum(x => x.Key.points) ?? 0).ToString();
             else
                 Debug.LogError($"Missing reference: {nameof(achievementPointsLabel)}");
 

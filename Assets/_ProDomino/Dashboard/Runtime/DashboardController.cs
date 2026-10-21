@@ -225,13 +225,13 @@ namespace ProDomino.Dashboard
             Launch(GameMode.french, GameType.competitive, NumberPlayers.oneVsOne, null, null, "Competitive · 1 vs 1");
         }
 
-        // Logged out the button reads "Register Now": open the same auth pop-up as the Options login button.
+        // Logged out the button reads "Register Now": open the auth pop-up straight on the Create User screen.
         private void OnPressPlayAndWin()
         {
             if (gameManager is not { IsAuthenticated: true })
             {
                 if (authManager)
-                    authManager.SetActiveAuthUI(true);
+                    authManager.OpenSignUpAuthUI();
                 return;
             }
 

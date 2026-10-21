@@ -918,6 +918,9 @@ namespace ProDomino.Authentication
         { 
             AuthUI?.CallOnCredentialsSignInEvent(true);
 
+            // Store the typed username/email before closing the UI clears the fields
+            AuthUI?.SaveRememberedCredentials();
+
             // Turn off the sign-up UI
             SetActiveAuthUI(false);
 
@@ -937,9 +940,24 @@ namespace ProDomino.Authentication
         /// </summary>
         /// <param name="response">The error message received from the failed sign-in attempt.</param>
         private void OnSignInWithCredentialsFailed(string response)
-        { 
+        {
             AuthUI?.CallOnCredentialsSignInEvent(false);
-            AuthUI?.SetFeedbackDirectly(true, $"<color=red>{response}</color>");
+
+            // A wrong password comes back as a generic "Invalid credentials" error that was shown under the
+            // username/email field, so players read it as a wrong email. Show it under the password field instead.
+            var isWrongPassword = response?.Contains("Invalid credentials", StringComparison.OrdinalIgnoreCase) ?? false;
+            if (isWrongPassword)
+            {
+                var isUsername = !AuthUI.Credentials_SignIn.Contains("@");
+                response = isUsername
+                    ? "<b>*</b> Incorrect password. Please try again."
+                    : "<b>*</b> Incorrect email or password. Please try again.";
+
+                // Clear any stale message under the credentials field
+                AuthUI?.SetFeedbackDirectly(true, string.Empty);
+            }
+
+            AuthUI?.SetFeedbackDirectly(true, $"<color=red>{response}</color>", isPasswordFeedback: isWrongPassword);
             Debug.LogError($"Sign-In failed: {response}");
         }
 

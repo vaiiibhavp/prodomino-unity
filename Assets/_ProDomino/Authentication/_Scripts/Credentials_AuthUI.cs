@@ -58,6 +58,8 @@ namespace ProDomino.Authentication
         [SerializeField, Space(5)] private UnityEvent<bool> onCheckEmailVerification;
         [SerializeField, Space(5)] private UnityEvent<bool> onRecoveryPassword;
 
+        private const string RememberedCredentialsKey = "RememberedCredentials";
+
         private PromptFadeController promptFadeController;
         private bool isRecoveryEmailValid;
         private Func<bool>
@@ -113,6 +115,8 @@ namespace ProDomino.Authentication
         private void OnPressRememberMeToggle(bool isRemember)
         {
             PlayerPrefs.SetInt("IsRememberPassword", isRemember ? 1 : 0);
+            if (!isRemember)
+                PlayerPrefs.DeleteKey(RememberedCredentialsKey);
             PlayerPrefs.Save();
 
             // Set the toggle state without notifying listeners to avoid recursive calls
@@ -225,7 +229,33 @@ namespace ProDomino.Authentication
 
                 // Keep the user's stored preference instead of clearing it every time the UI opens
                 RestoreRememberMeToggle();
+                RestoreRememberedCredentials();
             }
+        }
+
+        /// <summary>
+        /// Stores (or forgets) the sign-in username/email according to the 'Remember Me' preference. The password is never stored.
+        /// </summary>
+        internal void SaveRememberedCredentials()
+        {
+            if (PlayerPrefs.GetInt("IsRememberPassword", 0) is 1 && !string.IsNullOrEmpty(Credentials_SignIn))
+                PlayerPrefs.SetString(RememberedCredentialsKey, Credentials_SignIn);
+            else
+                PlayerPrefs.DeleteKey(RememberedCredentialsKey);
+
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Prefills the sign-in username/email field with the remembered credentials, if any.
+        /// </summary>
+        private void RestoreRememberedCredentials()
+        {
+            if (!signInCredentialsInputField || !string.IsNullOrEmpty(signInCredentialsInputField.text))
+                return;
+
+            if (PlayerPrefs.GetInt("IsRememberPassword", 0) is 1)
+                signInCredentialsInputField.text = PlayerPrefs.GetString(RememberedCredentialsKey, string.Empty);
         }
 
         /// <summary>
@@ -475,10 +505,11 @@ namespace ProDomino.Authentication
         /// </summary>
         /// <param name="isSignIn">Indicates whether the feedback is for sign-in (true) or sign-up (false).</param>
         /// <param name="feedback">The feedback message to display.</param>
-        internal void SetFeedbackDirectly(bool isSignIn, string feedback)
+        /// <param name="isPasswordFeedback">True to show the sign-in feedback under the password field instead of the credentials field.</param>
+        internal void SetFeedbackDirectly(bool isSignIn, string feedback, bool isPasswordFeedback = false)
         {
             var feedbackLabel = isSignIn
-                ? signInDenyFeedback
+                ? (isPasswordFeedback && signInPasswordDenyFeedback ? signInPasswordDenyFeedback : signInDenyFeedback)
                 : signUpUsernameDenyFeedback;
 
             if (feedbackLabel)

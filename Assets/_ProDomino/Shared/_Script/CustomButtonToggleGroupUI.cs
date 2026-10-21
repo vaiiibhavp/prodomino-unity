@@ -160,6 +160,18 @@ public class CustomButtonToggleGroupUI : MonoBehaviour
     }
 
     /// <summary>
+    /// Retrieves a button by its unique identifier without logging when it is missing.
+    /// </summary>
+    public bool TryGetButtonUI(string buttonID, out CustomButtonUI button)
+    {
+        if (buttons.Count == 0)
+            Configure();
+
+        button = buttons.FirstOrDefault(b => b && string.Equals(b.CustomButtonID, buttonID, StringComparison.OrdinalIgnoreCase));
+        return button != null;
+    }
+
+    /// <summary>
     /// Returns the first available button in the group.
     /// </summary>
     public CustomButtonUI GetFirstButtonUI()

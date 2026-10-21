@@ -146,6 +146,8 @@ namespace ProDomino.AchievementSystem
             var achievementDataCollection = AchievementDataCollection;
             if (achievementDataCollection is null or { Count: 0 })
             {
+                // Hide the rows authored in the prefab, otherwise their placeholder (static) data shows until the real data loads
+                achievementInstances?.ForEach(instance => { if (instance) instance.gameObject.SetActive(false); });
                 Debug.LogWarning("Achievement data collection is null or empty.");
                 return;
             }

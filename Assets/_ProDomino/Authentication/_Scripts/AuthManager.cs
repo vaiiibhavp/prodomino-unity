@@ -251,6 +251,11 @@ namespace ProDomino.Authentication
         public void SetActiveAuthUI(bool isActive) => AuthUI?.SetActive(isActive);
 
         /// <summary>
+        /// Opens the authentication UI on the Sign-Up (create account) screen.
+        /// </summary>
+        public void OpenSignUpAuthUI() => AuthUI?.OpenSignUp();
+
+        /// <summary>
         /// Attempts to authorize tracking on iOS, prompting the user if necessary.
         /// </summary>
         /// <returns>True if tracking authorization was denied on iOS; otherwise, false on iOS or true on other platforms.</returns>
@@ -340,6 +345,19 @@ namespace ProDomino.Authentication
                     throw;
                 else
                     return false;
+            }
+
+            // A session-token sign-in may not carry the username yet, which made the 'Remember me' check below never match
+            if (IsUGSAuthenticated && string.IsNullOrEmpty(AuthenticationService.Instance.PlayerInfo?.Username))
+            {
+                try
+                {
+                    await AuthenticationService.Instance.GetPlayerInfoAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"<b>[{nameof(TryToSignInCachedUserAsync)}]</b> Could not refresh the player info: {ex.Message}");
+                }
             }
 
             // Remove the session token if the user is not remembering the password

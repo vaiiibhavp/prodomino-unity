@@ -59,11 +59,21 @@ namespace ProDomino.Authentication
         /// <param name="isActive"></param>
         internal void SetActive(bool isActive)
         {
+            // To avoid preserving input data when the Auth UI is closed.
+            // Cleared first so opening the Sign-In screen can still prefill the remembered credentials.
+            ClearCredentialsInputFields();
+
             SetActive(authUICanvasGroup, isActive);
             SetActive_Credentials(isActive);
+        }
 
-            // To avoid preserving input data when the Auth UI is closed
-            ClearCredentialsInputFields();
+        /// <summary>
+        /// Opens the Auth UI directly on the Sign-Up (create account) screen.
+        /// </summary>
+        internal void OpenSignUp()
+        {
+            SetActive(true);
+            SetActive_Credentials(AuthUIActiveState.SignUp);
         }
 
         /// <summary>
