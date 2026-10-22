@@ -369,6 +369,18 @@ mergeInto(LibraryManager.library, {
         }
     },
 
+    WaitForAuthStateReady: function (objectName, callback) {
+        var parsedObjectName = UTF8ToString(objectName);
+        var parsedCallback = UTF8ToString(callback);
+
+        // The persisted user is restored asynchronously after page load, so currentUser reads null until the first
+        // auth state event. Module is used instead of unityInstance, which is only assigned once the loader resolves.
+        var unsubscribe = firebaseAuth.onAuthStateChanged(function (user) {
+            unsubscribe();
+            Module.SendMessage(parsedObjectName, parsedCallback, user ? "1" : "0");
+        });
+    },
+
     IsEmailVerified: function () {
         var user = firebaseAuth.currentUser;
         

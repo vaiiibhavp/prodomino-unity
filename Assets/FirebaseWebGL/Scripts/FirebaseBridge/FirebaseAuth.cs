@@ -109,6 +109,15 @@ namespace FirebaseWebGL.Scripts.FirebaseBridge
         public static extern int IsEmailVerified();
 
         /// <summary>
+        /// Waits for Firebase to restore the persisted user after page load<br></br><br></br>
+        /// The callback receives "1" if a user was restored, otherwise "0"
+        /// </summary>
+        /// <param name="objectName"> Name of the gameobject to call the callback of </param>
+        /// <param name="callback"> Name of the method to call once the auth state is known. Method must have signature: void Method(string output) </param>
+        [DllImport("__Internal")]
+        public static extern void WaitForAuthStateReady(string objectName, string callback);
+
+        /// <summary>
         /// Retrieves the user's Firebase profile information (displayName, photoURL, email, provider info)
         /// using a valid Firebase ID Token. 
         ///

@@ -416,7 +416,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             gameTypeSelector.DeselectAll(true);
 
         // --- 9. Update Play Button interactivity ---
-        SetPlayButtonInteractivityAsync(!IsMatchMaking && !IsInMatch, default, auxText: "Play");
+        SetPlayButtonInteractivityAsync(!IsMatchMaking && !IsInMatch, default, auxText: "Play Now");
 
         // --- 10. Handle Party Mode ---
         if (PartyController.IsRelay)
@@ -644,13 +644,13 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     }
 
     /// <summary>
-    /// Enables the play button and updates its text to "Play" after canceling a search.
+    /// Enables the play button and updates its text to "Play Now" after canceling a search.
     /// </summary>
     public void EnablePlayButtonAfterCancelingSearch()
     {
         Debug.Log("OnNetworkDespawn: Enable Button 02");
 
-        playGameModeButton.SetMainText("Play");
+        playGameModeButton.SetMainText("Play Now");
         SetPlayButtonInteractivity(true);
     }
 

@@ -61,6 +61,7 @@ namespace ProDomino.Authentication
         private const string RememberedCredentialsKey = "RememberedCredentials";
 
         private PromptFadeController promptFadeController;
+        private ProDomino.Shared.AuthResultPopUp resultPopUp;
         private bool isRecoveryEmailValid;
         private Func<bool>
             isValidToSignIn, 
@@ -147,12 +148,34 @@ namespace ProDomino.Authentication
         /// <param name="wasMailSentSuccessfully">True if the recovery email was sent successfully; otherwise, false.</param>
         private void OnSentRecoveryPasswordMail(bool wasMailSentSuccessfully)
         {
+            // Success: confirmation dialog (Figma success card), its button brings the player back to the Login screen
+            if (wasMailSentSuccessfully && ResultPopUp)
+            {
+                ResultPopUp.ShowSuccess(
+                    "Reset Link Sent Successfully!",
+                    $"We’ve sent a password reset link to {RecoveryEmail}. Please check your inbox to reset your password.",
+                    "Continue to Login",
+                    () =>
+                    {
+                        ResultPopUp.Hide();
+                        SetActive(true);
+                    });
+                return;
+            }
+
             if (promptFadeController)
-                promptFadeController.Fade(wasMailSentSuccessfully 
+                promptFadeController.Fade(wasMailSentSuccessfully
                     ? $"Recovery mail was sent successfully to \"{RecoveryEmail}\""
                     : $"Failed to send recovery mail to \"{RecoveryEmail}\". Try again later"
                     , 3, .25f, 1);
         }
+
+        /// <summary>
+        /// The auth result pop-up lives next to the auth UI (outside it, because the auth UI closes on success).
+        /// </summary>
+        private ProDomino.Shared.AuthResultPopUp ResultPopUp => resultPopUp = resultPopUp != null
+            ? resultPopUp
+            : transform.parent ? transform.parent.GetComponentInChildren<ProDomino.Shared.AuthResultPopUp>(true) : null;
 
         /// <summary>
         /// Updates the interactable state of sign-in, sign-up, and recovery buttons based on credential validation and

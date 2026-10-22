@@ -89,6 +89,8 @@ namespace ProDomino.Authentication
         /// </summary>
         public bool WillSignOutFromFirebaseToo { get; private set; }
 
+        private UniTaskCompletionSource<bool> firebaseAuthStateReadySource;
+
         /// <summary>
         /// This property is used to check if the player is authenticated with Credentials or a provider (Facebook, Google, Apple, etc.) <br></br>
         /// </summary>
@@ -366,6 +368,11 @@ namespace ProDomino.Authentication
                 Debug.LogWarning("Removing session token because the user is not remembering the password");
                 await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false);
             }
+
+            // Firebase restores its persisted user asynchronously, so wait for it before reading the session or the
+            // email verification. Otherwise a verified account is treated as unverified right after a page reload.
+            if (IsAuthenticated && IsValidPlatformToUseJSlib())
+                await Firebase_WaitForAuthStateReady();
 
             // Check if the user is authenticated but no yet with Firebase
             if (IsAuthenticated
@@ -1259,6 +1266,25 @@ namespace ProDomino.Authentication
         }
 
         /// <summary>
+        /// Waits until Firebase has restored its persisted user after page load.
+        /// </summary>
+        /// <returns>True if a Firebase user was restored; otherwise, false (also on timeout).</returns>
+        private async UniTask<bool> Firebase_WaitForAuthStateReady()
+        {
+            if (!IsValidPlatformToUseJSlib())
+                return false;
+
+            firebaseAuthStateReadySource = new UniTaskCompletionSource<bool>();
+            FirebaseAuth.WaitForAuthStateReady(gameObject.name, nameof(OnFirebaseAuthStateReady));
+
+            var (isTimeout, isSignedIn) = await firebaseAuthStateReadySource.Task.TimeoutWithoutException(TimeSpan.FromSeconds(10));
+            if (isTimeout)
+                Debug.LogWarning($"<b>[{nameof(Firebase_WaitForAuthStateReady)}]</b> Timed out waiting for the Firebase auth state");
+
+            return !isTimeout && isSignedIn;
+        }
+
+        /// <summary>
         /// Signs out the authenticated user from Firebase and triggers success or failure callbacks.
         /// </summary>
         public void Firebase_SignOut()
@@ -1469,6 +1495,12 @@ namespace ProDomino.Authentication
             else
                 Debug.LogError("Failed to sign in to Firebase with custom token: Unknown error");
         }
+
+        /// <summary>
+        /// [WebGL] jslib callback once Firebase knows whether a persisted user was restored.
+        /// </summary>
+        /// <param name="isSignedIn">"1" if a Firebase user was restored; otherwise, "0".</param>
+        private void OnFirebaseAuthStateReady(string isSignedIn) => firebaseAuthStateReadySource?.TrySetResult(isSignedIn is "1");
 
         /// <summary>
         /// Logs a message indicating a successful Firebase sign-out.

@@ -282,7 +282,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6362534466238717697}
   - {fileID: 5644973959968320089}
   - {fileID: 7388748725560589862}
   - {fileID: 6878254212404282382}
@@ -1387,6 +1386,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6362534466238717697}
   - {fileID: 6068744246668248554}
   - {fileID: 7279221278364704565}
   - {fileID: 1963376483407220589}
@@ -2272,11 +2272,11 @@ RectTransform:
   - {fileID: 1341849840729060088}
   m_Father: {fileID: 7823426110443363699}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: 104, y: 48}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!225 &7787634199679171017
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -4233,7 +4233,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7823426110443363699}
+  m_Father: {fileID: 7388748725560589862}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -6816,31 +6816,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
       propertyPath: m_text
-      value: Log In
+      value: Login
       objectReference: {fileID: 0}
     - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
       propertyPath: m_fontSize
-      value: 20
+      value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
       propertyPath: m_fontSizeBase
-      value: 20
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 90da772f3d299a24b8d64cc800df29b8, type: 2}
+    - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 1307712429747641559, guid: 90da772f3d299a24b8d64cc800df29b8, type: 2}
+    - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: m_fontStyle
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2629848820986714322, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: deselectedColor.r
+      value: 0.003921569
+      objectReference: {fileID: 0}
+    - target: {fileID: 2629848820986714322, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: deselectedColor.g
+      value: 0.003921569
+      objectReference: {fileID: 0}
+    - target: {fileID: 2629848820986714322, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
+      propertyPath: deselectedColor.b
+      value: 0.047058824
       objectReference: {fileID: 0}
     - target: {fileID: 6264628680408312289, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4280493350
-      objectReference: {fileID: 0}
-    - target: {fileID: 7197115929181369750, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
-      propertyPath: m_Color.b
-      value: 0.09
-      objectReference: {fileID: 0}
-    - target: {fileID: 7197115929181369750, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
-      propertyPath: m_Color.g
-      value: 0.027
-      objectReference: {fileID: 0}
-    - target: {fileID: 7197115929181369750, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
-      propertyPath: m_Color.r
-      value: 0.016
       objectReference: {fileID: 0}
     - target: {fileID: 7197115929181369750, guid: f43fe696ca157c74f857862b4a8c1840, type: 3}
       propertyPath: m_Sprite

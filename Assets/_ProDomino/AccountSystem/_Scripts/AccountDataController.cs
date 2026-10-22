@@ -255,6 +255,11 @@ namespace ProDomino.AccountSystem
 
             RefreshVerifyEmailButton();
 
+            // The cached Firebase flag stays false after the player clicks the mail link, so reload the user. The
+            // check email verification event refreshes the button once the reload answers.
+            if (authManager.IsUserAuthenticatedWithCredentials && !authManager.IsEmailVerified)
+                authManager.Firebase_CheckEmailVerification();
+
             // Same rule as the Achievements screen summary cards, so both screens always show the same numbers
             var completedAchievements = achievementManager.PlayerAchievementsDataCollection
                 ?.Where(x => x.Key is not null && x.Value is { completed: true })

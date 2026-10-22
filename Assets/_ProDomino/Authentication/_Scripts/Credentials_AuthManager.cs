@@ -746,6 +746,10 @@ namespace ProDomino.Authentication
             }
 
             Debug.Log($"Email verification sent to: {emailVerificationResponse.email}");
+
+            // Poll for the mail link click, so the verify email buttons hide without a reload of the page
+            StartCheckingForVerifiedEmail();
+
             return emailVerificationResponse.email;
         }
 
@@ -970,7 +974,37 @@ namespace ProDomino.Authentication
         {
             await SignOut(isSignOutFromFirebaseToo: true, isSignInAnonymouslyOnSignOut: false, isForcingDeleteAccount: false);
             await RestoreAnonymousSessionIfSignedOut();
-            OnSignInWithCredentialsFailed($"<b>*</b> {response}");
+            OnSignInWithCredentialsFailed(GetFirebaseSignInFeedback(response));
+        }
+
+        /// <summary>
+        /// Maps the serialized Firebase JS error to a player facing message. The raw JSON (code, message and stack) was
+        /// shown under the field before, which only happens in WebGL builds since the Editor skips the jslib.
+        /// </summary>
+        /// <param name="response">The serialized Firebase error sent by the jslib.</param>
+        /// <returns>The feedback to show under the credentials field.</returns>
+        private static string GetFirebaseSignInFeedback(string response)
+        {
+            string code = null;
+            try
+            {
+                if (!string.IsNullOrEmpty(response))
+                    code = Newtonsoft.Json.Linq.JObject.Parse(response)?["code"]?.ToString();
+            }
+            catch (JsonException)
+            {
+                Debug.LogWarning($"Could not parse the Firebase error: {response}");
+            }
+
+            return code switch
+            {
+                "auth/wrong-password" or "auth/invalid-credential" or "auth/invalid-login-credentials" or "auth/user-not-found"
+                    => "<b>*</b> Incorrect email or password. Please try again.",
+                "auth/user-disabled" => "<b>*</b> This account has been disabled.",
+                "auth/too-many-requests" => tooManyRequestsFeedback,
+                "auth/network-request-failed" => noInternetFeedback,
+                _ => "<b>*</b> Sign-in failed. Please try again."
+            };
         }
 
         /// <summary>
