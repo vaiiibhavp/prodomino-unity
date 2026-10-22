@@ -276,7 +276,17 @@ namespace ProDomino.Dashboard
         /// </summary>
         private void OpenGamesModal(GameMode mode)
         {
-            if (!CanStart()) return;
+            if (!gameModeConfig)
+            {
+                Debug.LogError($"[{nameof(DashboardController)}] GameModeConfig is not assigned.");
+                return;
+            }
+
+            // A search (e.g. Random players) is still running: its Play button would cancel it, so go to the
+            // Games screen without the popup instead of ignoring the click
+            var isSearchRunning = !CanStart();
+            if (isSearchRunning && gameModeConfig.IsInMatch)
+                return;
 
             if (!navigationPanelController)
                 navigationPanelController = FindAnyObjectByType<NavigationPanelController>(FindObjectsInactive.Include);
@@ -285,6 +295,12 @@ namespace ProDomino.Dashboard
                 navigationPanelController.ExternalActivateNavigationPanel(NavigationPanelType.Play);
             else
                 Debug.LogWarning($"[{nameof(DashboardController)}] NavigationPanelController not found; opening popup without switching tab.");
+
+            if (isSearchRunning)
+            {
+                Prompt("A match search is in progress. Cancel it to start another game.");
+                return;
+            }
 
             gameModeConfig.OpenGameModal(mode.ToString());
         }

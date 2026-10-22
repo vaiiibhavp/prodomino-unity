@@ -122,8 +122,9 @@ namespace ProDomino.Dashboard.Editor
             int h = 64;
             int radius = 16;
             float borderWidth = 1.3f;
-            var topFill = Hex("#050816");
-            var bottomFill = Hex("#02040B");
+            // Figma sidebar panel fill (#010818) stays distinct from the #01010C page and nav groups
+            var topFill = Hex("#010818");
+            var bottomFill = Hex("#010818");
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
 
             for (int y = 0; y < h; y++)

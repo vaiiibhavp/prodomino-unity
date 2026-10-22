@@ -65,8 +65,9 @@ namespace ProDomino.Dashboard.Editor
             screenCardBg = GetOrCreateScreenCardSprite();
 
             // Sliced sprites for Accordion Cards
-            cardNormalBg = MakePanelSprite("Rules_Card_Normal", 48, 48, 10, Hex("#0D121F"), Hex("#080B14"), Hex("#1E2538"), 1f);
-            cardActiveBg = MakePanelSprite("Rules_Card_Active", 48, 48, 10, Hex("#0D121F"), Hex("#080B14"), Hex("#F59E0B"), 1.5f);
+            // Figma FAQ Item: #010818 fill, #34343D 1px stroke (normal), amber 2px stroke (expanded)
+            cardNormalBg = MakePanelSprite("Rules_Card_Normal", 48, 48, 10, Hex("#010818"), Hex("#010818"), Hex("#34343D"), 1f);
+            cardActiveBg = MakePanelSprite("Rules_Card_Active", 48, 48, 10, Hex("#010818"), Hex("#010818"), Hex("#FFA501"), 2f);
             toggleBtnBg = MakePanelSprite("Rules_Toggle_Btn", 32, 32, 8, Hex("#161E30"), Hex("#101624"), Hex("#25314C"), 1f);
 
             // Mode Banner Gradient Backgrounds (200x120 matching Figma)

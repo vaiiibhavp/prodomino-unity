@@ -72,6 +72,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
     private bool isForcingBlockPlayButtonInteraction;
     private string playNavigationDefaultText;
     private DateTime? matchmakinStartTime;
+    private bool wasMatchMakingLastFrame;
 
     public bool RequiresAuthentication => false;
     public NavigationPanelType NavigationPanelType => NavigationPanelType.Play;
@@ -284,6 +285,16 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
                     playNavigationButton.SetMainText($"In Match!");
             }
 
+            // The search ended on its own without joining a match (timed out / failed): stop the counter and restore
+            // the label now, the dashboard deactivates this object right after so a later Update won't do it
+            else if (matchmakinStartTime.HasValue && wasMatchMakingLastFrame && !IsMatchMaking)
+            {
+                matchmakinStartTime = null;
+
+                if (!IsPartyRelay || IsLocaPlayerHost)
+                    playNavigationButton.SetMainText(playNavigationDefaultText);
+            }
+
             // If we are in matchmaking, update the play button text with the elapsed time
             else if (matchmakinStartTime.HasValue)
             {
@@ -295,6 +306,8 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             else if (playNavigationButton.GetMainText() != playNavigationDefaultText && (!IsPartyRelay || IsLocaPlayerHost))
                 playNavigationButton.SetMainText(playNavigationDefaultText);
         }
+
+        wasMatchMakingLastFrame = IsMatchMaking;
     }
 
     /// <summary>
@@ -683,6 +696,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
                     // Register the matchmaking start time
                     matchmakinStartTime = DateTime.Now;
+                    wasMatchMakingLastFrame = false;
 
                     break;
 
