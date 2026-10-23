@@ -1050,7 +1050,8 @@ namespace ProDomino.Authentication
         { 
             AuthUI?.CallOnCredentialsSignUpEvent(false);
             AuthUI?.SetFeedbackDirectly(false, $"<color=red>{response}</color>");
-            Debug.LogError($"Sign-Up failed: {response}");
+            // Expected user-facing outcome (username taken, rate limit, offline...), already shown in the UI
+            Debug.LogWarning($"Sign-Up failed: {response}");
         }
 
         /// <summary>

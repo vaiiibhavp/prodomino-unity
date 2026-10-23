@@ -60,6 +60,12 @@ public class CanvasGroupVisibilityController : MonoBehaviour
             List<RaycastResult> results = new List<RaycastResult>();
             GraphicRaycaster.Raycast(pointerData, results);
 
+            // A press on a disabled control (e.g. a "Coming soon" sidebar entry) does nothing, so it must not close the popup either
+            if (results.Count > 0 && results[0].gameObject != null
+                && results[0].gameObject.GetComponentInParent<Selectable>() is { } pressedSelectable
+                && !pressedSelectable.IsInteractable())
+                return false;
+
             foreach (var result in results)
             {
                 // If click was on the panel or one of its children, it's not outside

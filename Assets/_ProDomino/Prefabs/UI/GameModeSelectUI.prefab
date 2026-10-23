@@ -6307,6 +6307,7 @@ GameObject:
   - component: {fileID: 1342894337579284320}
   - component: {fileID: 3155785876030833088}
   - component: {fileID: 6120458843210593777}
+  - component: {fileID: 4821736519027364813}
   m_Layer: 0
   m_Name: CardsGrid
   m_TagString: Untagged
@@ -6354,7 +6355,7 @@ MonoBehaviour:
     m_Left: 0
     m_Right: 0
     m_Top: 0
-    m_Bottom: 0
+    m_Bottom: 24
   m_ChildAlignment: 0
   m_StartCorner: 0
   m_StartAxis: 0
@@ -6374,6 +6375,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8684cd4f9c2d40f19f81f5a01ef0ac71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProDomino.Shared::ProDomino.Shared.ResponsiveGridColumns
+  fitRowsToParentHeight: 1
+  minCellHeight: 150
+--- !u!114 &4821736519027364813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092984272066813388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_HorizontalFit: 0
+  m_VerticalFit: 2
 --- !u!1 &4099161162383310908
 GameObject:
   m_ObjectHideFlags: 0
@@ -11406,6 +11423,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1979178733667946193}
   - component: {fileID: 6762458724872099827}
+  - component: {fileID: 4821736519027364811}
+  - component: {fileID: 4821736519027364812}
   m_Layer: 0
   m_Name: GamesGrid_Root
   m_TagString: Untagged
@@ -11445,6 +11464,50 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &4821736519027364811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7388602105628861075}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
+--- !u!114 &4821736519027364812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7388602105628861075}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa08ab6e0800fa44ae55d278d1423e3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_Content: {fileID: 1342894337579284320}
+  m_Horizontal: 0
+  m_Vertical: 1
+  m_MovementType: 2
+  m_Elasticity: 0.1
+  m_Inertia: 1
+  m_DecelerationRate: 0.135
+  m_ScrollSensitivity: 30
+  m_Viewport: {fileID: 1979178733667946193}
+  m_HorizontalScrollbar: {fileID: 0}
+  m_VerticalScrollbar: {fileID: 0}
+  m_HorizontalScrollbarVisibility: 0
+  m_VerticalScrollbarVisibility: 0
+  m_HorizontalScrollbarSpacing: 0
+  m_VerticalScrollbarSpacing: 0
+  m_OnValueChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7402117641568143381
 GameObject:
   m_ObjectHideFlags: 0
