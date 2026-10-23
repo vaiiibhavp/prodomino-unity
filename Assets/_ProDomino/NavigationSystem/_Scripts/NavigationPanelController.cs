@@ -18,25 +18,11 @@ namespace ProDomino.NavigationSystem
         [SerializeField] private CustomButtonUI[] externalNavigationButtons;
         [SerializeField] private Button learnButton;
 
-        [Tooltip("Sidebar entries hidden while signed out (by toggle ID). Signed out only Dashboard, Games, Rules, Settings and Help stay visible.")]
-        [SerializeField] private string[] signedOutHiddenButtonIDs =
-        {
-            nameof(NavigationPanelType.Leaderboard),
-            nameof(NavigationPanelType.Achievements),
-            nameof(NavigationPanelType.FriendsList),
-            nameof(NavigationPanelType.Club),
-            nameof(NavigationPanelType.Party),
-            nameof(NavigationPanelType.Shop),
-            nameof(NavigationPanelType.Review),
-            "Tournament",
-        };
-
         private INavigationPanel[] navigationPanels;
         private Dictionary<INavigationPanel, bool> panelsBlockedByDefault;
         private GameManager gameManager;
         private AuthManager authManager;
         private bool isRestoringSelection;
-        private bool? lastSignedInVisibility;
 
         public CustomButtonToggleGroupUI CustomButtonToggleGroupUI => customButtonToggleGroupUI;
         public NavigationPanelType NavigationPanelType { get; private set; }
@@ -154,9 +140,6 @@ namespace ProDomino.NavigationSystem
 
         private void LateUpdate()
         {
-            // onSignedIn can fire before IsAuthenticated turns true, so poll the cached state for the real transition
-            RefreshSignedOutButtonsVisibility();
-
             // Popups can close through paths that raise no event (outside click, direct CanvasGroup hide).
             // If an overlay's sidebar button is still highlighted but its popup is hidden, restore the previous selection.
             // The press that closed the popup may still become a click on another entry
@@ -326,22 +309,6 @@ namespace ProDomino.NavigationSystem
         }
 
         /// <summary>
-        /// Hides the sidebar entries that only make sense for a signed-in player.
-        /// </summary>
-        private void RefreshSignedOutButtonsVisibility()
-        {
-            var isSignedIn = gameManager is { IsAuthenticated: true };
-            if (lastSignedInVisibility == isSignedIn || signedOutHiddenButtonIDs is null)
-                return;
-
-            lastSignedInVisibility = isSignedIn;
-
-            foreach (var id in signedOutHiddenButtonIDs)
-                if (customButtonToggleGroupUI.TryGetButtonUI(id, out var customButtonUI) && customButtonUI.gameObject.activeSelf != isSignedIn)
-                    customButtonUI.gameObject.SetActive(isSignedIn);
-        }
-
-        /// <summary>
         /// Called when a button is selected in the CustomButtonToggleGroupUI.
         /// </summary>
         /// <param name="id"></param>
@@ -383,12 +350,13 @@ namespace ProDomino.NavigationSystem
 
             SetBlockToRequiredNavigationButtons(false);
 
-            // If the user is signed out, set the active navigation panel to Play by default
+            // If the user is signed out, fall back to the Dashboard (the signed-out landing entry)
             if (ActiveNavigationPanel is not null)
             {
                 if (ActiveNavigationPanel.RequiresAuthentication)
-                { 
-                    var customButtonUI = customButtonToggleGroupUI.GetButtonUI(NavigationPanelType.Play.ToString())
+                {
+                    var customButtonUI = customButtonToggleGroupUI.GetButtonUI(NavigationPanelType.Dashboard.ToString())
+                       ?? customButtonToggleGroupUI.GetButtonUI(NavigationPanelType.Play.ToString())
                        ?? customButtonToggleGroupUI.GetFirstButtonUI();
 
                     if (customButtonUI != null)

@@ -18,7 +18,7 @@ namespace ProDomino.ReplaySystem
             reviewButton;
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.Review;
-        public bool RequiresAuthentication => false;
+        public bool RequiresAuthentication => true;
 
         [SerializeField] CanvasGroup LatestSavedGamesCanvasGroup;
         [SerializeField] ReplayTurnByTurn replayTurnByTurn;
@@ -56,8 +56,8 @@ namespace ProDomino.ReplaySystem
         }
 
         /// <summary>
-        /// Review stays reachable for guests, so on sign-out drop any open replay (it was built with
-        /// the previous user's cosmetics) and show the saved games list again.
+        /// On sign-out drop any open replay (it was built with the previous user's cosmetics)
+        /// and show the saved games list again for the next sign-in.
         /// </summary>
         private void OnSignOut()
         {
