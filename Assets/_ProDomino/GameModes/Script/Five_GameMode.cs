@@ -1661,29 +1661,41 @@ namespace ProDomino.GameModes
             string auxPlayerID_win = "";
             limitPointsGameMode = VSPlayerSelectedID is NumberPlayers.oneVsOne ? 50 : 100;
 
+            var turnScript = extendedGameController.TurnScript;
+
+            // Several players can be over the limit at the same time (points are scored during play and again at round end),
+            // so the winner is the highest score over the limit, not the last seat checked
             if (VSPlayerSelectedID is not NumberPlayers.twoVsTwo)
-            { 
-                if (extendedGameController.TurnScript.PlayerScore >= limitPointsGameMode)
-                    auxPlayerID_win = "Player";
+            {
+                var bestScore = -1;
+                var seatScores = new (string seat, int score)[]
+                {
+                    ("Player", turnScript.PlayerScore),
+                    ("Left", turnScript.LeftAIScore),
+                    ("Top", turnScript.TopAIScore),
+                    ("Right", turnScript.RightAIScore)
+                };
 
-                if (extendedGameController.TurnScript.LeftAIScore >= limitPointsGameMode)
-                    auxPlayerID_win = "Left";
-
-                if (extendedGameController.TurnScript.TopAIScore >= limitPointsGameMode)
-                    auxPlayerID_win = "Top";
-
-                if (extendedGameController.TurnScript.RightAIScore >= limitPointsGameMode)
-                    auxPlayerID_win = "Right";
+                foreach (var (seat, score) in seatScores)
+                {
+                    if (score >= limitPointsGameMode && score > bestScore)
+                    {
+                        bestScore = score;
+                        auxPlayerID_win = seat;
+                    }
+                }
             }
             else
-            { 
-                if (extendedGameController.TurnScript.PlayerScore + extendedGameController.TurnScript.TopAIScore >= limitPointsGameMode)
-                    auxPlayerID_win = extendedGameController.TurnScript.PlayerScore > extendedGameController.TurnScript.TopAIScore 
-                        ? "Player" : "Top";
+            {
+                var teamAScore = turnScript.PlayerScore + turnScript.TopAIScore;
+                var teamBScore = turnScript.LeftAIScore + turnScript.RightAIScore;
+                var teamAReached = teamAScore >= limitPointsGameMode;
+                var teamBReached = teamBScore >= limitPointsGameMode;
 
-                if (extendedGameController.TurnScript.LeftAIScore + extendedGameController.TurnScript.RightAIScore >= limitPointsGameMode)
-                    auxPlayerID_win = extendedGameController.TurnScript.LeftAIScore > extendedGameController.TurnScript.RightAIScore
-                        ? "Left" : "Right";
+                if (teamAReached && (!teamBReached || teamAScore >= teamBScore))
+                    auxPlayerID_win = turnScript.PlayerScore > turnScript.TopAIScore ? "Player" : "Top";
+                else if (teamBReached)
+                    auxPlayerID_win = turnScript.LeftAIScore > turnScript.RightAIScore ? "Left" : "Right";
             }
 
             return auxPlayerID_win;

@@ -80,6 +80,18 @@ namespace ProDomino.Dashboard
         /// </summary>
         public int SlideCount => slides.Count;
 
+        /// <summary>
+        /// Slides authored in the prefab (or scene), before any runtime replacement.
+        /// </summary>
+        public IReadOnlyList<Slide> DefaultSlides
+        {
+            get
+            {
+                CacheDefaults();
+                return defaultSlides;
+            }
+        }
+
         private void Awake()
         {
             CacheDefaults();

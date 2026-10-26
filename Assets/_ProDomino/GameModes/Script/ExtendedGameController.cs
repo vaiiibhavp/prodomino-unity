@@ -1206,7 +1206,10 @@ namespace ProDomino.GameModes
             }
             else if (VsPlayerSelectedID is NumberPlayers.oneVsOne)
             {
-                scoreCollection.Add(2, (scoreUITop, GameMode is not GameMode.concentrate ? topRoundScore : GameTurnController.TopAIScore));
+                // Top keeps its seat key (3) so it matches the winner index parsed from PlayerWinner below.
+                // Keying it as 2 made the winner lookup fail in 1v1, so the list fell back to score order
+                // and could show the local player 1st while the header said "You Lost"
+                scoreCollection.Add(3, (scoreUITop, GameMode is not GameMode.concentrate ? topRoundScore : GameTurnController.TopAIScore));
             }
 
             var orderAssignationLowerized = new List<string> { "player", "left", "top", "right" };

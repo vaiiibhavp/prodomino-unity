@@ -13,7 +13,8 @@ namespace ProDomino.Dashboard
     /// <summary>
     /// Feeds the dashboard challenge banner with the signed in player's daily and monthly (weekly mission data) challenges
     /// from <see cref="MissionManager"/>. Each period shows its first unclaimed mission with a
-    /// progress bar, count and reward. Signed out (or before missions load) the banner falls back
+    /// progress bar, count and reward, in place of the authored slide with the same background; the
+    /// other authored slides keep showing. Signed out (or before missions load) the banner falls back
     /// to the slides authored in the prefab, without the progress row.
     /// </summary>
     [DisallowMultipleComponent]
@@ -109,15 +110,35 @@ namespace ProDomino.Dashboard
                 return;
 
             // MissionManager has no monthly period, so the monthly banner tracks the long-period (weekly) missions
-            TryAddSlide(missionManager.DailyMissionsDataCollection, dailyBackground, dailyIcon, dailyTitle);
-            TryAddSlide(missionManager.WeeklyMissionsDataCollection, monthlyBackground, monthlyIcon, monthlyTitle);
+            var daily = BuildChallengeSlide(missionManager.DailyMissionsDataCollection, dailyBackground, dailyIcon, dailyTitle);
+            var monthly = BuildChallengeSlide(missionManager.WeeklyMissionsDataCollection, monthlyBackground, monthlyIcon, monthlyTitle);
+            if (daily is null && monthly is null)
+                return;
+
+            // Live challenges take the place of their authored slide, so the other authored banners
+            // (e.g. the lead promo banner) stay in the rotation after login
+            foreach (var authored in carousel.DefaultSlides)
+            {
+                if (daily is not null && authored.background == dailyBackground)
+                    slides.Add(daily.Value);
+                else if (monthly is not null && authored.background == monthlyBackground)
+                    slides.Add(monthly.Value);
+                else
+                    slides.Add(authored);
+            }
+
+            // A live challenge without a matching authored slide still shows, after the authored ones
+            if (daily is not null && carousel.DefaultSlides.All(x => x.background != dailyBackground))
+                slides.Add(daily.Value);
+            if (monthly is not null && carousel.DefaultSlides.All(x => x.background != monthlyBackground))
+                slides.Add(monthly.Value);
         }
 
-        private void TryAddSlide(Dictionary<PlayerMissionData, GameMissionData> missions, Sprite background, Sprite icon, string title)
+        private DashboardBannerCarousel.Slide? BuildChallengeSlide(Dictionary<PlayerMissionData, GameMissionData> missions, Sprite background, Sprite icon, string title)
         {
             var regularMissions = missions?.Where(x => x.Key is { isBonus: false } && x.Value is not null).ToList();
             if (regularMissions is null or { Count: 0 })
-                return;
+                return null;
 
             // First mission still to claim. Once every mission is claimed the last one stays, full
             var (player, game) = regularMissions.FirstOrDefault(x => !x.Key.claimed) is { Key: not null } pending
@@ -127,7 +148,7 @@ namespace ProDomino.Dashboard
             var goal = Mathf.Max(0, game.goalAmount);
             var progress = player.claimed ? goal : (int)Mathf.Min(player.progress, goal);
 
-            slides.Add(new DashboardBannerCarousel.Slide
+            return new DashboardBannerCarousel.Slide
             {
                 background = background,
                 icon = icon,
@@ -137,7 +158,7 @@ namespace ProDomino.Dashboard
                 progress = goal > 0 ? (float)progress / goal : 1f,
                 progressText = $"{progress}/{goal}",
                 rewardText = game.rewardAmount.ToString(),
-            });
+            };
         }
 
         private string BuildSignature()

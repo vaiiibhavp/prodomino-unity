@@ -259,13 +259,16 @@ namespace ProDomino.GameModes
                 // Determine if the player is the winner
                 if (numberPlayers is not NumberPlayers.twoVsTwo)
                 {
+                    // Derive the state from the same ordered results the list shows, so header and positions never disagree.
+                    // PlayerIndex 1 is always the local player's seat
+                    var localPlayerWon = matchResults.FirstOrDefault()?.PlayerIndex == 1;
+
                     // Only the subject ("You") is tinted, the rest keeps the label color (design: "You Won the Block Game!")
-                    PlayerResultStateText.text = playerWinner switch
-                    {
-                        "Player" => $"<color=#{ColorUtility.ToHtmlStringRGB(wonColor)}>You</color> Won the {gameModeName} Game!",
-                        "draw" => $"<color=#{ColorUtility.ToHtmlStringRGB(drawColor)}>It’s a draw</color>",
-                        _ => $"<color=#{ColorUtility.ToHtmlStringRGB(lostColor)}>You</color> Lost the {gameModeName} Game!",
-                    };
+                    PlayerResultStateText.text = playerWinner == "draw"
+                        ? $"<color=#{ColorUtility.ToHtmlStringRGB(drawColor)}>It’s a draw</color>"
+                        : localPlayerWon
+                            ? $"<color=#{ColorUtility.ToHtmlStringRGB(wonColor)}>You</color> Won the {gameModeName} Game!"
+                            : $"<color=#{ColorUtility.ToHtmlStringRGB(lostColor)}>You</color> Lost the {gameModeName} Game!";
                 }
                 else
                 {
