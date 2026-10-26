@@ -333,7 +333,8 @@ public class CustomButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         if (canvasGroup != null)
         {
             canvasGroup.interactable = isInteractable;
-            canvasGroup.blocksRaycasts = isInteractable;
+            // Click-blocked buttons ("Coming soon") keep raycasts so the press stops here and the tooltip gets hover
+            canvasGroup.blocksRaycasts = isInteractable || blockClickHandler;
             canvasGroup.alpha = isInteractable ? 1f : auxAlpha;
         }
     }
