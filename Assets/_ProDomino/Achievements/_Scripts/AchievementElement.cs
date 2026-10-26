@@ -41,24 +41,6 @@ namespace ProDomino.AchievementSystem
         [SerializeField] private Sprite starPointsSprite;
         [SerializeField] private Sprite questBadgeSprite;
 
-        [Space, Header("Static Progress (Figma)")]
-        [Tooltip("Achievements tab shows the Figma progress/action values instead of the player's real progress")]
-        [SerializeField] private bool useStaticProgress = true;
-
-        private enum StaticActionState { Claim, Claimed, InProgress }
-
-        // Figma "Achievements" frame rows, repeated down the list
-        private static readonly (uint progress, long goal, StaticActionState state)[] staticProgressRows =
-        {
-            (2, 5, StaticActionState.Claim),
-            (2, 5, StaticActionState.Claim),
-            (5, 5, StaticActionState.Claimed),
-            (2, 5, StaticActionState.InProgress),
-            (2, 5, StaticActionState.Claim),
-        };
-
-        private int staticRowIndex;
-
         private AsyncActionHandler<Achievement> claimReward;
         private PlayerAchievementData temporalPlayerAchievementData;
 
@@ -137,13 +119,11 @@ namespace ProDomino.AchievementSystem
         /// </summary>
         /// <param name="gameAchievementData">The game achievement data to configure.</param>
         /// <param name="playerAchievementData">The player achievement data to configure.</param>
-        /// <param name="rowIndex">Position of the achievement in the list, picks the static progress row.</param>
-        internal void Configure(GameAchievementData gameAchievementData, PlayerAchievementData playerAchievementData, int rowIndex = 0)
+        internal void Configure(GameAchievementData gameAchievementData, PlayerAchievementData playerAchievementData)
         {
             // Save the references to the achievement data
             GameAchievementData = gameAchievementData;
             PlayerAchievementData = playerAchievementData;
-            staticRowIndex = rowIndex;
 
             // Clone the data to avoid direct references (use when is necessary check if the data has changed)
             if (PlayerAchievementData is not null)
@@ -257,15 +237,6 @@ namespace ProDomino.AchievementSystem
             uint curProgress = PlayerAchievementData?.progress ?? 0;
             long goalAmount = GameAchievementData?.goalAmount ?? 1;
 
-            if (useStaticProgress)
-            {
-                var staticRow = staticProgressRows[Mathf.Abs(staticRowIndex) % staticProgressRows.Length];
-                curProgress = staticRow.progress;
-                goalAmount = staticRow.goal;
-                isClaimed = staticRow.state is StaticActionState.Claimed;
-                isCompleted = staticRow.state is not StaticActionState.InProgress;
-            }
-
             var notReadyYet = !isCompleted && !isClaimed;
             var readyToReclaim = isCompleted && !isClaimed;
 
@@ -291,7 +262,7 @@ namespace ProDomino.AchievementSystem
                 achievementIcon.preserveAspect = true;
             }
 
-            // 2. Column 2: Game (Illustration & Name)
+            // 2. Column 2: Game (Illustration & Name). Real mode name, the block modes share the block illustration
             var gameMode = ResolveGameMode(GameAchievementData);
             bool isConcentrate = gameMode is GameModeFilter.Concentrate;
             string gName = $"{gameMode} Game";
@@ -314,10 +285,7 @@ namespace ProDomino.AchievementSystem
                 pointsIcon.gameObject.SetActive(true);
             }
             if (pointsLabel != null)
-            {
-                long pts = GameAchievementData?.points ?? 0;
-                pointsLabel.text = pts > 0 ? pts.ToString() : "200";
-            }
+                pointsLabel.text = (GameAchievementData?.points ?? 0).ToString();
 
             // 4. Column 4: Progress Bar & Fraction
             if (goalAmount <= 0) goalAmount = 1;
@@ -344,19 +312,20 @@ namespace ProDomino.AchievementSystem
         }
 
         /// <summary>
-        /// Resolves the game mode an achievement belongs to. Uses the single-mode filter when the data has one,
-        /// otherwise reads the "... X Mode" / "... X game" wording of the name and description. Defaults to Block.
+        /// Resolves the game mode an achievement belongs to. Reads the "... X Mode" / "... X game" wording of the name
+        /// first so the column matches what the row says, then the single-mode filter of the data. Defaults to Block.
         /// </summary>
         private static GameModeFilter ResolveGameMode(GameAchievementData data)
         {
+            var match = gameModeWordingRegex.Match(data?.name ?? string.Empty);
+            if (!match.Success)
+                match = gameModeWordingRegex.Match(data?.description ?? string.Empty);
+            if (match.Success && Enum.TryParse(match.Groups[1].Value, true, out GameModeFilter parsed))
+                return parsed;
+
             var filter = data?.gameModeFilter ?? GameModeFilter.None;
             if (filter is GameModeFilter.French or GameModeFilter.Block or GameModeFilter.Draw or GameModeFilter.Five or GameModeFilter.Concentrate)
                 return filter;
-
-            var text = $"{data?.name} {data?.description}";
-            var match = gameModeWordingRegex.Match(text);
-            if (match.Success && Enum.TryParse(match.Groups[1].Value, true, out GameModeFilter parsed))
-                return parsed;
 
             return GameModeFilter.Block;
         }
@@ -443,10 +412,6 @@ namespace ProDomino.AchievementSystem
                 await ClaimChallengeReward();
                 return;
             }
-
-            // Static Figma states are display only, the player may not have earned this achievement
-            if (useStaticProgress)
-                return;
 
             if (PlayerAchievementData is not null && claimReward is not null)
             {

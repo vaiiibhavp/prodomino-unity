@@ -168,13 +168,12 @@ namespace ProDomino.AchievementSystem
             achievementInstances.ForEach(instance => instance.gameObject.SetActive(false));
 
             // Iterate through the weekly achievements and ensure we have enough instances
-            var rowIndex = 0;
             foreach (var (gameAchievementData, playerAchievementData) in achievementDataCollection)
             {
                 var instance = achievementInstances?.FirstOrDefault(i => !i.gameObject.activeSelf);
                 if (instance != null)
                 {
-                    instance.Configure(gameAchievementData, playerAchievementData, rowIndex++);
+                    instance.Configure(gameAchievementData, playerAchievementData);
                     instance.HighlightNameMatches(""); // clear highlights
                     instance.gameObject.SetActive(true);
                 }
