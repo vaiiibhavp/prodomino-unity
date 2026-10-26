@@ -38,6 +38,9 @@ namespace ProDomino.AchievementSystem
         [SerializeField] private RectTransform progressFillRect;
         [SerializeField] private Sprite blockGameSprite;
         [SerializeField] private Sprite concentrateGameSprite;
+        [SerializeField] private Sprite frenchGameSprite;
+        [SerializeField] private Sprite drawGameSprite;
+        [SerializeField] private Sprite fiveGameSprite;
         [SerializeField] private Sprite starPointsSprite;
         [SerializeField] private Sprite questBadgeSprite;
 
@@ -193,7 +196,7 @@ namespace ProDomino.AchievementSystem
             // 2. Column 2: Game. Missions are not bound to a mode, only concentrate tiles missions are concentrate specific
             var isConcentrate = GameMissionData.analyticType is AnalyticType.ConcentrateMatchTiles
                 || (GameMissionData.name ?? string.Empty).IndexOf("Concentrate", StringComparison.OrdinalIgnoreCase) >= 0;
-            var gameSprite = isConcentrate && concentrateGameSprite != null ? concentrateGameSprite : blockGameSprite;
+            var gameSprite = GetGameSprite(isConcentrate ? GameModeFilter.Concentrate : GameModeFilter.Block);
 
             if (gameLabel != null) gameLabel.text = isConcentrate ? "Concentrate Game" : "Block Game";
             if (gameIcon != null && gameSprite != null)
@@ -262,11 +265,10 @@ namespace ProDomino.AchievementSystem
                 achievementIcon.preserveAspect = true;
             }
 
-            // 2. Column 2: Game (Illustration & Name). Real mode name, the block modes share the block illustration
+            // 2. Column 2: Game (Illustration & Name). Real mode name and that mode's illustration
             var gameMode = ResolveGameMode(GameAchievementData);
-            bool isConcentrate = gameMode is GameModeFilter.Concentrate;
             string gName = $"{gameMode} Game";
-            Sprite gSp = isConcentrate && concentrateGameSprite != null ? concentrateGameSprite : blockGameSprite;
+            Sprite gSp = GetGameSprite(gameMode);
 
             if (gameLabel != null) gameLabel.text = gName;
             if (gameIcon != null && gSp != null)
@@ -328,6 +330,30 @@ namespace ProDomino.AchievementSystem
                 return filter;
 
             return GameModeFilter.Block;
+        }
+
+        /// <summary>
+        /// Returns the illustration of a game mode. Falls back to the block illustration only when the mode sprite is
+        /// not assigned on the row.
+        /// </summary>
+        private Sprite GetGameSprite(GameModeFilter gameMode)
+        {
+            var sprite = gameMode switch
+            {
+                GameModeFilter.Concentrate => concentrateGameSprite,
+                GameModeFilter.French => frenchGameSprite,
+                GameModeFilter.Draw => drawGameSprite,
+                GameModeFilter.Five => fiveGameSprite,
+                _ => blockGameSprite
+            };
+
+            if (sprite == null)
+            {
+                Debug.LogWarning($"{name}: no game sprite assigned for {gameMode} mode, using the block sprite.", this);
+                sprite = blockGameSprite;
+            }
+
+            return sprite;
         }
 
         private static readonly System.Text.RegularExpressions.Regex gameModeWordingRegex =
