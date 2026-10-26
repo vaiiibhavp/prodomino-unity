@@ -12,12 +12,16 @@ namespace ProDomino.Shared
         /// <summary>
         /// Obtiene el texto localizado de forma asíncrona.
         /// </summary>
-        public static async Task<string> Get(string key, string table = DefaultTable)
+        public static Task<string> Get(string key, string table = DefaultTable)
         {
             var localized = new LocalizedString(table, key);
             var handle = localized.GetLocalizedStringAsync();
-            await handle.Task;
-            return handle.Result;
+
+            // AsyncOperationHandle.Task waits on a worker thread, which never completes on WebGL (no threads),
+            // so the result is taken from the Completed callback instead
+            var completion = new TaskCompletionSource<string>();
+            handle.Completed += x => completion.TrySetResult(x.Result);
+            return completion.Task;
         }
     }
 }

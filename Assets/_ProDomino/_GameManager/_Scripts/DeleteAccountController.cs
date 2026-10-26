@@ -91,10 +91,12 @@ namespace ProDomino.GameSystem
             // Store default confirm button text to later
             if (confirmButtonLabel)
             {
-                defaultConfirmButtonText = await LocalizationHelper.Get("confirm_delete_button", localize_tablet);
+                // Authored label first, so the button is never blank while the localized text loads
+                defaultConfirmButtonText = confirmButtonLabel.text;
 
-                if (string.IsNullOrEmpty(defaultConfirmButtonText))
-                    defaultConfirmButtonText = confirmButtonLabel.text;
+                var localizedText = await LocalizationHelper.Get("confirm_delete_button", localize_tablet);
+                if (!string.IsNullOrEmpty(localizedText))
+                    defaultConfirmButtonText = localizedText;
             }
             else
                 Debug.LogError("DeleteAccountController: confirmButtonLabel reference are missing");

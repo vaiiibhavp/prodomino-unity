@@ -87,9 +87,12 @@ namespace ProDomino.Dashboard
             var wasShowingChallenges = lastSignature is not null and not DefaultSignature and not SignedOutSignature;
             lastSignature = signature;
 
-            // Signed out the banner only shows its first authored slide (the "Register Now" call to action)
-            if (slides.Count is 0)
-                carousel.ResetSlides(maxSlides: signature is SignedOutSignature ? 1 : 0);
+            // Signed out the banner only shows its first authored slide (the "Register Now" call to action),
+            // without the progress row: there is no player progress to show
+            if (signature is SignedOutSignature)
+                carousel.SetSlides(carousel.DefaultSlides.Take(1).Select(x => { x.showProgress = false; return x; }));
+            else if (slides.Count is 0)
+                carousel.ResetSlides();
             else if (wasShowingChallenges)
                 carousel.UpdateSlides(slides);
             else
