@@ -15,6 +15,7 @@ namespace ProDomino.InAppPurchaseSystem
     {
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TMP_Text descriptionLabel;
+        [SerializeField] private TMP_Text priceLabel;
         [SerializeField] private Button confirmButton, denyButton;
 
         private InAppPurchaseManager inAppPurchaseManager;
@@ -116,6 +117,15 @@ namespace ProDomino.InAppPurchaseSystem
             {
                 Debug.LogError($"{nameof(MonthlySubscriptionPopUp)}: monthlySubscriptionProduct is null");
                 return;
+            }
+
+            // Set the price card label (e.g. "$2.99 / per month")
+            if (priceLabel)
+            {
+                var priceText = monthlySubscriptionProduct.currency == "USD"
+                    ? $"${monthlySubscriptionProduct.price}"
+                    : $"{monthlySubscriptionProduct.price} {monthlySubscriptionProduct.currency}";
+                priceLabel.text = $"{priceText}<size=26%> / per month</size>";
             }
 
             // Replace the price placeholder with the actual price

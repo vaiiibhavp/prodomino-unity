@@ -392,7 +392,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
 
         // --- 4. Update Game Type buttons ---
         SetGameTypeInteractable(GameType.casual, !isConcentrateMode);
-        SetGameTypeInteractable(GameType.competitive, false); // hidden in the raw selector; started from Dashboard's own Competitive card instead
+        SetGameTypeInteractable(GameType.competitive, canShowMultiplayer);
         SetGameTypeInteractable(GameType.singlePlayerIA, true); // always reset; may change later for party conditions
 
         // --- 5. Update VS Player buttons ---
@@ -1033,8 +1033,14 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
         navigationPanelController.SetInteractable(!isBlocked);
     }
 
-    // Safety net: never leave the sidebar locked if this panel goes away mid-match
-    private void OnDisable() => SetSidebarBlockedByGameplay(false);
+    // Safety net: never leave the sidebar locked once the match is gone. An overlay (Settings) also
+    // disables this panel mid-match, so keep the lock while a match is still running; the exit flow
+    // (SetSelectionUIVisibility(true) / SetGameplayVisibility(false)) releases it.
+    private void OnDisable()
+    {
+        if (!IsInMatch && !IsInOnlineMatch)
+            SetSidebarBlockedByGameplay(false);
+    }
 
     /// <summary>
     /// Sets the visibility of the UI background and refreshes its layout if made visible.

@@ -17,6 +17,8 @@ namespace ProDomino.NavigationSystem
         [SerializeField] private Transform navigationPanelsRoot;
         [SerializeField] private CustomButtonUI[] externalNavigationButtons;
         [SerializeField] private Button learnButton;
+        [Tooltip("Sidebar buttons that live outside canvasGroup but must follow SetInteractable (e.g. Help)")]
+        [SerializeField] private CustomButtonUI[] outsideCanvasGroupButtons;
 
         private INavigationPanel[] navigationPanels;
         private Dictionary<INavigationPanel, bool> panelsBlockedByDefault;
@@ -289,7 +291,29 @@ namespace ProDomino.NavigationSystem
         public void SetInteractable(bool isInteractable)
         {
             canvasGroup.SetActive(isInteractable, isSettingAlpha: false);
+
+            if (outsideCanvasGroupButtons is null)
+                return;
+
+            // Same as canvasGroup: only input is locked, alpha stays. Unlock restores the state each
+            // button had before the lock, so auth/default rules applied meanwhile are not overridden.
+            foreach (var button in outsideCanvasGroupButtons)
+            {
+                if (!button)
+                    continue;
+
+                if (!isInteractable)
+                {
+                    if (!lockedOutsideButtons.ContainsKey(button))
+                        lockedOutsideButtons[button] = button.IsInteractable;
+                    button.SetButtonInteractableWithAlphaFull(false);
+                }
+                else if (lockedOutsideButtons.Remove(button, out var wasInteractable))
+                    button.SetButtonInteractableWithAlphaFull(wasInteractable);
+            }
         }
+
+        private readonly Dictionary<CustomButtonUI, bool> lockedOutsideButtons = new();
 
         private void SetBlockToRequiredNavigationButtons(bool isInteractable)
         {

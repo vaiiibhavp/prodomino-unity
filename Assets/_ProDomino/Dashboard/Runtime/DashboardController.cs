@@ -56,6 +56,11 @@ namespace ProDomino.Dashboard
         [SerializeField] private Button frenchButton;
         [SerializeField] private Button drawButton;
         [SerializeField] private Button fiveButton;
+        [SerializeField] private Button blockPlayButton;
+        [SerializeField] private Button concentratePlayButton;
+        [SerializeField] private Button frenchPlayButton;
+        [SerializeField] private Button drawPlayButton;
+        [SerializeField] private Button fivePlayButton;
 
         [Header("Matchmaking overlay")]
         [SerializeField] private CanvasGroup matchmakingOverlay;
@@ -104,6 +109,11 @@ namespace ProDomino.Dashboard
             frenchButton?.onClick.AddListener(() => OpenGamesModal(GameMode.french));
             drawButton?.onClick.AddListener(() => OpenGamesModal(GameMode.draw));
             fiveButton?.onClick.AddListener(() => OpenGamesModal(GameMode.five));
+            blockPlayButton?.onClick.AddListener(() => OpenGamesModal(GameMode.block));
+            concentratePlayButton?.onClick.AddListener(() => OpenGamesModal(GameMode.concentrate));
+            frenchPlayButton?.onClick.AddListener(() => OpenGamesModal(GameMode.french));
+            drawPlayButton?.onClick.AddListener(() => OpenGamesModal(GameMode.draw));
+            fivePlayButton?.onClick.AddListener(() => OpenGamesModal(GameMode.five));
             cancelMatchmakingButton?.onClick.AddListener(CancelMatchmaking);
 
             SetOverlayVisible(false);
