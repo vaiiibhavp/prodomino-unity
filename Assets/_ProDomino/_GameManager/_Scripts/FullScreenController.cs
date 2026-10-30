@@ -17,6 +17,15 @@ namespace ProDomino.GameSystem
         private Vector2 originalSize;
         private bool saved = false;
 
+        public RectTransform InnerScreen => innerScreenRectTransform;
+
+        /// <summary>
+        /// Size the inner screen has outside fullscreen, valid in either mode.
+        /// </summary>
+        public Vector2 NormalInnerSize => saved && innerScreenRectTransform && innerScreenRectTransform.parent is RectTransform parent
+            ? Vector2.Scale(parent.rect.size, originalAnchorMax - originalAnchorMin) + originalSize
+            : innerScreenRectTransform ? innerScreenRectTransform.rect.size : Vector2.zero;
+
         private RectTransformPanZoomController rectTransformPanZoomController;
         private RectTransformPanZoomController RectTransformPanZoomController => rectTransformPanZoomController = rectTransformPanZoomController != null 
             ? rectTransformPanZoomController 

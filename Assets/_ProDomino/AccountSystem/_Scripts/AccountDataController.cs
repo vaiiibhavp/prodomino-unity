@@ -250,8 +250,6 @@ namespace ProDomino.AccountSystem
 
             if (userIDLabel)
                 userIDLabel.text = authManager.UUID;
-            else
-                Debug.LogError($"Missing reference: {nameof(userIDLabel)}");
 
             RefreshVerifyEmailButton();
 
