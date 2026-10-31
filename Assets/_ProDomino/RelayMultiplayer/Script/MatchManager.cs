@@ -405,13 +405,10 @@ public class MatchManager : NetworkBehaviour
         if (numberPlayers is not NumberPlayers.oneVsOne and not NumberPlayers.oneVsThree and not NumberPlayers.none and not NumberPlayers.twoVsTwo)
             throw new ArgumentException($"<color={Consts.Colors.Error}><b>[{nameof(MatchManager)}]</b> Invalid number of players. Must be either 'oneVsOne' or 'oneVsThree'.</color>");
 
-        // Check if the user is authenticated using providers
-        if (gameType is GameType.competitive && !IsAuthenticated)
-            throw new ArgumentException($"<color={Consts.Colors.Error}><b>[{nameof(MatchManager)}]</b> Competitive games require the user to be authenticated with Unity Gaming Services to create a competitive session.</color>");
-
-        // Else, check if at least the player is authenticated anonimously for casual games
-        else if (gameType is GameType.casual && !authManager.IsUGSAuthenticated)
-            throw new ArgumentException($"<color={Consts.Colors.Error}><b>[{nameof(MatchManager)}]</b> Casual games require the user to be authenticated (at least anonimously) with Unity Gaming Services to create a casual session.</color>");
+        // Casual and competitive games only need the player authenticated (at least anonimously) with Unity Gaming Services,
+        // so logged-out players can start a competitive session the same way logged-in ones do
+        if (gameType is GameType.casual or GameType.competitive && !authManager.IsUGSAuthenticated)
+            throw new ArgumentException($"<color={Consts.Colors.Error}><b>[{nameof(MatchManager)}]</b> {(gameType is GameType.casual ? "Casual" : "Competitive")} games require the user to be authenticated (at least anonimously) with Unity Gaming Services to create a session.</color>");
         #endregion
 
         #region Local Variables

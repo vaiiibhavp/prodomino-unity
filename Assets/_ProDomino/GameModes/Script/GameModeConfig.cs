@@ -386,13 +386,12 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             return;
 
         // --- 3. Calculate base conditions ---
-        bool isAuthenticated = authManager != null && ((authManager.IsUserAuthenticatedWithCredentials && authManager.IsEmailVerified) || authManager.IsUserAuthenticatedWithProvider);
         bool isConcentrateMode = GameModeSelectedID == GameMode.concentrate;
-        bool canShowMultiplayer = isAuthenticated && !isConcentrateMode;
 
         // --- 4. Update Game Type buttons ---
+        // Competitive behaves the same logged in or out; like Casual it is only hidden in Concentrate
         SetGameTypeInteractable(GameType.casual, !isConcentrateMode);
-        SetGameTypeInteractable(GameType.competitive, canShowMultiplayer);
+        SetGameTypeInteractable(GameType.competitive, !isConcentrateMode);
         SetGameTypeInteractable(GameType.singlePlayerIA, true); // always reset; may change later for party conditions
 
         // --- 5. Update VS Player buttons ---
@@ -412,7 +411,7 @@ public class GameModeConfig : MonoBehaviour, INavigationPanel
             vsPlayerSelector.DeselectAll(true);
 
         if ((gameTypeSelector.CheckIfSelected(GameType.casual.ToString()) && isConcentrateMode) ||
-            (gameTypeSelector.CheckIfSelected(GameType.competitive.ToString()) && !canShowMultiplayer))
+            (gameTypeSelector.CheckIfSelected(GameType.competitive.ToString()) && isConcentrateMode))
             gameTypeSelector.DeselectAll(true);
 
         // --- 9. Update Play Button interactivity ---
