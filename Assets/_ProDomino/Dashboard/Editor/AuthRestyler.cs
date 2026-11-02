@@ -75,6 +75,7 @@ namespace ProDomino.Dashboard.Editor
             waveEmoji = AuthArt("Auth_Emoji_Wave.png");
 
             RestyleAuthPrefab();
+            AuthTextClarity.Apply();   // larger, sharper text on the Login / Create Account cards
             RevertStaleAuthOverrides();
             BuildResultPopUp();
             AssetDatabase.SaveAssets();
