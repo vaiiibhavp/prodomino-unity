@@ -5,6 +5,7 @@ using ProDomino.AnalyticsSystem;
 using ProDomino.Authentication;
 using ProDomino.FriendSystem;
 using ProDomino.GameSystem;
+using ProDomino.NavigationSystem;
 using ProDomino.Shared;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ using Unity.Services.Friends.Models;
 using Unity.Services.Friends.Notifications;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using static HelperSharedLibrary.Enums;
 using static ProDomino.FriendSystem.FriendManager;
@@ -52,6 +55,12 @@ namespace ProDomino.NotificationSystem
         private AnalyticsManager analyticsManager;
         private List<NotificationEntry> notificationEntries;
         private readonly HashSet<NotificationEntry> olderEntries = new();
+        private readonly List<RaycastResult> raycastResults = new();
+
+        private NavigationPanelController navigationController;
+        private NavigationPanelType trackedNavigationPanelType;
+
+        private bool IsPopUpOpen => popUpCanvasGroup && popUpCanvasGroup.alpha > 0f;
 
         public bool IsViewingLatestNews { get; private set; }
         internal FriendsEntryData[] RequestsEntryDatas => friendManager.RequestsEntryDatas?.ToArray();
@@ -90,7 +99,7 @@ namespace ProDomino.NotificationSystem
             friendManager.RegisterRelationshipDeleted(OnFriendRelationshipDeleted);
 
             // UI bindings
-            openPopUpButton?.onClick.AddListener(OpenPopUp);
+            openPopUpButton?.onClick.AddListener(TogglePopUp);
             closePopUpButton?.onClick.AddListener(ClosePopUp);
 
             if (notificationFiltersToggleGroupUI)
@@ -114,6 +123,10 @@ namespace ProDomino.NotificationSystem
             }
 
             gameManager.HandleOnSignIn(UpdateInstacesSync);
+            gameManager.HandleOnSignOut(OnSignOut);
+
+            // Not registered in the ServiceLocator; null in scenes without the sidebar
+            navigationController = FindFirstObjectByType<NavigationPanelController>();
 
             // By default, hide all notification entries
             notificationEntries.ForEach(x => x?.gameObject.SetActive(false));
@@ -125,6 +138,57 @@ namespace ProDomino.NotificationSystem
             // Ensure the button is only interactable if the user is authenticated
             if (openPopUpButton != null)
                 openPopUpButton.interactable = IsAuthenticated;
+
+            if (!IsPopUpOpen)
+            {
+                trackedNavigationPanelType = navigationController ? navigationController.NavigationPanelType : NavigationPanelType.None;
+                return;
+            }
+
+            // Session ended through a path that raised no sign-out event (e.g. expiry)
+            if (!IsAuthenticated)
+            {
+                HidePopUp(isUpdatingInstances: false);
+                return;
+            }
+
+            // Screen changed while open (sidebar, shortcut or code-driven navigation)
+            if (navigationController && navigationController.NavigationPanelType != trackedNavigationPanelType)
+            {
+                trackedNavigationPanelType = navigationController.NavigationPanelType;
+                ClosePopUp();
+                return;
+            }
+
+            if (IsPressOutsidePopUp())
+                ClosePopUp();
+        }
+
+        /// <summary>
+        /// True when this frame's press landed outside the popup. The open button is excluded: its click toggles the popup itself.
+        /// </summary>
+        private bool IsPressOutsidePopUp()
+        {
+            var pointer = Pointer.current;
+            if (pointer is null || !pointer.press.wasPressedThisFrame || !EventSystem.current)
+                return false;
+
+            var position = pointer.position.ReadValue();
+
+            // Rect test instead of raycast: the popup stops blocking raycasts while it refreshes
+            var canvas = popUpCanvasGroup.GetComponentInParent<Canvas>()?.rootCanvas;
+            var eventCamera = canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            if (RectTransformUtility.RectangleContainsScreenPoint((RectTransform)popUpCanvasGroup.transform, position, eventCamera))
+                return false;
+
+            raycastResults.Clear();
+            EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = position }, raycastResults);
+
+            // Nothing under the pointer: empty space counts as outside
+            if (raycastResults.Count is 0 || !raycastResults[0].gameObject)
+                return true;
+
+            return !(openPopUpButton && raycastResults[0].gameObject.transform.IsChildOf(openPopUpButton.transform));
         }
 
         private void OnDestroy()
@@ -133,7 +197,10 @@ namespace ProDomino.NotificationSystem
                 firebaseWebGLReceiver.UnregisterOnMessageReceived(OnReceiveMessage);
 
             if (gameManager)
+            {
                 gameManager.UnHandleOnSignIn(UpdateInstacesSync);
+                gameManager.UnHandleOnSignOut(OnSignOut);
+            }
 
             if (friendManager)
             {
@@ -142,7 +209,7 @@ namespace ProDomino.NotificationSystem
                 friendManager.UnregisterRelationshipDeleted(OnFriendRelationshipDeleted);
             }
 
-            openPopUpButton?.onClick.RemoveListener(OpenPopUp);
+            openPopUpButton?.onClick.RemoveListener(TogglePopUp);
             closePopUpButton?.onClick.RemoveListener(ClosePopUp);
         }
 
@@ -615,9 +682,23 @@ namespace ProDomino.NotificationSystem
         }
 
         /// <summary>
+        /// Notification button handler: opens the popup, or closes it when already open.
+        /// </summary>
+        private void TogglePopUp()
+        {
+            if (IsPopUpOpen)
+                ClosePopUp();
+            else
+                OpenPopUp();
+        }
+
+        /// <summary>
         /// Hides the notification popup panel.
         /// </summary>
-        private void ClosePopUp()
+        private void ClosePopUp() => HidePopUp(isUpdatingInstances: true);
+
+        /// <param name="isUpdatingInstances">False when signed out: there is no session to refresh the entries from.</param>
+        private void HidePopUp(bool isUpdatingInstances)
         {
             if (!popUpCanvasGroup)
             {
@@ -627,7 +708,14 @@ namespace ProDomino.NotificationSystem
 
             popUpCanvasGroup.SetActive(false);
 
-            UpdateInstances().Forget();
+            if (isUpdatingInstances)
+                UpdateInstances().Forget();
+        }
+
+        private void OnSignOut()
+        {
+            if (IsPopUpOpen)
+                HidePopUp(isUpdatingInstances: false);
         }
 
         /// <summary>
