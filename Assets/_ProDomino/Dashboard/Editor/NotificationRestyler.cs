@@ -17,11 +17,11 @@ namespace ProDomino.Dashboard.Editor
     /// Restyles the Notification Drawer and Notification Cards to match the Figma reference (media_1790154812121.png):
     /// - Right-side flyout drawer (330x720, #0C101D -> #070A14, border #1E2538, radius 16px, sortingOrder 1020)
     /// - Header: Golden bell icon + "Notification" (Montserrat-Bold 17px) + dark square Close button (X icon)
-    /// - Section Headers: "Today" and "Older Notification" (Montserrat-SemiBold 12px, #94A3B8)
+    /// - Section Headers: "Today" and "Older Notification" (Montserrat-SemiBold 13px, #94A3B8)
     /// - Notification Cards (#111625 -> #0D111D, border #1F2639, radius 10px, 52px height):
     ///     - Category label ("Friends Notification", "Club Membership", etc., white 11px)
     ///     - Avatar circular thumbnail (28x28)
-    ///     - Message body ("Emma accepted your friend request.", etc., #94A3B8 10.5px)
+    ///     - Message body ("Emma accepted your friend request.", etc., #CBD5E1 13.5px)
     ///     - Golden timestamp ("12:00PM", #F59E0B) placed at bottom-right
     /// - Empty State: "No notifications yet" (#64748B)
     /// </summary>
@@ -216,7 +216,7 @@ namespace ProDomino.Dashboard.Editor
                 catGo.transform.SetParent(contentGo.transform, false);
                 var catTmp = catGo.AddComponent<TextMeshProUGUI>();
                 catTmp.font = fSemiBold;
-                catTmp.fontSize = 11.5f;
+                catTmp.fontSize = 15f;
                 catTmp.color = Color.white;
                 catTmp.text = "Friends Notification";
                 catTmp.alignment = TextAlignmentOptions.MidlineLeft;
@@ -234,15 +234,15 @@ namespace ProDomino.Dashboard.Editor
                 bottomHlg.childForceExpandWidth = false;
                 bottomHlg.childForceExpandHeight = true;
                 var bottomLe = bottomRowGo.AddComponent<LayoutElement>();
-                bottomLe.minHeight = bottomLe.preferredHeight = 16f;
+                bottomLe.minHeight = bottomLe.preferredHeight = 20f;
 
                 // Message Text
                 var msgGo = new GameObject("Message_Text", typeof(RectTransform));
                 msgGo.transform.SetParent(bottomRowGo.transform, false);
                 var msgTmp = msgGo.AddComponent<TextMeshProUGUI>();
                 msgTmp.font = fRegular;
-                msgTmp.fontSize = 10f;
-                msgTmp.color = Hex("#94A3B8");
+                msgTmp.fontSize = 13.5f;
+                msgTmp.color = Hex("#CBD5E1");
                 msgTmp.text = "Emma accepted your friend request.";
                 msgTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 msgTmp.overflowMode = TextOverflowModes.Ellipsis;
@@ -257,7 +257,7 @@ namespace ProDomino.Dashboard.Editor
                 timeGo.transform.SetParent(bottomRowGo.transform, false);
                 var timeTmp = timeGo.AddComponent<TextMeshProUGUI>();
                 timeTmp.font = fMedium;
-                timeTmp.fontSize = 9.5f;
+                timeTmp.fontSize = 12f;
                 timeTmp.color = Hex("#F59E0B"); // Golden amber
                 timeTmp.text = "12:00PM";
                 timeTmp.alignment = TextAlignmentOptions.MidlineRight;
@@ -293,7 +293,7 @@ namespace ProDomino.Dashboard.Editor
                 var confirmTxt = confirmTxtGo.AddComponent<TextMeshProUGUI>();
                 Stretch((RectTransform)confirmTxtGo.transform);
                 confirmTxt.font = fBold;
-                confirmTxt.fontSize = 9.5f;
+                confirmTxt.fontSize = 13f;
                 confirmTxt.color = Hex("#01010C");
                 confirmTxt.text = "Accept";
                 confirmTxt.alignment = TextAlignmentOptions.Center;
@@ -314,7 +314,7 @@ namespace ProDomino.Dashboard.Editor
                 var declineTxt = declineTxtGo.AddComponent<TextMeshProUGUI>();
                 Stretch((RectTransform)declineTxtGo.transform);
                 declineTxt.font = fMedium;
-                declineTxt.fontSize = 9.5f;
+                declineTxt.fontSize = 13f;
                 declineTxt.color = Hex("#94A3B8");
                 declineTxt.text = "Decline";
                 declineTxt.alignment = TextAlignmentOptions.Center;
@@ -433,7 +433,7 @@ namespace ProDomino.Dashboard.Editor
                 titleRt.offsetMax = new Vector2(-48f, 0f);
                 var titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
                 titleTmp.font = fBold;
-                titleTmp.fontSize = 16.5f;
+                titleTmp.fontSize = 18f;
                 titleTmp.color = Color.white;
                 titleTmp.text = "Notification";
                 titleTmp.alignment = TextAlignmentOptions.MidlineLeft;
@@ -534,7 +534,7 @@ namespace ProDomino.Dashboard.Editor
                 todayLe.flexibleWidth = 1f;
                 var todayTmp = todayGo.AddComponent<TextMeshProUGUI>();
                 todayTmp.font = fSemiBold;
-                todayTmp.fontSize = 12f;
+                todayTmp.fontSize = 13f;
                 todayTmp.color = Hex("#94A3B8");
                 todayTmp.text = "Today";
                 todayTmp.alignment = TextAlignmentOptions.MidlineLeft;
@@ -550,7 +550,7 @@ namespace ProDomino.Dashboard.Editor
                 olderLe.flexibleWidth = 1f;
                 var olderTmp = olderGo.AddComponent<TextMeshProUGUI>();
                 olderTmp.font = fSemiBold;
-                olderTmp.fontSize = 12f;
+                olderTmp.fontSize = 13f;
                 olderTmp.color = Hex("#94A3B8");
                 olderTmp.text = "Older Notification";
                 olderTmp.alignment = TextAlignmentOptions.BottomLeft;
@@ -573,7 +573,7 @@ namespace ProDomino.Dashboard.Editor
                 emptyLabelRt.sizeDelta = new Vector2(260f, 40f);
                 var emptyTmp = emptyLabelGo.AddComponent<TextMeshProUGUI>();
                 emptyTmp.font = fMedium;
-                emptyTmp.fontSize = 13.5f;
+                emptyTmp.fontSize = 15f;
                 emptyTmp.color = Hex("#64748B");
                 emptyTmp.text = "No notifications yet";
                 emptyTmp.alignment = TextAlignmentOptions.Center;
