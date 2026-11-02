@@ -7,6 +7,7 @@ using System.Linq;
 using Timba.Patterns;
 using TMPro;
 using Unity.Services.Friends.Models;
+using Unity.Services.Friends.Notifications;
 using UnityEngine;
 using UnityEngine.UI;
 using static ProDomino.FriendSystem.FriendManager;
@@ -75,6 +76,30 @@ namespace ProDomino.FriendSystem
         internal bool IsViewingFriendList { get; private set; }
         internal FriendsEntryData[] FriendsEntryDatas => friendManager.FriendsEntryDatas?.ToArray();
 
+        /// <summary>
+        /// Friend requests received by the local player, shown in the full friends list layout only.
+        /// TargetID holds the requester, the same way it holds the friend in <see cref="FriendsEntryDatas"/>.
+        /// </summary>
+        internal FriendsEntryData[] IncomingRequestsEntryDatas => UsesScreenStates
+            ? friendManager?.RequestsEntryDatas
+                ?.Where(x => !string.IsNullOrEmpty(x.SenderID)
+                    && x.SenderID != authManager?.UUID // Outgoing requests are sent by the local player
+                    && (!FriendsEntryDatas?.Any(y => y.TargetID == x.SenderID) ?? true)) // Ignore already friends
+                ?.Select(x => new FriendsEntryData
+                {
+                    UUID = x.UUID,
+                    SenderID = x.SenderID,
+                    TargetID = x.SenderID,
+                    Name = x.Name,
+                    Availability = x.Availability,
+                    Activity = x.Activity,
+                    Timestamp = x.Timestamp
+                })
+                ?.GroupBy(x => x.TargetID)
+                ?.Select(x => x.First())
+                ?.ToArray()
+            : null;
+
         internal const string FriendList = "FriendList";
         internal const string RecentlyPlayed = "RecentlyPlayed";
 
@@ -103,10 +128,7 @@ namespace ProDomino.FriendSystem
             // Try to get instances already prepared in the editor. If there are, initialize them before using them
             friendEntriesInstances = friendEntriesParent?.GetComponentsInChildren<FriendEntry>(true)?.ToList() ?? new();
             foreach (var friendEntryInstance in friendEntriesInstances)
-                friendEntryInstance.Initialize
-                    (InviteFriendToPlay, 
-                    RemoveFriendFromList,
-                    () => PartyMembers);
+                InitializeFriendEntry(friendEntryInstance);
 
             // Assign the request friendship button callback
             if (requestFriendshipButton)
@@ -133,6 +155,16 @@ namespace ProDomino.FriendSystem
             if (searchUserEntryInstances is not null and { Count: > 0 })
                 foreach (var searchUserEntryInstance in searchUserEntryInstances)
                     searchUserEntryInstance.Initialize(OnInviteFriendToPlay);
+        }
+
+        private void InitializeFriendEntry(FriendEntry friendEntry)
+        {
+            friendEntry.Initialize
+                (InviteFriendToPlay,
+                RemoveFriendFromList,
+                () => PartyMembers);
+
+            friendEntry.InitializeRequestActions(AcceptFriendRequest, DeclineFriendRequest);
         }
 
 #if UNITY_EDITOR
@@ -483,7 +515,8 @@ namespace ProDomino.FriendSystem
         /// </summary>
         private void ApplyScreenState()
         {
-            var hasAnyFriend = (FriendsEntryDatas?.Length ?? 0) > 0;
+            // Received requests are listed in the friends grid too, so they must not leave the screen empty
+            var hasAnyFriend = (FriendsEntryDatas?.Length ?? 0) > 0 || (IncomingRequestsEntryDatas?.Length ?? 0) > 0;
 
             // Layouts without the screen states (party panel) only toggle the empty label and search results
             if (!UsesScreenStates)
@@ -564,7 +597,21 @@ namespace ProDomino.FriendSystem
                 (FriendAction.Block, OnBlockFriend),
                 (FriendAction.Unblock, OnUnblockFriend));
 
+            // Requests received or withdrawn while the list is open must show up without reopening it
+            friendManager.RegisterRelationshipAdded(OnRelationshipAdded);
+            friendManager.RegisterRelationshipDeleted(OnRelationshipDeleted);
+
             ConfigureUI();
+        }
+
+        private void OnRelationshipAdded(IRelationshipAddedEvent _) => RefreshIfVisible();
+
+        private void OnRelationshipDeleted(IRelationshipDeletedEvent _) => RefreshIfVisible();
+
+        private void RefreshIfVisible()
+        {
+            if (UsesScreenStates && friendListCanvasGroup && friendListCanvasGroup.alpha > 0)
+                ConfigureUI();
         }
 
         /// <summary>
@@ -585,6 +632,9 @@ namespace ProDomino.FriendSystem
                 (FriendAction.DeclineRequest, OnDeclineFriendRequest),
                 (FriendAction.Block, OnBlockFriend),
                 (FriendAction.Unblock, OnUnblockFriend));
+
+            friendManager.UnregisterRelationshipAdded(OnRelationshipAdded);
+            friendManager.UnregisterRelationshipDeleted(OnRelationshipDeleted);
         }
 
         /// <summary>
@@ -742,27 +792,28 @@ namespace ProDomino.FriendSystem
                 ?.Select(x => x.OrderByDescending(y => y.Timestamp).First())
                 ?.ToList();
 
+            // Received requests get their own cards in the friends list view
+            var incomingRequestsEntryDatas = isIncludingRecentlyPlayedUnknownPlayers
+                ? Array.Empty<FriendsEntryData>()
+                : IncomingRequestsEntryDatas ?? Array.Empty<FriendsEntryData>();
+
+            var entriesCount = (friendsEntryDatas?.Count ?? 0) + incomingRequestsEntryDatas.Length;
+
             // Ensure we have enough instances to display all entries
-            if (friendsEntryDatas is not null and { Count: > 0 })
-            { 
+            if (entriesCount > 0)
+            {
                 friendEntriesInstances ??= new();
-                for (var i = 0; i < friendsEntryDatas.Count; i++)
+                for (var i = 0; i < entriesCount; i++)
                     if (i >= friendEntriesInstances.Count)
                     {
                         var newInstance = Instantiate(friendEntryPrefab, friendEntriesParent);
-                        newInstance.Initialize
-                            (InviteFriendToPlay, 
-                            RemoveFriendFromList,
-                            () => PartyMembers);
+                        InitializeFriendEntry(newInstance);
                         friendEntriesInstances.Add(newInstance);
                     }
                     else if (friendEntriesInstances[i] == null)
                     {
                         var newInstance = Instantiate(friendEntryPrefab, friendEntriesParent);
-                        newInstance.Initialize
-                            (InviteFriendToPlay, 
-                            RemoveFriendFromList,
-                            () => PartyMembers);
+                        InitializeFriendEntry(newInstance);
                         friendEntriesInstances[i] = newInstance;
                     }
             }
@@ -772,6 +823,16 @@ namespace ProDomino.FriendSystem
 
             // Deactivate all current instances
             friendEntriesInstances?.ForEach(instance => instance?.SetActive(false));
+
+            foreach (var requestEntryData in incomingRequestsEntryDatas)
+            {
+                var instance = friendEntriesInstances?.FirstOrDefault(i => i != null && !i.gameObject.activeSelf);
+                if (instance != null)
+                {
+                    instance.Configure(requestEntryData, categoriesShown, isIncomingRequest: true);
+                    instance.SetActive(true);
+                }
+            }
 
             // Configure and activate only those matching the criteria
             if (friendsEntryDatas is not null and { Count: > 0 })
@@ -800,6 +861,40 @@ namespace ProDomino.FriendSystem
         /// <param name="toggleId">The ID of the toggle used to determine the ordering criteria.</param>
         private async void OrderPlayersBy(string toggleId)
         {
+            // Refreshes overlap when an action and its relationship event both reconfigure the UI;
+            // run them one at a time and keep only the latest pending one
+            if (isOrderingPlayers)
+            {
+                pendingOrderToggleId = toggleId;
+                return;
+            }
+
+            isOrderingPlayers = true;
+            try
+            {
+                await OrderPlayersByAsync(toggleId);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+            finally
+            {
+                isOrderingPlayers = false;
+            }
+
+            if (pendingOrderToggleId is { } nextToggleId)
+            {
+                pendingOrderToggleId = null;
+                OrderPlayersBy(nextToggleId);
+            }
+        }
+
+        private bool isOrderingPlayers;
+        private string pendingOrderToggleId;
+
+        private async UniTask OrderPlayersByAsync(string toggleId)
+        {
             if (!gameManager)
             {
                 Debug.LogErrorFormat("Could not order due {GameManager} is null", nameof(GameManager), nameof(FriendManager));
@@ -818,17 +913,22 @@ namespace ProDomino.FriendSystem
                     .Where(x => x.gameObject.activeSelf && x.FriendsEntryData.HasValue)
                     .ToList();
 
-                var friendEntryDict = instancesToFilter.ToDictionary(entry => entry.FriendsEntryData?.TargetID);
+                var friendEntryDict = instancesToFilter
+                    .Where(entry => !string.IsNullOrEmpty(entry.FriendsEntryData?.TargetID))
+                    .GroupBy(entry => entry.FriendsEntryData?.TargetID)
+                    .ToDictionary(x => x.Key, x => x.First());
 
                 if (IsViewingFriendList)
                 {
+                    // Received requests go first so they are noticed, then the friends
                     var friends = await friendManager.GetFriends();
                     orderedFriendEntries = friendEntryDict
-                        ?.Where(x => friends?.Any(y => y.Id == x.Key) ?? false)
+                        ?.Where(x => x.Value.IsIncomingRequest || (friends?.Any(y => y.Id == x.Key) ?? false))
                         ?.Select(x => x.Value)
-                        ?.OrderBy(x => x.FriendsEntryData?.Name)
+                        ?.OrderByDescending(x => x.IsIncomingRequest)
+                        ?.ThenBy(x => x.FriendsEntryData?.Name)
                         ?.ToList() ?? new();
-                } 
+                }
                 else
                 { 
                     var recentlyPlayed = gameManager.RecentlyPlayedDatas;
@@ -919,6 +1019,119 @@ namespace ProDomino.FriendSystem
             }
 
             ConfigureUI();
+        }
+
+        /// <summary>
+        /// Accepts the received friends request shown by a friend card.
+        /// The list refreshes through the accept request event.
+        /// </summary>
+        /// <param name="requestEntryData">The request's data, holding the requester in TargetID.</param>
+        private async void AcceptFriendRequest(FriendsEntryData? requestEntryData)
+        {
+            if (!requestEntryData.HasValue || string.IsNullOrEmpty(requestEntryData.Value.TargetID))
+            {
+                Debug.LogWarning("Couldn't accept the friends request because its data is null");
+                return;
+            }
+
+            if (!friendManager)
+            {
+                Debug.LogWarning("Cannot accept the friends request because the friends manager is null");
+                return;
+            }
+
+            var requesterID = requestEntryData.Value.TargetID;
+            var requesterName = requestEntryData.Value.Name;
+
+            SetInteractivity(false);
+            try
+            {
+                await friendManager.MakeFriendAction(FriendAction.AcceptRequest, requesterID);
+
+                var isFriend = FriendsEntryDatas?.Any(x => x.TargetID == requesterID) ?? false;
+                if (isFriend)
+                    RemoveFriendRequestNotifications(requesterID);
+                if (promptFadeController)
+                    promptFadeController.Fade(isFriend
+                        ? $"You are now friends with {requesterName}"
+                        : $"Couldn't accept the friend request from {requesterName}", 3f);
+
+                // A failed accept raises no event; refresh anyway in case the request no longer exists
+                if (!isFriend)
+                    ConfigureUI();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+            finally
+            {
+                if (friendListCanvasGroup.alpha is 0)
+                    SetVisibility(false);
+                else
+                    SetInteractivity(true);
+            }
+        }
+
+        /// <summary>
+        /// Declines the received friends request shown by a friend card.
+        /// The list refreshes through the decline request event.
+        /// </summary>
+        /// <param name="requestEntryData">The request's data, holding the requester in TargetID.</param>
+        private async void DeclineFriendRequest(FriendsEntryData? requestEntryData)
+        {
+            if (!requestEntryData.HasValue || string.IsNullOrEmpty(requestEntryData.Value.TargetID))
+            {
+                Debug.LogWarning("Couldn't decline the friends request because its data is null");
+                return;
+            }
+
+            if (!friendManager)
+            {
+                Debug.LogWarning("Cannot decline the friends request because the friends manager is null");
+                return;
+            }
+
+            SetInteractivity(false);
+            try
+            {
+                await friendManager.MakeFriendAction(FriendAction.DeclineRequest, requestEntryData.Value.TargetID);
+                RemoveFriendRequestNotifications(requestEntryData.Value.TargetID);
+
+                if (promptFadeController)
+                    promptFadeController.Fade($"Friend request from {requestEntryData.Value.Name} was declined", 3f);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+            finally
+            {
+                if (friendListCanvasGroup.alpha is 0)
+                    SetVisibility(false);
+                else
+                    SetInteractivity(true);
+            }
+        }
+
+        /// <summary>
+        /// Drops the saved notifications of a received friends request once it was answered from the list,
+        /// so the notifications panel doesn't keep offering an already handled request.
+        /// </summary>
+        /// <param name="requesterID">The ID of the player who sent the request.</param>
+        private void RemoveFriendRequestNotifications(string requesterID)
+        {
+            var notifications = gameManager?.PlayerNotificationDatas;
+            if (notifications is null)
+                return;
+
+            var removedCount = notifications.RemoveAll(x => x != null
+                && x.notificationType is HelperSharedLibrary.Enums.NotificationType.FriendRequest
+                && x.senderID == requesterID
+                && x.targetID == authManager?.UUID);
+
+            if (removedCount > 0)
+                gameManager.SavePublicGameData();
         }
 
         /// <summary>

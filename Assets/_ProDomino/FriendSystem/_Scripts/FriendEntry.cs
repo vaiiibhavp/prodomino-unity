@@ -32,6 +32,15 @@ namespace ProDomino.FriendSystem
         [SerializeField] private Button actionsMenuButton;
         [SerializeField] private GameObject actionsMenuPanel;
 
+        [Header("Friend Request (optional)")]
+        [Tooltip("Accept button shown for received friend requests. Leave empty to clone the invite button.")]
+        [SerializeField] private CustomButtonUI acceptRequestButton;
+        [Tooltip("Decline button shown for received friend requests. Leave empty to clone the remove button.")]
+        [SerializeField] private CustomButtonUI declineRequestButton;
+        [SerializeField] private string acceptRequestText = "Accept";
+        [SerializeField] private string declineRequestText = "Decline";
+        [SerializeField] private string requestStatusText = "Friend Request";
+
         [Header("Status Label Colors (optional)")]
         [SerializeField] private bool isTintingStatusLabel;
         [SerializeField] private Color onlineStatusLabelColor = new(0.902f, 0.902f, 0.906f, 1f);
@@ -46,8 +55,15 @@ namespace ProDomino.FriendSystem
         private Action<FriendsEntryData?> onInviteFriendToPlay;
         private Action<FriendsEntryData?> onRemoveFriendFromList;
         private Func<IReadOnlyList<PartyEntryData?>> getPartyMembers;
+        private Action<FriendsEntryData?> onAcceptRequest;
+        private Action<FriendsEntryData?> onDeclineRequest;
 
         internal FriendsEntryData? FriendsEntryData { get; private set; }
+
+        /// <summary>
+        /// Whether this card shows a received friend request instead of a friend.
+        /// </summary>
+        internal bool IsIncomingRequest { get; private set; }
         internal IReadOnlyList<PartyEntryData?> PartyMembers => getPartyMembers?.Invoke();
 
         private void Awake()
@@ -61,7 +77,50 @@ namespace ProDomino.FriendSystem
             if (actionsMenuButton)
                 actionsMenuButton.onClick.AddListener(ToggleActionsMenu);
 
+            // Without dedicated buttons, clone the menu buttons so the request actions keep the card style
+            if (!acceptRequestButton)
+                acceptRequestButton = CloneRequestButton(inviteButton, "Button_AcceptRequest", acceptRequestText);
+            if (!declineRequestButton)
+                declineRequestButton = CloneRequestButton(RemoveButton, "Button_DeclineRequest", declineRequestText);
+
+            if (acceptRequestButton)
+                acceptRequestButton.onClick.AddListener(OnPressAcceptRequestButton);
+
+            if (declineRequestButton)
+                declineRequestButton.onClick.AddListener(OnPressDeclineRequestButton);
+
+            SetRequestButtonsVisible(false);
             SetActionsMenuVisible(false);
+        }
+
+        /// <summary>
+        /// Duplicates a card button next to the original, keeping its look but with its own label and listeners.
+        /// </summary>
+        private static CustomButtonUI CloneRequestButton(CustomButtonUI source, string name, string text)
+        {
+            if (!source)
+                return null;
+
+            var clone = Instantiate(source, source.transform.parent);
+            clone.name = name;
+
+            // Instantiate copies the persistent calls only; drop them so the clone runs just its own action
+            clone.onClick = new();
+
+            if (clone.GetMainText() is not null)
+                clone.SetMainText(text);
+            else if (clone.GetComponentInChildren<TMP_Text>(true) is { } label)
+                label.text = text;
+
+            return clone;
+        }
+
+        private void SetRequestButtonsVisible(bool isVisible)
+        {
+            if (acceptRequestButton)
+                acceptRequestButton.gameObject.SetActive(isVisible);
+            if (declineRequestButton)
+                declineRequestButton.gameObject.SetActive(isVisible);
         }
 
         private void OnDisable()
@@ -123,6 +182,19 @@ namespace ProDomino.FriendSystem
         }
 
         /// <summary>
+        /// Assigns the actions used when the card shows a received friend request.
+        /// </summary>
+        /// <param name="onAcceptRequest">Action invoked when accepting the friend request.</param>
+        /// <param name="onDeclineRequest">Action invoked when declining the friend request.</param>
+        internal void InitializeRequestActions
+            (Action<FriendsEntryData?> onAcceptRequest,
+            Action<FriendsEntryData?> onDeclineRequest)
+        {
+            this.onAcceptRequest = onAcceptRequest;
+            this.onDeclineRequest = onDeclineRequest;
+        }
+
+        /// <summary>
         /// Configures the friend entry UI elements based on the provided friend data and categories shown.
         /// </summary>
         /// <param name="friendsEntryData">The friend entry data to display in the UI.</param>
@@ -138,13 +210,16 @@ namespace ProDomino.FriendSystem
                 avatarImage.sprite = sprite ? sprite : defaultAvatarSprite;
         }
 
-        internal void Configure(FriendsEntryData? friendsEntryData, CategoriesShown categoriesShown)
+        /// <param name="isIncomingRequest">Whether the data is a received friend request, shown with accept and decline actions.</param>
+        internal void Configure(FriendsEntryData? friendsEntryData, CategoriesShown categoriesShown, bool isIncomingRequest = false)
         {
             // A reused card must not keep the previous friend's icon while the new one loads
             if (FriendsEntryData?.TargetID != friendsEntryData?.TargetID)
                 SetAvatar(null);
 
             FriendsEntryData = friendsEntryData;
+            IsIncomingRequest = isIncomingRequest && friendsEntryData.HasValue;
+            SetRequestButtonsVisible(IsIncomingRequest);
 
             if (!FriendsEntryData.HasValue)
             {
@@ -164,18 +239,21 @@ namespace ProDomino.FriendSystem
 
             if (friendStatusLabel)
             {
-                friendStatusLabel.text = FriendsEntryData.Value.Availability.ToString();
+                friendStatusLabel.text = IsIncomingRequest
+                    ? requestStatusText
+                    : FriendsEntryData.Value.Availability.ToString();
 
                 if (isTintingStatusLabel)
-                    friendStatusLabel.color = FriendsEntryData.Value.Availability is Availability.Online
+                    friendStatusLabel.color = FriendsEntryData.Value.Availability is Availability.Online && !IsIncomingRequest
                         ? onlineStatusLabelColor
                         : otherStatusLabelColor;
             }
             else
                 Debug.LogWarning("The status label is null");
 
+            // A pending request has no shared presence yet, so its indicator stays neutral
             if (statusIndicatorImage)
-                statusIndicatorImage.color = FriendsEntryData.Value.Availability switch
+                statusIndicatorImage.color = IsIncomingRequest ? unknownlineStatusColor : FriendsEntryData.Value.Availability switch
                 {
                     Availability.Online => onlineStatusColor,
                     Availability.Offline => offlineStatusColor,
@@ -197,6 +275,11 @@ namespace ProDomino.FriendSystem
             // Only allow removing friends
             if (RemoveButton)
                 RemoveButton.SetButtonInteractable(FriendsEntryData.HasValue, ignoreDefault: true);
+
+            if (acceptRequestButton)
+                acceptRequestButton.SetButtonInteractable(IsIncomingRequest, ignoreDefault: true);
+            if (declineRequestButton)
+                declineRequestButton.SetButtonInteractable(IsIncomingRequest, ignoreDefault: true);
 
             UpdateCategories(categoriesShown);
         }
@@ -226,10 +309,11 @@ namespace ProDomino.FriendSystem
                 friendIDLabel.gameObject.SetActive(categories.HasFlag(CategoriesShown.ID));
             if (friendStatusLabel)
                 friendStatusLabel.gameObject.SetActive(categories.HasFlag(CategoriesShown.Status));
+            // A received request only offers accepting or declining it
             if (inviteButton)
-                inviteButton.gameObject.SetActive(categories.HasFlag(CategoriesShown.Invite));
+                inviteButton.gameObject.SetActive(categories.HasFlag(CategoriesShown.Invite) && !IsIncomingRequest);
             if (RemoveButton)
-                RemoveButton.gameObject.SetActive(categories.HasFlag(CategoriesShown.Remove));
+                RemoveButton.gameObject.SetActive(categories.HasFlag(CategoriesShown.Remove) && !IsIncomingRequest);
         }
 
         /// <summary>
@@ -260,6 +344,36 @@ namespace ProDomino.FriendSystem
 
             SetActionsMenuVisible(false);
             onRemoveFriendFromList.Invoke(FriendsEntryData);
+        }
+
+        /// <summary>
+        /// Invokes the event to accept the received friend request shown by this card.
+        /// </summary>
+        private void OnPressAcceptRequestButton()
+        {
+            if (onAcceptRequest is null)
+            {
+                Debug.LogWarning("Event registered when a friend request is accepted is null");
+                return;
+            }
+
+            SetActionsMenuVisible(false);
+            onAcceptRequest.Invoke(FriendsEntryData);
+        }
+
+        /// <summary>
+        /// Invokes the event to decline the received friend request shown by this card.
+        /// </summary>
+        private void OnPressDeclineRequestButton()
+        {
+            if (onDeclineRequest is null)
+            {
+                Debug.LogWarning("Event registered when a friend request is declined is null");
+                return;
+            }
+
+            SetActionsMenuVisible(false);
+            onDeclineRequest.Invoke(FriendsEntryData);
         }
     }
 }
