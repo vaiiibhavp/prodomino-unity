@@ -15,7 +15,7 @@ namespace ProDomino.Dashboard.Editor
 {
     /// <summary>
     /// Restyles the Notification Drawer and Notification Cards to match the Figma reference (media_1790154812121.png):
-    /// - Right-side flyout drawer (330x720, #0C101D -> #070A14, border #1E2538, radius 16px, sortingOrder 60)
+    /// - Right-side flyout drawer (330x720, #0C101D -> #070A14, border #1E2538, radius 16px, sortingOrder 1020)
     /// - Header: Golden bell icon + "Notification" (Montserrat-Bold 17px) + dark square Close button (X icon)
     /// - Section Headers: "Today" and "Older Notification" (Montserrat-SemiBold 12px, #94A3B8)
     /// - Notification Cards (#111625 -> #0D111D, border #1F2639, radius 10px, 52px height):
@@ -379,7 +379,7 @@ namespace ProDomino.Dashboard.Editor
                 // Ensure Canvas overrideSorting so drawer floats above all other layers
                 var pressedCanvas = GetOrAdd<Canvas>(pressed.gameObject);
                 pressedCanvas.overrideSorting = true;
-                pressedCanvas.sortingOrder = 60;
+                pressedCanvas.sortingOrder = 1020;
                 GetOrAdd<GraphicRaycaster>(pressed.gameObject);
 
                 // Ensure CanvasGroup on Pressed_NotifUI
@@ -625,7 +625,7 @@ namespace ProDomino.Dashboard.Editor
 
             var pressedCanvas = GetOrAdd<Canvas>(pressed.gameObject);
             pressedCanvas.overrideSorting = true;
-            pressedCanvas.sortingOrder = 60;
+            pressedCanvas.sortingOrder = 1020;
             GetOrAdd<GraphicRaycaster>(pressed.gameObject);
 
             // Re-apply prefabs into scene
