@@ -300,6 +300,10 @@ public class MatchManager : NetworkBehaviour
             () => joinCodeManager?.JoinCode,
             () => IsInMatch,
             () => IsInRelay);
+
+        // Stop the active match when the player signs out, so it neither keeps running nor resumes on the next sign-in
+        authManager?.HandleOnBeforeSignOut(LeaveMatchOnSignOut);
+        gameManager?.HandleOnSignOut(LeaveMatchOnSignOut);
     }
 
     private void Update()
@@ -365,6 +369,58 @@ public class MatchManager : NetworkBehaviour
     {
         base.OnDestroy();
         CancelMatchmaking();
+
+        authManager?.UnHandleOnBeforeSignOut(LeaveMatchOnSignOut);
+        gameManager?.UnHandleOnSignOut(LeaveMatchOnSignOut);
+    }
+
+    /// <summary>
+    /// Stops the local player's active match (or matchmaking) when they sign out.<br></br>
+    /// Runs before the sign-out (player ID still valid) and again after it as a fallback for session expiry; the second call is a no-op.<br></br>
+    /// Only the local player is disconnected: other players keep their match through the usual dropout handling.
+    /// </summary>
+    private void LeaveMatchOnSignOut()
+    {
+        var isMatchmaking = IsMatchmakingRef;
+        if (!IsInMatch && !isMatchmaking)
+            return;
+
+        Debug.Log($"<color={Consts.Colors.Process}><b>[{nameof(MatchManager)}]</b> Player is signing out. Leaving the current match...</color>");
+
+        // The match is torn down below, so the despawn must not run the regular To Lobby flow (interstitial, lobby restore) again
+        if (MenuController)
+            MenuController._GameModeConfig._GameSearchStatus = GameSearchStatus.none;
+
+        try
+        {
+            if (isMatchmaking)
+                CancelMatchmaking();
+
+            // Disconnect only the local player. LeaveMatch is not used because in a party relay it sends every party member back to lobby
+            if (IsSpawned && NetworkManager.Singleton is { IsConnectedClient: true, ShutdownInProgress: false })
+                DisconnectPlayerRPC
+                    (localPlayerMatchID,
+                    (int)NetworkManager.Singleton.LocalClientId,
+                    authManager?.UUID ?? string.Empty,
+                    Consts.Reasons.LeftingOwnWill);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"<color={Consts.Colors.Error}><b>[{nameof(MatchManager)}]</b> Failed to leave the match on sign out: {e.Message}</color>");
+        }
+
+        // Stop the local game immediately (also covers matches against the AI, which have no network session)
+        if (MenuController)
+            MenuController.EndMatchOnSignOut();
+
+        if (currentGameMode)
+        {
+            Destroy(currentGameMode.gameObject);
+            currentGameMode = default;
+        }
+
+        enableTimerInHost = false;
+        playerUpdateComplete.Clear();
     }
 
     /// <summary>

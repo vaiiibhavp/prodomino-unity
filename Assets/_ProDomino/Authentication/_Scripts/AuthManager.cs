@@ -40,6 +40,7 @@ namespace ProDomino.Authentication
         [SerializeField] private UnityEvent onCompletelySignedIn;
 
         private HandleProcessesController handleProcessesController;
+        private Action onBeforeSignOut;
 
         // Exclusive Auth Manager Firebase consts
         // With this you could login in firebase from cloud code (iniatialice some cloud code function since there)
@@ -586,6 +587,16 @@ namespace ProDomino.Authentication
             }
 
             Debug.Log("Signing out...");
+
+            // Let listeners stop player-bound work (active matches, relay sessions) while the player ID is still valid
+            try
+            {
+                onBeforeSignOut?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             WillSignInAnonymouslyOnSignOut = isSignInAnonymouslyOnSignOut;
             WillSignOutFromFirebaseToo = isSignOutFromFirebaseToo;
@@ -1402,6 +1413,27 @@ namespace ProDomino.Authentication
             // The other possible way is to use AuthenticationService.Instance.SignedIn, but it will be called when the player is signed in UGS only
             if (onCompletelySignedIn is not null)
                 onCompletelySignedIn.RemoveListener(onSignIn);
+        }
+
+        /// <summary>
+        /// Registers a callback to be invoked when a sign-out starts, before the UGS session is cleared.<br></br>
+        /// Use it for work that still needs the current player (e.g. leaving an active match).
+        /// </summary>
+        /// <param name="onBeforeSignOut">The action to execute before signing out.</param>
+        public void HandleOnBeforeSignOut(Action onBeforeSignOut)
+        {
+            if (onBeforeSignOut != null)
+                this.onBeforeSignOut += onBeforeSignOut;
+        }
+
+        /// <summary>
+        /// Removes the specified action from the before sign-out event.
+        /// </summary>
+        /// <param name="onBeforeSignOut">The action to remove.</param>
+        public void UnHandleOnBeforeSignOut(Action onBeforeSignOut)
+        {
+            if (onBeforeSignOut != null)
+                this.onBeforeSignOut -= onBeforeSignOut;
         }
 
         /// <summary>

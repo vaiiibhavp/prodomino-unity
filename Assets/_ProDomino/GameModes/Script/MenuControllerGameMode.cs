@@ -390,6 +390,42 @@ namespace ProDomino.GameModes
         }
 
         /// <summary>
+        /// Immediately tears down the current match when the player signs out. Unlike <see cref="ToLobby"/>, it reports
+        /// no give-up result and shows no interstitial: the game mode object (with its timers, coroutines, AI and
+        /// animations) is destroyed and the selection UI is restored, so the next sign-in starts from a clean lobby.
+        /// </summary>
+        public void EndMatchOnSignOut()
+        {
+            if (!IsInMatch)
+                return;
+
+            Debug.Log($"[{nameof(MenuControllerGameMode)}] Player signed out during a match. Ending it.");
+
+            PostMatchResultController?.SetVisibility(false);
+
+            if (gameManager)
+            {
+                gameManager.UpdateAnalyticsValue((false, GlobalAnalyticType.usersPlayingNow, _gameModeConfig.GameModeSelectedID));
+                gameManager.RegisterStartMatchDateTime(true);
+            }
+
+            // The game holder is usually the game mode itself, but destroy the game mode explicitly so nothing keeps running
+            if (currentGameModeScript)
+                Destroy(currentGameModeScript.gameObject);
+            currentGameModeScript = null;
+
+            EndGame();
+            _currentGameHolder = null;
+
+            _inGameMenu.SetActive(false);
+            _inGameMenuStuff.gameObject.SetActive(false);
+            FullScreenController?.SetFullscreen(false);
+
+            OpenMainMenu();
+            _gameModeConfig.ValidateGameModeFullData();
+        }
+
+        /// <summary>
         /// Initializes and starts a new domino game session by configuring UI elements, setting up the selected game
         /// mode, and updating analytics.
         /// </summary>
