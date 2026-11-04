@@ -454,35 +454,37 @@ namespace ProDomino.FriendSystem
         /// met.
         /// </summary>
         /// <param name="joinCode">The code used to join the target party.</param>
-        /// <returns>A UniTask representing the asynchronous join operation.</returns>
-        public async UniTask JoinToParty(string joinCode)
+        /// <returns>The outcome of the join attempt.</returns>
+        public async UniTask<PartyJoinResult> JoinToParty(string joinCode)
         {
             if (!partyController)
             {
                 Debug.LogWarning("Couldn't join to a party because the party controller reference is null");
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             if (string.IsNullOrEmpty(joinCode))
             {
                 Debug.LogWarning("Couldn't join to a party because the join code is null or empty");
-                return;
+                return PartyJoinResult.Invalid;
             }
 
             if (FriendsEntryDatas.Any(x => x.UUID == authManager.UUID))
             {
                 Debug.LogWarning("You are already in a party. Leave the current party before joining another one.");
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             try
             {
-                await partyController.JoinToParty(joinCode);
-                Debug.Log($"Joined to party with code {joinCode}.");
+                var result = await partyController.JoinToParty(joinCode);
+                Debug.Log($"Join to party with code {joinCode} finished with result {result}.");
+                return result;
             }
             catch (FriendsServiceException e)
             {
                 Debug.Log($"Failed to join to party with code {joinCode}. - {e}");
+                return PartyJoinResult.Invalid;
             }
         }
 

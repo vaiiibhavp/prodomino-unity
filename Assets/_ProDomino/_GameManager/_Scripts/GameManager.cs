@@ -524,7 +524,12 @@ namespace ProDomino.GameSystem
         /// <summary>
         /// Saves the public game data to the cloud save service, including notifications and recently played players.
         /// </summary>
-        public void SavePublicGameData()
+        public void SavePublicGameData() => SavePublicGameDataAsync().Forget();
+
+        /// <summary>
+        /// Awaitable version of <see cref="SavePublicGameData"/>, for callers that refresh from the cloud right after saving.
+        /// </summary>
+        public async UniTask SavePublicGameDataAsync()
         {
             if (!IsAuthenticated)
             {
@@ -552,7 +557,7 @@ namespace ProDomino.GameSystem
             else if (RecentlyPlayedDatas is not null and { Count: > 0 })
                 PublicPlayerData.Add(Consts.CollectionKeys.RecentlyPlayed, RecentlyPlayedDatas);
 
-            CloudSaveService.Instance.Data.Player.SaveAsync(PublicPlayerData.ToDictionary(x => x.Key, x => x.Value));
+            await CloudSaveService.Instance.Data.Player.SaveAsync(PublicPlayerData.ToDictionary(x => x.Key, x => x.Value));
         }
 
         /// <summary>

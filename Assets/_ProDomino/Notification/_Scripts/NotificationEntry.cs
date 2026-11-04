@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using HelperSharedLibrary;
 using System;
 using Timba.Utils;
@@ -33,11 +34,17 @@ namespace ProDomino.NotificationSystem
         private Func<string, Sprite> getIconSprite;
         private AsyncActionHandler<PlayerNotificationData> onConfirmAction;
         private AsyncActionHandler<PlayerNotificationData> onDeclineAction;
+        private bool isRunningAction;
 
         /// <summary>
         /// The data backing this notification entry.
         /// </summary>
         internal PlayerNotificationData PlayerNotificationData { get; private set; }
+
+        /// <summary>
+        /// True for cards built with the Accept/Decline actions row (the notification entry prefab's design).
+        /// </summary>
+        internal bool HasActionsRow => actionsRow && confirmButton && declineButton;
 
         /// <summary>
         /// Initializes the entry with a function that resolves icons based on string IDs.
@@ -170,8 +177,9 @@ namespace ProDomino.NotificationSystem
                 }
             }
 
-            if (actionsRow)
-                actionsRow.SetActive((confirmButton && confirmButton.gameObject.activeSelf) || (declineButton && declineButton.gameObject.activeSelf));
+            var row = ActionsRow;
+            if (row)
+                row.SetActive((confirmButton && confirmButton.gameObject.activeSelf) || (declineButton && declineButton.gameObject.activeSelf));
         }
 
         internal void Reset()
@@ -179,6 +187,8 @@ namespace ProDomino.NotificationSystem
             PlayerNotificationData = null;
             onConfirmAction = null;
             onDeclineAction = null;
+            isRunningAction = false;
+            SetButtonsInteractable(true);
 
             if (categoryLabel)
                 categoryLabel.text = string.Empty;
@@ -203,54 +213,82 @@ namespace ProDomino.NotificationSystem
                 declineButton.onClick.RemoveAllListeners();
                 declineButton.gameObject.SetActive(false);
             }
-            if (actionsRow)
-                actionsRow.SetActive(false);
+            var row = ActionsRow;
+            if (row)
+                row.SetActive(false);
         }
 
-        private async void OnConfirmButtonClicked()
+        /// <summary>
+        /// Container of the confirm/decline buttons. When the reference isn't assigned, falls back to the buttons'
+        /// own parent row: some cards leave it empty while that row is saved inactive, which kept the buttons hidden.
+        /// </summary>
+        private GameObject ActionsRow
         {
-            if (onConfirmAction == null)
-            { 
-                Debug.LogWarning("No confirm action assigned for this notification entry.");
+            get
+            {
+                if (actionsRow)
+                    return actionsRow;
+
+                var button = confirmButton ? confirmButton : declineButton;
+                var parent = button ? button.transform.parent : null;
+                if (!parent || parent == transform)
+                    return null;
+
+                // Only treat it as the actions row when it holds nothing but the action buttons
+                foreach (Transform child in parent)
+                    if ((!confirmButton || child != confirmButton.transform) && (!declineButton || child != declineButton.transform))
+                        return null;
+
+                return parent.gameObject;
+            }
+        }
+
+        private void OnConfirmButtonClicked() => RunAction(onConfirmAction, "confirm").Forget();
+
+        private void OnDeclineButtonClicked() => RunAction(onDeclineAction, "decline").Forget();
+
+        /// <summary>
+        /// Runs a confirm/decline action with both buttons locked, so the notification can't be answered twice.
+        /// </summary>
+        private async UniTaskVoid RunAction(AsyncActionHandler<PlayerNotificationData> action, string actionName)
+        {
+            if (action == null)
+            {
+                Debug.LogWarning($"No {actionName} action assigned for this notification entry.");
                 return;
             }
 
-            confirmButton.interactable = false; // Prevent multiple clicks
+            if (isRunningAction)
+                return;
+
+            var actionData = PlayerNotificationData;
+            isRunningAction = true;
+            SetButtonsInteractable(false);
             try
             {
-                await onConfirmAction(PlayerNotificationData);
+                await action(actionData);
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error executing confirm action: {e.Message}");
+                Debug.LogError($"Error executing {actionName} action: {e.Message}");
             }
             finally
             {
-                confirmButton.interactable = true; // Re-enable button after action
+                // The entry may have been reset and reused for another notification while the action ran
+                if (this && ReferenceEquals(PlayerNotificationData, actionData))
+                {
+                    isRunningAction = false;
+                    SetButtonsInteractable(true);
+                }
             }
         }
 
-        private void OnDeclineButtonClicked()
+        private void SetButtonsInteractable(bool isInteractable)
         {
-            if (onDeclineAction == null)
-            {
-                Debug.LogWarning("No decline action assigned for this notification entry.");
-                return;
-            }
-
-            declineButton.interactable = false; // Prevent multiple clicks
-            try
-            {
-                onDeclineAction(PlayerNotificationData);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error executing decline action: {e.Message}");
-            }
-            finally
-            {
-                declineButton.interactable = true; // Re-enable button after action
-            }
+            if (confirmButton)
+                confirmButton.interactable = isInteractable;
+            if (declineButton)
+                declineButton.interactable = isInteractable;
         }
 
         /// <summary>

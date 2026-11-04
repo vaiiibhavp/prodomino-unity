@@ -53,7 +53,12 @@ namespace ProDomino.NotificationSystem
         private FriendManager friendManager;
         private DictionaryService dictionaryService;
         private AnalyticsManager analyticsManager;
+        private PromptFadeController promptFadeController;
         private List<NotificationEntry> notificationEntries;
+
+        // Party invitations accepted/declined (or in flight) this session; guards against double handling
+        // and hides them while the cloud copy of the notification list catches up
+        private readonly HashSet<string> handledPartyInvitations = new();
         private readonly HashSet<NotificationEntry> olderEntries = new();
         private readonly List<RaycastResult> raycastResults = new();
 
@@ -80,6 +85,7 @@ namespace ProDomino.NotificationSystem
             friendManager = ServiceLocator.Instance.GetService<FriendManager>();
             dictionaryService = ServiceLocator.Instance.GetService<DictionaryService>();
             analyticsManager = ServiceLocator.Instance.GetService<AnalyticsManager>();
+            promptFadeController = ServiceLocator.Instance.GetService<PromptFadeController>();
 
             // Validate required services
             if (!gameManager || !authManager || !dictionaryService || !analyticsManager)
@@ -457,6 +463,7 @@ namespace ProDomino.NotificationSystem
             SetInteractivity(true);
 
             var playerNotificationDatas = gameManager.PlayerNotificationDatas
+               ?.Where(x => !IsHandledPartyInvitation(x))
                ?.OrderByDescending(x => x.timestamp)
                ?.Distinct()
                ?.ToList();
@@ -560,27 +567,9 @@ namespace ProDomino.NotificationSystem
 
                 foreach (var notificationEntryData in todayDatas)
                 {
-                    var instance = notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf);
+                    var instance = ConfigureEntry(notificationEntryData);
                     if (instance != null)
-                    {
-                        var onConfirm = notificationEntryData.notificationType switch
-                        {
-                            NotificationType.Reward => OnConfirmReward,
-                            NotificationType.FriendRequest => OnConfirmFriendRequest,
-                            NotificationType.PartyInvite => OnConfirmPartyRequest,
-                            _ => default(AsyncActionHandler<PlayerNotificationData>),
-                        };
-
-                        var onDecline = notificationEntryData.notificationType switch
-                        {
-                            NotificationType.FriendRequest => OnDeclineFriendRequest,
-                            _ => default(AsyncActionHandler<PlayerNotificationData>),
-                        };
-
-                        instance.Configure(notificationEntryData, onConfirm, onDecline);
-                        instance.SetActive(true);
                         instance.transform.SetSiblingIndex(order++);
-                    }
                 }
 
                 if (olderSectionHeader && olderDatas.Count > 0)
@@ -588,25 +577,9 @@ namespace ProDomino.NotificationSystem
 
                 foreach (var notificationEntryData in olderDatas)
                 {
-                    var instance = notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf);
+                    var instance = ConfigureEntry(notificationEntryData);
                     if (instance != null)
                     {
-                        var onConfirm = notificationEntryData.notificationType switch
-                        {
-                            NotificationType.Reward => OnConfirmReward,
-                            NotificationType.FriendRequest => OnConfirmFriendRequest,
-                            NotificationType.PartyInvite => OnConfirmPartyRequest,
-                            _ => default(AsyncActionHandler<PlayerNotificationData>),
-                        };
-
-                        var onDecline = notificationEntryData.notificationType switch
-                        {
-                            NotificationType.FriendRequest => OnDeclineFriendRequest,
-                            _ => default(AsyncActionHandler<PlayerNotificationData>),
-                        };
-
-                        instance.Configure(notificationEntryData, onConfirm, onDecline);
-                        instance.SetActive(true);
                         instance.transform.SetSiblingIndex(order++);
                         olderEntries.Add(instance);
                     }
@@ -638,6 +611,59 @@ namespace ProDomino.NotificationSystem
                     noNotificationsCanvasGroup?.SetActive(true, isSettingInteractable: false, isSettingBlocksRaycasts: false);
                 transform.RefreshLayoutGroupsImmediateAndRecursive();
             }
+        }
+
+        /// <summary>
+        /// Picks a free entry for the notification, binds its confirm/decline actions and shows it.
+        /// </summary>
+        private NotificationEntry ConfigureEntry(PlayerNotificationData notificationEntryData)
+        {
+            var onConfirm = notificationEntryData.notificationType switch
+            {
+                NotificationType.Reward => OnConfirmReward,
+                NotificationType.FriendRequest => OnConfirmFriendRequest,
+                NotificationType.PartyInvite => OnConfirmPartyRequest,
+                _ => default(AsyncActionHandler<PlayerNotificationData>),
+            };
+
+            var onDecline = notificationEntryData.notificationType switch
+            {
+                NotificationType.FriendRequest => OnDeclineFriendRequest,
+                NotificationType.PartyInvite => OnDeclinePartyRequest,
+                _ => default(AsyncActionHandler<PlayerNotificationData>),
+            };
+
+            // Incoming friend requests and party invitations show Accept/Decline: they need the card layout with the
+            // actions row (the entry prefab's design), not whichever pooled card happens to be free
+            var hasActions = notificationEntryData.notificationType is NotificationType.FriendRequest or NotificationType.PartyInvite
+                && notificationEntryData.senderID != authManager.UUID;
+
+            var instance = hasActions
+                ? notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf && i.HasActionsRow) ?? CreateEntry()
+                : notificationEntries?.FirstOrDefault(i => !i.gameObject.activeSelf);
+
+            if (instance == null)
+                return null;
+
+            instance.Configure(notificationEntryData, onConfirm, onDecline);
+            instance.SetActive(true);
+            return instance;
+        }
+
+        private NotificationEntry CreateEntry()
+        {
+            if (!notificationEntryPrefab || !notificationEntriesParent)
+            {
+                Debug.LogWarning("Couldn't create a notification entry because its prefab or parent reference is null");
+                return null;
+            }
+
+            var newInstance = Instantiate(notificationEntryPrefab, notificationEntriesParent);
+            newInstance.Initialize(() => authManager.UUID, _iconID => dictionaryService.GetSpriteNoCollection(_iconID));
+            newInstance.Reset();
+            newInstance.SetActive(false);
+            notificationEntries.Add(newInstance);
+            return newInstance;
         }
 
         private PlayerNotificationData GenerateRequestNotification(string senderID, string targetID, string name)
@@ -858,88 +884,150 @@ namespace ProDomino.NotificationSystem
             }
         }
 
+        /// <summary>
+        /// Accepts a party invitation: joins the invited party through its join code and removes the invitation.
+        /// An expired or invalid invitation is removed too; one that can't be used right now (e.g. in a match) is kept.
+        /// </summary>
         private async UniTask OnConfirmPartyRequest(PlayerNotificationData playerNotificationData)
         {
             if (!friendManager)
             {
-                Debug.LogWarning("Couldn't confirm friend request because friend manager reference is null");
+                Debug.LogWarning("Couldn't confirm party request because friend manager reference is null");
                 return;
             }
 
-            if (playerNotificationData is null or { dataCollection: null or { Count: 0 }})
+            if (playerNotificationData is null)
             {
-                Debug.LogWarning("Couldn't confirm party request because player notification data is null or its data collection is empty");
+                Debug.LogWarning("Couldn't confirm party request because player notification data is null");
                 return;
             }
 
-            var joinCode = playerNotificationData.dataCollection.TryGetValue(Consts.CollectionKeys.JoinCode, out var joinCodeValue)
-                ? joinCodeValue
-                : null;
-
-            if (string.IsNullOrEmpty(joinCode))
+            var invitationKey = GetPartyInvitationKey(playerNotificationData);
+            if (!handledPartyInvitations.Add(invitationKey))
             {
-                Debug.LogWarning("Couldn't confirm party request because join code is null or empty");
+                Debug.LogWarning("Party invitation was already accepted or declined");
                 return;
             }
+
+            var joinCode = GetPartyInvitationJoinCode(playerNotificationData);
+            var isKeepingInvitation = false;
 
             SetInteractivity(false);
             try
             {
-                await friendManager.JoinToParty(joinCode);
+                if (string.IsNullOrEmpty(joinCode))
+                {
+                    Debug.LogWarning("Couldn't confirm party request because join code is null or empty");
+                    promptFadeController?.Fade("This party invitation is no longer valid");
+                }
+                else
+                {
+                    switch (await friendManager.JoinToParty(joinCode))
+                    {
+                        case PartyJoinResult.Joined:
+                            // PartyController already shows the "joined" prompt
+                            break;
+                        case PartyJoinResult.AlreadyJoined:
+                            promptFadeController?.Fade("You are already in this party");
+                            break;
+                        case PartyJoinResult.Blocked:
+                            isKeepingInvitation = true;
+                            promptFadeController?.Fade("You can't join this party right now");
+                            break;
+                        default:
+                            promptFadeController?.Fade("This party invitation has expired or is no longer valid");
+                            break;
+                    }
+                }
             }
             catch (Exception e)
             {
                 Debug.LogError(e);
+                isKeepingInvitation = true;
             }
             finally
             {
-                // if there are more notification like the one recently accepted, trim all of them
-                if (gameManager.PlayerNotificationDatas.Contains(playerNotificationData))
-                {
-                    Debug.Log($"Detected notification equals to party invitation (hashcode: {playerNotificationData.GetHashCode()}). Procceding to delete them...");
-
-                    // Try to remove every notification that is equals to the accepted invitation
-                    var deletedQuantity = gameManager.PlayerNotificationDatas.RemoveAll(x => x == playerNotificationData);
-                    if (deletedQuantity > 0)
-                    { 
-                        Debug.Log($"Deleted {deletedQuantity} notification equals to party invitation (hashcode: {playerNotificationData.GetHashCode()})");
-                        gameManager.SavePublicGameData();
-                    }
-                }
-
-                if (popUpCanvasGroup.alpha is 0)
-                    ClosePopUp();
+                if (isKeepingInvitation)
+                    handledPartyInvitations.Remove(invitationKey);
                 else
-                    SetInteractivity(true);
+                    await RemovePartyInvitation(playerNotificationData);
 
-                UpdateInstances().Forget();
+                await RefreshAfterPartyInvitationAction();
             }
         }
 
+        /// <summary>
+        /// Declines a party invitation. The friends service has no decline endpoint for messages,
+        /// so declining removes the invitation from the pending notifications.
+        /// </summary>
         private async UniTask OnDeclinePartyRequest(PlayerNotificationData playerNotificationData)
         {
-            if (!friendManager)
+            if (playerNotificationData is null)
             {
-                Debug.LogWarning("Couldn't confirm friend request because friend manager reference is null");
+                Debug.LogWarning("Couldn't decline party request because player notification data is null");
+                return;
+            }
+
+            if (!handledPartyInvitations.Add(GetPartyInvitationKey(playerNotificationData)))
+            {
+                Debug.LogWarning("Party invitation was already accepted or declined");
                 return;
             }
 
             SetInteractivity(false);
             try
             {
-                // TODO: there is a way to decline a request or just not accept it?
+                await RemovePartyInvitation(playerNotificationData);
+            }
+            finally
+            {
+                await RefreshAfterPartyInvitationAction();
+            }
+        }
+
+        private static string GetPartyInvitationJoinCode(PlayerNotificationData playerNotificationData) =>
+            playerNotificationData?.dataCollection is not null
+            && playerNotificationData.dataCollection.TryGetValue(Consts.CollectionKeys.JoinCode, out var joinCode)
+                ? joinCode
+                : null;
+
+        private static string GetPartyInvitationKey(PlayerNotificationData playerNotificationData) =>
+            $"{playerNotificationData.senderID}|{GetPartyInvitationJoinCode(playerNotificationData)}|{playerNotificationData.timestamp}";
+
+        private bool IsHandledPartyInvitation(PlayerNotificationData playerNotificationData) =>
+            playerNotificationData is { notificationType: NotificationType.PartyInvite }
+            && handledPartyInvitations.Contains(GetPartyInvitationKey(playerNotificationData));
+
+        /// <summary>
+        /// Removes the invitation (and any duplicate of it) from the notification list and waits for the cloud save,
+        /// so the refresh that follows doesn't load it back.
+        /// </summary>
+        private async UniTask RemovePartyInvitation(PlayerNotificationData playerNotificationData)
+        {
+            var deletedQuantity = gameManager.PlayerNotificationDatas?.RemoveAll(x => x == playerNotificationData) ?? 0;
+            if (deletedQuantity is 0)
+                return;
+
+            Debug.Log($"Deleted {deletedQuantity} party invitation notification(s) (hashcode: {playerNotificationData.GetHashCode()})");
+            try
+            {
+                await gameManager.SavePublicGameDataAsync();
             }
             catch (Exception e)
             {
                 Debug.LogError(e);
             }
-            finally
-            {
-                if (popUpCanvasGroup.alpha is 0)
-                    ClosePopUp();
-                else
-                    SetInteractivity(true);
-            }
+        }
+
+        private async UniTask RefreshAfterPartyInvitationAction()
+        {
+            // The popup may have been closed meanwhile (e.g. by OnPlayerJoined); don't leave a hidden popup blocking input
+            if (IsPopUpOpen)
+                SetInteractivity(true);
+            else
+                HidePopUp(isUpdatingInstances: false);
+
+            await UpdateInstances();
         }
 
         private async UniTask OnConfirmReward(PlayerNotificationData playerNotificationData)

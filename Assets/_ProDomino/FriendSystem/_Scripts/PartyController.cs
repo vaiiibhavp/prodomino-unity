@@ -17,6 +17,21 @@ namespace ProDomino.FriendSystem
     /// Manages party session operations, including joining, inviting, kicking members, handling party events, and
     /// synchronizing party member data within a multiplayer environment.
     /// </summary>
+    /// <summary>
+    /// Outcome of trying to join a party through an invitation join code.
+    /// </summary>
+    public enum PartyJoinResult
+    {
+        /// <summary>Joined the party session.</summary>
+        Joined,
+        /// <summary>The local player is already inside the invited party session.</summary>
+        AlreadyJoined,
+        /// <summary>Joining isn't possible right now (in a match, not signed in, already in a party...). The invitation stays valid.</summary>
+        Blocked,
+        /// <summary>The join attempt failed: the party session no longer exists or the join code is invalid.</summary>
+        Invalid,
+    }
+
     public partial class PartyController : MonoBehaviour
     {
         [Header("Party Fields")]
@@ -258,21 +273,20 @@ namespace ProDomino.FriendSystem
         /// Client joins the party using the join code
         /// </summary>
         /// <param name="joinCode">The join code for the party.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="Exception">Thrown when an error occurs while joining the party.</exception>
-        internal async UniTask JoinToParty(string joinCode)
+        /// <returns>The outcome of the join attempt.</returns>
+        internal async UniTask<PartyJoinResult> JoinToParty(string joinCode)
         {
             if (!MainPartyMembers)
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Couldn't configure party entries. The MainPartMembers GUI is null</color>");
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             if (!IsAuthenticated)
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Couldn't create friend party because the environment is not initialized or the user is not authenticated yet");
                 MainPartyMembers.MainRefreshPartyEntries();
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             if (friendManager is null or { IsAlreadyInitialized: false })
@@ -286,7 +300,7 @@ namespace ProDomino.FriendSystem
                     {
                         Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Could not join party with join code {joinCode} because the main friend manager is not initialized");
                         MainPartyMembers.MainRefreshPartyEntries();
-                        return;
+                        return PartyJoinResult.Blocked;
                     }
                 }
 
@@ -295,7 +309,7 @@ namespace ProDomino.FriendSystem
                 {
                     Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Could not join party with join code {joinCode} because the main friend manager is null");
                     MainPartyMembers.MainRefreshPartyEntries();
-                    return;
+                    return PartyJoinResult.Blocked;
                 }
             }
 
@@ -304,28 +318,36 @@ namespace ProDomino.FriendSystem
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Couldn't join party because the func to obtain data from MatchManager are null</color>");
                 MainPartyMembers.MainRefreshPartyEntries();
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             if (checkIfIsInMatch())
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Couldn't was possible accept a party invitation due you are in a match</color>");
                 MainPartyMembers.MainRefreshPartyEntries();
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             if (string.IsNullOrEmpty(authManager.UUID))
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b>Couldn't was possible send a party invitation due player id is null or empty");
                 MainPartyMembers.MainRefreshPartyEntries();
-                return;
+                return PartyJoinResult.Blocked;
+            }
+
+            // Already inside the invited session: the invitation is fulfilled
+            if (checkIfIsRelay() && getJoinCode() == joinCode)
+            {
+                Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b>Couldn't join to party because the player is already in that party session");
+                MainPartyMembers.MainRefreshPartyEntries();
+                return PartyJoinResult.AlreadyJoined;
             }
 
             if (PartyMembers?.Any(x => x?.PlayerID == authManager.UUID) ?? false)
             {
                 Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b>Couldn't join to party because the player is already in the party");
                 MainPartyMembers.MainRefreshPartyEntries();
-                return;
+                return PartyJoinResult.Blocked;
             }
 
             // Attempt to create or join a matchmaking session
@@ -348,7 +370,7 @@ namespace ProDomino.FriendSystem
                     else
                     { 
                         Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Couldn't accept invitations if you are in an active relay session</color>");
-                        return;
+                        return PartyJoinResult.Blocked;
                     }
                 }
 
@@ -365,14 +387,17 @@ namespace ProDomino.FriendSystem
                 { 
                     Debug.Log($"<color={Consts.Colors.Success}><b>[{nameof(PartyController)}]</b> Joined party session successfully</color>");
                     promptFadeController?.Fade("Joined party successfully");
+                    return PartyJoinResult.Joined;
                 }
-                else
-                    Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Failed to join to a party session</color>");
+
+                Debug.LogWarning($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Failed to join to a party session</color>");
+                return PartyJoinResult.Invalid;
             }
             catch (Exception e)
             {
                 Debug.LogError($"<color={Consts.Colors.Error}><b>[{nameof(PartyController)}]</b> Failed to join to a party session:\n\n{e.Message}</color>");
                 MainPartyMembers.MainRefreshPartyEntries();
+                return PartyJoinResult.Invalid;
             }
             finally
             {
