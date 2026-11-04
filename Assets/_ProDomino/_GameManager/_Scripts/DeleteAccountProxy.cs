@@ -13,6 +13,22 @@ namespace ProDomino.GameSystem
             ? deleteAccountController 
             : FindFirstObjectByType<DeleteAccountController>();
         private Button button;
+        private bool isBlocked;
+
+        /// <summary>
+        /// Blocks the delete button regardless of the auth state, e.g. while the verify email button owns the slot.
+        /// </summary>
+        public void SetBlocked(bool blocked)
+        {
+            isBlocked = blocked;
+            RefreshInteractable();
+        }
+
+        private void RefreshInteractable()
+        {
+            if (button)
+                button.interactable = !isBlocked && gameManager && gameManager.IsAuthenticated;
+        }
 
         private void Awake()
         {
@@ -29,7 +45,7 @@ namespace ProDomino.GameSystem
                 Debug.LogError("DeleteAccountProxy: GameManager reference is missing");
 
             // Popup may be activated after sign-in already fired, so sync with current auth state
-            button.interactable = gameManager && gameManager.IsAuthenticated;
+            RefreshInteractable();
         }
 
         private void OnDestroy()
@@ -46,6 +62,9 @@ namespace ProDomino.GameSystem
 
         private void OnPressDeleteButton()
         {
+            if (isBlocked)
+                return;
+
             // Get the refence once
             var deleteAccountController = DeleteAccountController;
             if (!deleteAccountController)
@@ -65,7 +84,7 @@ namespace ProDomino.GameSystem
                 return;
             }
 
-            button.interactable = gameManager.IsAuthenticated;
+            RefreshInteractable();
         }
         private void OnSignedOut()
         {

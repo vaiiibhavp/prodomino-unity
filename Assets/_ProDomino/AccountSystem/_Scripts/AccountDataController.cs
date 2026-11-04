@@ -40,6 +40,8 @@ namespace ProDomino.AccountSystem
         [SerializeField] private Button editProfileButton;
         [SerializeField] private Button logoutButton;
         [SerializeField] private Button verifyEmailButton;
+        [Tooltip("Delete account button. It shares the slot with the verify email button, so only one is shown at a time. Resolved from children when empty.")]
+        [SerializeField] private DeleteAccountProxy deleteAccountButton;
         [SerializeField] private CustomizationController customizationController;
 
         [Header("Game Mode Tabs")]
@@ -82,6 +84,9 @@ namespace ProDomino.AccountSystem
             leaderboardManager = ServiceLocator.Instance.GetService<LeaderboardManager>();
             leaderboardAccountEntries = new();
 
+            if (!deleteAccountButton)
+                deleteAccountButton = GetComponentInChildren<DeleteAccountProxy>(true);
+
             if (gameModeTabs is not null)
                 foreach (var tab in gameModeTabs)
                 {
@@ -108,19 +113,27 @@ namespace ProDomino.AccountSystem
 
         /// <summary>
         /// Shows the verify email button only for credential (email/password) accounts whose email is not verified
-        /// yet, the same rule the legacy options dropdown used.
+        /// yet, the same rule the legacy options dropdown used. The delete button is the exact opposite, so both
+        /// buttons are never visible or interactable at the same time.
         /// </summary>
         private void RefreshVerifyEmailButton()
         {
-            if (!verifyEmailButton)
-                return;
-
-            bool shouldShow = authManager != null
+            bool shouldShowVerify = authManager != null
                 && authManager.IsUserAuthenticatedWithCredentials
                 && !authManager.IsEmailVerified;
 
-            verifyEmailButton.interactable = shouldShow;
-            verifyEmailButton.gameObject.SetActive(shouldShow);
+            if (verifyEmailButton)
+            {
+                verifyEmailButton.interactable = shouldShowVerify;
+                verifyEmailButton.gameObject.SetActive(shouldShowVerify);
+            }
+
+            if (deleteAccountButton)
+            {
+                // Block before hiding/showing, so the proxy's own auth refresh can never re-enable it underneath
+                deleteAccountButton.SetBlocked(shouldShowVerify);
+                deleteAccountButton.gameObject.SetActive(!shouldShowVerify);
+            }
         }
 
         /// <summary>

@@ -18,7 +18,8 @@ namespace ProDomino.ReplaySystem
             reviewButton;
 
         public NavigationPanelType NavigationPanelType => NavigationPanelType.Review;
-        public bool RequiresAuthentication => true;
+        // Replays are stored in local save slots, not per account, so the Review screen is available signed out too
+        public bool RequiresAuthentication => false;
 
         [SerializeField] CanvasGroup LatestSavedGamesCanvasGroup;
         [SerializeField] ReplayTurnByTurn replayTurnByTurn;
