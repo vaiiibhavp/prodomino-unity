@@ -106,6 +106,8 @@ namespace ProDomino.Authentication
             closeRecoveryScreenButton?.onClick.AddListener(OnPressCloseButton);
             backRecoveryScreenButton?.onClick.AddListener(OnOpenSignInScreen);
 
+            OnAwake_KeyboardNavigation();
+
             HandleOnRecoveryPassword(OnSentRecoveryPasswordMail);
         }
 
@@ -206,6 +208,8 @@ namespace ProDomino.Authentication
             signInCredentialsInputField?.onValueChanged.RemoveListener(OnSignInValueChanged);
             signInPasswordInputField?.onValueChanged.RemoveListener(OnSignInValueChanged);
             recoveryEmailInputField?.onValueChanged.RemoveListener(OnRecoveryEmailValueChanged);
+
+            OnDestroy_KeyboardNavigation();
         }
 
         /// <summary>
