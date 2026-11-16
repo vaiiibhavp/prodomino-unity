@@ -191,6 +191,13 @@ namespace ProDomino.GameModes
             }
         }
 
+        // The gameplay view is shown (e.g. a Party table waiting for players) before RestartGame runs,
+        // so without this the prefab's default board sprite (green) flashes before the equipped skin.
+        private void OnEnable()
+        {
+            ApplyBoardSkin();
+        }
+
         void Start()
         {
             tileSortingBtn?.AddEventToListener(SortDominos);
@@ -798,6 +805,31 @@ namespace ProDomino.GameModes
                 return;
             }
 
+            ApplyBoardSkin();
+
+            // Override the tile sprites if the tiles skin searched from the GameManager is available
+            var tiles = gameManager?.Tiles;
+            if (tiles is not null and { Length: 28 } && tiles.All(tile => tile))
+                (DeckController as ExtendedDeckController)?.OverrideSpriteArray(gameManager.Tiles, gameManager.BackTile);
+            else
+                Debug.LogWarning("GameManager.Tiles is null or does not contain 28 tiles.");
+
+            // Override the tile skin for Concentrate game mode if available
+            if (TryGetComponent(out Concentrate_GameMode concentrate_GameMode))
+                concentrate_GameMode.OverrideTilesSkin(gameManager.GetTiles().id);
+
+            // Override the boneyard skin if ExtendedDeckController is available
+            (DeckController as ExtendedDeckController)?.OverrideBoneyardSkin(gameManager.GetTiles().id);
+        }
+
+        /// <summary>
+        /// Apply the player's equipped board / board fund skin, falling back to the prefab sprites.
+        /// </summary>
+        private void ApplyBoardSkin()
+        {
+            if (gameManager is null)
+                return;
+
             // Override the board fund image only when the skin lookup produced a sprite. A missing
             // entry must keep the prefab look, otherwise the Image renders as a plain white quad.
             if (boardFundImage)
@@ -818,20 +850,6 @@ namespace ProDomino.GameModes
             }
             else
                 Debug.LogWarning("BoardImage is not assigned in the inspector." + transform.gameObject.name );
-
-            // Override the tile sprites if the tiles skin searched from the GameManager is available
-            var tiles = gameManager?.Tiles;
-            if (tiles is not null and { Length: 28 } && tiles.All(tile => tile))
-                (DeckController as ExtendedDeckController)?.OverrideSpriteArray(gameManager.Tiles, gameManager.BackTile);
-            else
-                Debug.LogWarning("GameManager.Tiles is null or does not contain 28 tiles.");
-
-            // Override the tile skin for Concentrate game mode if available
-            if (TryGetComponent(out Concentrate_GameMode concentrate_GameMode))
-                concentrate_GameMode.OverrideTilesSkin(gameManager.GetTiles().id);
-
-            // Override the boneyard skin if ExtendedDeckController is available
-            (DeckController as ExtendedDeckController)?.OverrideBoneyardSkin(gameManager.GetTiles().id);
         }
 
         protected override void ClearGameBoard()

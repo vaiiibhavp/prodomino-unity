@@ -32,7 +32,11 @@ namespace ProDomino.FriendSystem
         [SerializeField] private UnityEvent<FriendAction> onFriendActionMade;
         [SerializeField] private ConfirmFriendshipPopUp confirmFriendshipPopUp;
         [SerializeField] private PartyController partyController;
-        [SerializeField] private float offlineDelaySeconds = 60;
+        [Header("Presence")]
+        [Tooltip("How often the local player re-publishes its presence so friends know it is still connected.")]
+        [SerializeField] private float presenceHeartbeatSeconds = 45;
+        [Tooltip("A friend whose presence was not refreshed for this long is shown as offline (closed tab, crash, lost connection).")]
+        [SerializeField] private float presenceStaleSeconds = 150;
 
         [Header("Friend Event Callbacks")]
         [SerializeField] private UnityEvent<string> onBeforeSendFriendRequest;
@@ -64,6 +68,16 @@ namespace ProDomino.FriendSystem
         private GameManager gameManager;
         private Coroutine offlineCoroutine;
         private (Availability availability, Activity activity)? lastPresenceSet;
+        private Coroutine presenceHeartbeatCoroutine;
+
+        // Local time a presence event was last received per friend; guards against client/server clock skew
+        private readonly Dictionary<string, DateTime> lastPresenceEventUtc = new();
+
+        /// <summary>
+        /// Raised after the friends' presence was re-evaluated (presence event or periodic heartbeat),
+        /// so visible lists can update their online/offline indicators.
+        /// </summary>
+        public event Action OnFriendsPresenceRefreshed;
 
         public bool IsAlreadyInitialized { get; private set; }
         public FriendsConfig FriendsConfigData => gameManager?.GameBackendConfigData?.friendsConfig;
@@ -109,7 +123,51 @@ namespace ProDomino.FriendSystem
             await UniTask.WaitUntil(() => gameManager is not null and { IsAlreadyInitialized: true, IsAuthenticated: true });
 
             // MainReferenceInitialize the unity friend service
-            await FriendsService.Instance.InitializeAsync();          
+            await FriendsService.Instance.InitializeAsync();
+
+            presenceHeartbeatCoroutine ??= StartCoroutine(PresenceHeartbeat());
+        }
+
+        /// <summary>
+        /// Periodically re-publishes the local presence (keeps LastSeen fresh for friends) and re-evaluates
+        /// the friends' presence, so friends that disconnected without saying so (closed browser tab, crash,
+        /// network loss) flip to offline once their presence goes stale.
+        /// </summary>
+        private IEnumerator PresenceHeartbeat()
+        {
+            var wait = new WaitForSecondsRealtime(Mathf.Max(10f, presenceHeartbeatSeconds));
+            while (true)
+            {
+                yield return wait;
+
+                if (!IsAlreadyInitialized || gameManager is null or { IsAlreadyInitialized: false } or { IsAuthenticated: false })
+                    continue;
+
+                yield return HeartbeatTick().ToCoroutine();
+            }
+
+            async UniTask HeartbeatTick()
+            {
+                try
+                {
+                    if (!IsFriendsServiceReady)
+                        return;
+
+                    // Only keep alive while we consider ourselves online (not after going offline in background)
+                    if (lastPresenceSet is { availability: not Availability.Offline } current)
+                        await SetPresence(current.availability, current.activity.Status, force: true);
+
+                    // Re-sync relationships in case presence notifications were missed
+                    await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+
+                    await RefreshAll();
+                    OnFriendsPresenceRefreshed?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Presence heartbeat failed: {e.Message}");
+                }
+            }
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -275,9 +333,13 @@ namespace ProDomino.FriendSystem
 
                 friendsService.PresenceUpdated += async e =>
                 {
+                    if (!string.IsNullOrEmpty(e?.ID))
+                        lastPresenceEventUtc[e.ID] = DateTime.UtcNow;
+
                     await RefreshAll();
 
                     PresenceUpdated?.Invoke(e);
+                    OnFriendsPresenceRefreshed?.Invoke();
                     Debug.Log("PresenceUpdated EventReceived");
                 };
 
@@ -783,7 +845,8 @@ namespace ProDomino.FriendSystem
         /// </summary>
         /// <param name="presenceAvailabilityOptions">The availability status to set for the user.</param>
         /// <param name="activityStatus">The activity message to set for the user.</param>
-        private async UniTask SetPresence(Availability presenceAvailabilityOptions, string activityStatus = "")
+        /// <param name="force">Re-send even if unchanged (heartbeat refreshes LastSeen on the backend).</param>
+        private async UniTask SetPresence(Availability presenceAvailabilityOptions, string activityStatus = "", bool force = false)
         {
             var friendsService = await GetFriendsServiceSafeAsync(isTryingToInitializeOnFail: false);
             if (friendsService is null || !IsFriendsServiceReady)
@@ -792,23 +855,56 @@ namespace ProDomino.FriendSystem
                 return;
             }
 
-            var activity = new Activity { Status = activityStatus };
-            if (lastPresenceSet.HasValue
+            var activity = new Activity { Status = activityStatus ?? string.Empty };
+            if (!force
+                && lastPresenceSet.HasValue
                 && lastPresenceSet.Value.availability == presenceAvailabilityOptions
                 && lastPresenceSet.Value.activity.Status == activity.Status)
                 return;
 
             try
             {
-                lastPresenceSet = (presenceAvailabilityOptions, activity);
-                
                 await friendsService.SetPresenceAsync(presenceAvailabilityOptions, activity);
-                Debug.Log($"Availability changed to {presenceAvailabilityOptions}.");
+
+                // Cache only after success, otherwise a failed call would block every retry
+                lastPresenceSet = (presenceAvailabilityOptions, activity);
+                if (!force)
+                    Debug.Log($"Availability changed to {presenceAvailabilityOptions}.");
             }
-            catch (FriendsServiceException e)
+            catch (Exception e)
             {
                 Debug.Log($"Failed to set the presence to {presenceAvailabilityOptions} - {e}");
             }
+        }
+
+        /// <summary>
+        /// Resolves the availability to show for a friend. A presence that says Online but was not refreshed
+        /// within <see cref="presenceStaleSeconds"/> is treated as Offline (the friend disconnected without
+        /// publishing it, e.g. closed the browser tab).
+        /// </summary>
+        private Availability GetEffectiveAvailability(string memberId, Presence presence)
+        {
+            if (presence is null)
+                return Availability.Offline;
+
+            if (presence.Availability is Availability.Offline or Availability.Invisible or Availability.Unknown)
+                return Availability.Offline;
+
+            var lastSeenUtc = presence.LastSeen.Kind switch
+            {
+                DateTimeKind.Local => presence.LastSeen.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(presence.LastSeen, DateTimeKind.Utc),
+                _ => presence.LastSeen
+            };
+
+            if (!string.IsNullOrEmpty(memberId)
+                && lastPresenceEventUtc.TryGetValue(memberId, out var heardUtc)
+                && heardUtc > lastSeenUtc)
+                lastSeenUtc = heardUtc;
+
+            return DateTime.UtcNow - lastSeenUtc > TimeSpan.FromSeconds(presenceStaleSeconds)
+                ? Availability.Offline
+                : presence.Availability;
         }
 
         /// <summary>
@@ -1006,39 +1102,41 @@ namespace ProDomino.FriendSystem
                 return;
             }
 
-            FriendsEntryDatas.Clear();
             var friends = await GetFriends();
             if (friends is null || friends.Count == 0)
             {
+                FriendsEntryDatas.Clear();
                 Debug.Log("No friends found.");
                 return;
             }
 
+            // Build into a new list and swap, so overlapping refreshes never interleave entries
+            var entries = new List<FriendsEntryData>(friends.Count);
             foreach (var friend in friends)
             {
                 var presence = friend.Presence;
-                bool isReallyOnline = presence.Availability == Availability.Online
-                    || (DateTime.UtcNow - presence.LastSeen) < TimeSpan.FromSeconds(offlineDelaySeconds);
+                var availability = GetEffectiveAvailability(friend.Id, presence);
 
                 string activityText;
-                if (presence.Availability == Availability.Offline ||
-                    presence.Availability == Availability.Invisible)
-
-                    activityText = presence.LastSeen.ToShortDateString() + " " +
-                                   presence.LastSeen.ToLongTimeString();
+                if (availability is Availability.Offline)
+                    activityText = presence is null || presence.LastSeen == default
+                        ? "Unknown"
+                        : presence.LastSeen.ToLocalTime().ToShortDateString() + " " + presence.LastSeen.ToLocalTime().ToLongTimeString();
                 else
                     activityText = presence.GetActivity<Activity>()?.Status ?? "Unknown";
 
-                var info = new FriendsEntryData
+                entries.Add(new FriendsEntryData
                 {
                     SenderID = authManager.UUID,
                     TargetID = friend.Id,
-                    Name = friend.Profile.Name,
-                    Availability = isReallyOnline ? Availability.Online : Availability.Offline,
+                    Name = friend.Profile?.Name,
+                    Availability = availability,
                     Activity = activityText,
-                };
-                FriendsEntryDatas.Add(info);
+                });
             }
+
+            FriendsEntryDatas.Clear();
+            FriendsEntryDatas.AddRange(entries);
         }
 
         /// <summary>

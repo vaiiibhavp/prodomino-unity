@@ -601,7 +601,37 @@ namespace ProDomino.FriendSystem
             friendManager.RegisterRelationshipAdded(OnRelationshipAdded);
             friendManager.RegisterRelationshipDeleted(OnRelationshipDeleted);
 
+            // Online/offline changes update the existing cards in place
+            friendManager.OnFriendsPresenceRefreshed += UpdateFriendEntriesPresence;
+
             ConfigureUI();
+        }
+
+        /// <summary>
+        /// Re-applies the latest presence to the cards already shown, without rebuilding the list.
+        /// </summary>
+        private void UpdateFriendEntriesPresence()
+        {
+            if (this == null || friendEntriesInstances is null || friendManager?.FriendsEntryDatas is null)
+                return;
+
+            var latestByID = friendManager.FriendsEntryDatas
+                .Where(x => !string.IsNullOrEmpty(x.TargetID))
+                .GroupBy(x => x.TargetID)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            foreach (var entry in friendEntriesInstances)
+            {
+                if (entry == null || !entry.gameObject.activeSelf || entry.IsIncomingRequest || !entry.FriendsEntryData.HasValue)
+                    continue;
+
+                var current = entry.FriendsEntryData.Value;
+                if (current.TargetID is null || !latestByID.TryGetValue(current.TargetID, out var latest))
+                    continue;
+
+                if (current.Availability != latest.Availability || current.Activity != latest.Activity)
+                    entry.Configure(latest, categoriesShown);
+            }
         }
 
         private void OnRelationshipAdded(IRelationshipAddedEvent _) => RefreshIfVisible();
@@ -635,6 +665,7 @@ namespace ProDomino.FriendSystem
 
             friendManager.UnregisterRelationshipAdded(OnRelationshipAdded);
             friendManager.UnregisterRelationshipDeleted(OnRelationshipDeleted);
+            friendManager.OnFriendsPresenceRefreshed -= UpdateFriendEntriesPresence;
         }
 
         /// <summary>
