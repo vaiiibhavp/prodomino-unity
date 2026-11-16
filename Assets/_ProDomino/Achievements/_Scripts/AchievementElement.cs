@@ -70,7 +70,8 @@ namespace ProDomino.AchievementSystem
             if (PlayerMissionData is not null)
             {
                 // Mission progress changes in place (analytics), so refresh when the data differs from the local copy
-                if (PlayerMissionData == temporalPlayerMissionData)
+                // Value comparison: the local copy is a clone, so a reference check would never match
+                if (PlayerMissionData.Equals(temporalPlayerMissionData))
                     return;
 
                 temporalPlayerMissionData = (PlayerMissionData)PlayerMissionData.Clone();
@@ -174,11 +175,15 @@ namespace ProDomino.AchievementSystem
             if (PlayerMissionData is null || GameMissionData is null)
                 return;
 
+            // Status follows the backend progress against the goal, the same rule MissionManager.ClaimMissionReward
+            // checks before claiming. The completed flag alone is not enough: a row flagged completed below its
+            // goal would offer a Claim that the claim request rejects
             var goalAmount = Math.Max(1, GameMissionData.goalAmount);
             var isClaimed = PlayerMissionData.claimed;
-            var isCompleted = isClaimed || PlayerMissionData.completed || PlayerMissionData.progress >= goalAmount;
+            var reachedGoal = PlayerMissionData.progress >= goalAmount;
+            var isCompleted = isClaimed || reachedGoal;
             var notReadyYet = !isCompleted;
-            var readyToClaim = isCompleted && !isClaimed;
+            var readyToClaim = reachedGoal && !isClaimed;
 
             // 1. Column 1: Info (Name & category)
             if (nameLabel)

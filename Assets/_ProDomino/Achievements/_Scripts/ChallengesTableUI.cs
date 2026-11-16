@@ -32,6 +32,7 @@ namespace ProDomino.AchievementSystem
         private readonly List<PlayerMissionData> boundMissions = new();
         private MissionManager missionManager;
         private float refreshTimer;
+        private bool hasBound;
 
         private void Awake()
         {
@@ -65,7 +66,9 @@ namespace ProDomino.AchievementSystem
         {
             CollectMissions();
 
-            if (IsBoundTo(missions))
+            // Always bind once: until then the rows still show the placeholder content authored in the prefab
+            // (fake progress and Claim / Claimed states), which must be replaced or hidden even with no missions
+            if (hasBound && IsBoundTo(missions))
                 return;
 
             Bind();
@@ -116,6 +119,7 @@ namespace ProDomino.AchievementSystem
                 rows.Add(Instantiate(rowTemplate, transform));
 
             boundMissions.Clear();
+            hasBound = true;
 
             for (var i = 0; i < rows.Count; i++)
             {
