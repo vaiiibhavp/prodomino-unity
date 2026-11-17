@@ -82,12 +82,14 @@ namespace DominoTemplate.Controllers
             set => gameController_SetTileIDUsedInShowBoard = value;
         }
 
-        private void OnEnable()
+        // Virtual so subclasses can hook OnEnable without hiding this subscription (Unity only invokes the most-derived message method)
+        protected virtual void OnEnable()
         {
+            DragHandler.CreateSlot -= CreateSlot;
             DragHandler.CreateSlot += CreateSlot;
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
             DragHandler.CreateSlot -= CreateSlot;
         }

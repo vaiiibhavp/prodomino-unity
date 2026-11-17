@@ -193,8 +193,11 @@ namespace ProDomino.GameModes
 
         // The gameplay view is shown (e.g. a Party table waiting for players) before RestartGame runs,
         // so without this the prefab's default board sprite (green) flashes before the equipped skin.
-        private void OnEnable()
+        protected override void OnEnable()
         {
+            // Must call base: it subscribes CreateSlot to DragHandler, without it dropped tiles never find a slot
+            base.OnEnable();
+
             ApplyBoardSkin();
         }
 
