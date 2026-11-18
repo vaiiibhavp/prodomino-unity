@@ -26,6 +26,10 @@ namespace ProDomino.GameSystem
         public FirestoreClubChatData PlayerClubChatData { get; private set; }
 
         public Dictionary<string, SearchDataModel> SearchedClubsCollection { get; private set; }
+
+        // How long a non-empty club search result can be reused before asking the backend again
+        private const double clubSearchCacheMinutes = 1;
+
         public FirestoreClubData[] ClubLeaderboard { get; private set; }
         public string UGSPlayerClubName { get; private set; }
         public bool WasLastClubMessageSentProperly { get; private set; }
@@ -459,11 +463,25 @@ namespace ProDomino.GameSystem
             lastNormalizedSearchTerm = NormalizeName(partialName);
             Debug.Log($"Searching clubs with normalized partial name: {lastNormalizedSearchTerm}");
 
-            // After the cleaning, check if we have a cached result for the same search term
+            // Nothing searchable left after normalization (e.g. only symbols were typed)
+            if (string.IsNullOrEmpty(lastNormalizedSearchTerm))
+            {
+                Debug.LogWarning($"Search term '{partialName}' has no searchable characters after normalization.");
+                return Array.Empty<FirestoreClubData>();
+            }
+
+            // Only reuse a cached result when it is recent and actually contains clubs.
+            // Empty or old results are dropped so newly created clubs (and updated member counts) show up.
             if (SearchedClubsCollection.TryGetValue(lastNormalizedSearchTerm, out var cachedSearchDataModel))
             {
-                Debug.Log($"Returning cached search results for term: {lastNormalizedSearchTerm} with {cachedSearchDataModel.clubsFound?.Count ?? 0} clubs found.");
-                return cachedSearchDataModel.clubsFound.ToArray();
+                var isCacheFresh = (DateTime.UtcNow - cachedSearchDataModel.searchTime).TotalMinutes <= clubSearchCacheMinutes;
+                if (isCacheFresh && cachedSearchDataModel.clubsFound is { Count: > 0 })
+                {
+                    Debug.Log($"Returning cached search results for term: {lastNormalizedSearchTerm} with {cachedSearchDataModel.clubsFound.Count} clubs found.");
+                    return cachedSearchDataModel.clubsFound.ToArray();
+                }
+
+                SearchedClubsCollection.Remove(lastNormalizedSearchTerm);
             }
 
             // Mark as waiting
@@ -528,6 +546,10 @@ namespace ProDomino.GameSystem
                         OnSearchClubsByNameFailed("Failed to deserialize Firestore club Search response.");
                         return null;
                     }
+
+                    // Surface backend-side reasons (e.g. missing Firebase tokens) instead of silently showing no clubs
+                    if (clubsSearchResponse.clubsFound is not { Count: > 0 })
+                        Debug.LogWarning($"Club search for '{lastNormalizedSearchTerm}' returned no clubs. Backend code: {clubsSearchResponse.clubResponseCodeType}, message: {clubsSearchResponse.message}");
 
                     // Cache the search result
                     SearchedClubsCollection[lastNormalizedSearchTerm] = new(clubsSearchResponse.clubsFound ?? new(), DateTime.UtcNow);

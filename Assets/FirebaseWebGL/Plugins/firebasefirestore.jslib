@@ -385,6 +385,7 @@ mergeInto(LibraryManager.library, {
                 .normalize("NFD")                      // Decompose accented characters
                 .replace(/[\u0300-\u036f]/g, "")       // Remove diacritics
                 .replace(/[^a-z0-9\s]/g, "")           // Remove special characters
+                .replace(/\s+/g, " ")                  // Collapse repeated spaces
                 .trim();
 
             if (normalized.length === 0) {
@@ -392,44 +393,47 @@ mergeInto(LibraryManager.library, {
                 return;
             }
 
-            // Determine if it's a multi-word search (contains spaces)
-            var isMultiWord = normalized.includes(" ");
+            var maxResults = 10;
+            var searchWords = normalized.split(" ").filter(function (w) { return w.length > 0; });
+            var isMultiWord = searchWords.length > 1;
 
-            var query;
-            if (isMultiWord) {
-                // --- Case 1: Multi-word search using normalizedName prefix ---
-                var endRange = normalized + "\uf8ff";
+            // searchTokens holds every prefix of every word of the club name, so querying it with the
+            // longest typed word finds candidates regardless of word order or partially typed words.
+            var anchorWord = searchWords.reduce(function (a, b) { return b.length > a.length ? b : a; });
 
-                query = firebaseFirestore
-                    .collection(parsedPath)
-                    .orderBy("normalizedName")
-                    .startAt(normalized)
-                    .endAt(endRange)
-                    .limit(10);
-                console.log(`[Firestore] Multi-word search for '${normalized}' using normalizedName prefix`);
-            } else {
-                // --- Case 2: Single-word search using searchTokens array ---
-                query = firebaseFirestore
-                    .collection(parsedPath)
-                    .where("searchTokens", "array-contains", normalized)
-                    .limit(10);
-                console.log(`[Firestore] Single-word search for '${normalized}' using searchTokens array`);
-            }
+            // Every typed word must be the start of some word in the club name
+            var matchesAllWords = function (club) {
+                var name = (club.normalizedName || club.clubName || "").toLowerCase();
+                var nameWords = name.split(/\s+/);
+                return searchWords.every(function (w) {
+                    return nameWords.some(function (nw) { return nw.indexOf(w) === 0; });
+                });
+            };
+
+            // Multi-word searches are filtered after the query, so fetch extra candidates
+            var query = firebaseFirestore
+                .collection(parsedPath)
+                .where("searchTokens", "array-contains", anchorWord)
+                .limit(isMultiWord ? maxResults * 5 : maxResults);
+            console.log(`[Firestore] Club search for '${normalized}' using searchTokens '${anchorWord}'`);
 
             // Execute query
             query.get()
                 .then(function (querySnapshot) {
-                    if (querySnapshot.empty) {
-                        unityInstance.Module.SendMessage(parsedObjectName, parsedFallback, "No matches found");
-                        return;
-                    }
-
                     var clubs = [];
                     querySnapshot.forEach(function (doc) {
                         var data = doc.data();
                         data.id = doc.id;
-                        clubs.push(data);
+                        if (!isMultiWord || matchesAllWords(data))
+                            clubs.push(data);
                     });
+
+                    if (clubs.length === 0) {
+                        unityInstance.Module.SendMessage(parsedObjectName, parsedFallback, "No matches found");
+                        return;
+                    }
+
+                    clubs = clubs.slice(0, maxResults);
 
                     // Send results back to Unity as JSON
                     unityInstance.Module.SendMessage(parsedObjectName, parsedCallback, JSON.stringify(clubs));

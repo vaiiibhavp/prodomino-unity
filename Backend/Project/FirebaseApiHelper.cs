@@ -1069,88 +1069,32 @@ internal class FirebaseApiHelper
         if (string.IsNullOrEmpty(normalizedTerm))
             return new List<FirestoreClubData>();
 
-        // Determine whether it's a multi-word or single-word search
-        bool isMultiWord = normalizedTerm.Contains(' ');
+        // searchTokens holds every prefix of every word of the club name, so querying it with the
+        // longest typed word finds candidates regardless of word order or partially typed words.
+        var searchWords = normalizedTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        bool isMultiWord = searchWords.Length > 1;
+        var anchorWord = searchWords.OrderByDescending(w => w.Length).First();
 
-        object queryPayload;
-
-        if (isMultiWord)
+        // Multi-word searches are filtered after the query, so fetch extra candidates
+        object queryPayload = new
         {
-            // Case 1: Multi-word search → use normalizedName prefix
-            string startAt = normalizedTerm;
-            string endAt = normalizedTerm + "\uf8ff";
-
-            queryPayload = new
+            structuredQuery = new
             {
-                structuredQuery = new
+                from = new[] { new { collectionId = collection } },
+                where = new
                 {
-                    from = new[] { new { collectionId = collection } },
-                    orderBy = new[]
+                    fieldFilter = new
                     {
-                        new
-                        {
-                            field = new { fieldPath = "normalizedName" },
-                            direction = "ASCENDING"
-                        }
-                    },
-                    where = new
-                    {
-                        compositeFilter = new
-                        {
-                            op = "AND",
-                            filters = new object[]
-                            {
-                                new
-                                {
-                                    fieldFilter = new
-                                    {
-                                        field = new { fieldPath = "normalizedName" },
-                                        op = "GREATER_THAN_OR_EQUAL",
-                                        value = new { stringValue = startAt }
-                                    }
-                                },
-                                new
-                                {
-                                    fieldFilter = new
-                                    {
-                                        field = new { fieldPath = "normalizedName" },
-                                        op = "LESS_THAN_OR_EQUAL",
-                                        value = new { stringValue = endAt }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    limit = limit
-                }
-            };
+                        field = new { fieldPath = "searchTokens" },
+                        op = "ARRAY_CONTAINS",
+                        value = new { stringValue = anchorWord }
+                    }
+                },
+                limit = isMultiWord ? limit * 5 : limit
+            }
+        };
 
-            logger?.LogInformation($"[Firestore] Multi-word search for '{normalizedTerm}' using normalizedName prefix.");
-        } 
-        
-        else
-        {
-            // Case 2: Single-word search → use searchTokens array-contains
-            queryPayload = new
-            {
-                structuredQuery = new
-                {
-                    from = new[] { new { collectionId = collection } },
-                    where = new
-                    {
-                        fieldFilter = new
-                        {
-                            field = new { fieldPath = "searchTokens" },
-                            op = "ARRAY_CONTAINS",
-                            value = new { stringValue = normalizedTerm }
-                        }
-                    },
-                    limit = limit
-                }
-            };
-
-            logger?.LogInformation($"[Firestore] Single-word search for '{normalizedTerm}' using searchTokens array.");
-        }
+        logger?.LogInformation($"[Firestore] Club search for '{normalizedTerm}' using searchTokens '{anchorWord}'.");
 
         // Execute the query
         var response = await ExecuteRequestAsync(
@@ -1176,7 +1120,7 @@ internal class FirebaseApiHelper
             {
                 var json = document.ToString(Formatting.None);
                 var parsedClub = FirestoreClubData.ParseClubData(json);
-                if (parsedClub != null)
+                if (parsedClub != null && (!isMultiWord || MatchesAllWords(parsedClub)))
                     clubs.Add(parsedClub);
             }
             catch (Exception ex)
@@ -1185,8 +1129,21 @@ internal class FirebaseApiHelper
             }
         }
 
+        clubs = clubs.Take(limit).ToList();
+
         logger?.LogInformation($"[Firestore] Retrieved {clubs.Count} clubs matching search term '{normalizedTerm}'.");
         return clubs;
+
+        // Every typed word must be the start of some word in the club name
+        bool MatchesAllWords(FirestoreClubData club)
+        {
+            var name = !string.IsNullOrEmpty(club.normalizedName)
+                ? club.normalizedName
+                : UGSApiHelper.NormalizeName(club.clubName);
+
+            var nameWords = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return searchWords.All(w => nameWords.Any(nw => nw.StartsWith(w, StringComparison.Ordinal)));
+        }
     }
 
 

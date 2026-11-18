@@ -1667,6 +1667,10 @@ public class MatchManager : NetworkBehaviour
                     // Start the turn timer for the selected player
                     StartTurnTimer_ServerRPC();
 
+                    // Start the time bar for everyone (same as a regular turn change). Without this, when a bot starts the round,
+                    // the clients never update their current turn, so their time bar stays frozen on the previous round's player
+                    StartTimeBarForEveryone_ClientRpc(auxClientIdFirstPlayer);
+
                     // Get the client data info of the current one to determine if this client is a bot
                     var currentPlayerDataInfo = currentGameMode.GetPlayersDataInfo_fromHost(auxClientIdFirstPlayer);
                     if (!currentPlayerDataInfo.isBot)
@@ -1735,6 +1739,9 @@ public class MatchManager : NetworkBehaviour
             //// Initialize the replay manager on the server (this is called directly because every client already has initialized its currentGameMode)
             //InitializeClientsReplayManager_ServerRpc();
         }
+
+        // Stop every time bar left running/frozen from the previous round
+        currentGameMode.ExtendedGameController.OnFinishTimer_Externally();
 
         // Restart the game mode
         currentGameMode.RestartGame(restartNewRound: restartNewRound);

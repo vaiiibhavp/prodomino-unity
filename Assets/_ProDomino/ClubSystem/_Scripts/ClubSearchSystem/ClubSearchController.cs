@@ -39,6 +39,16 @@ namespace ProDomino.ClubSystem
         private List<ClubSearchEntry> searchEntries;
         private List<ClubSearchLeaderboardEntry> leaderboardEntries;
 
+        // Top Clubs panel; search results are shown in its place
+        private Transform leaderboardContainer;
+
+        // Search results panel built from the Top Clubs panel (cards parent, card template and scroll view)
+        private Transform searchCardsParent;
+        private ClubSearchEntry searchCardTemplate;
+        private UnityEngine.UI.ScrollRect searchResultsScrollRect;
+
+        private const string NoClubsFoundMessage = "No clubs found";
+
         private void Awake()
         {
             if (createClubButton)
@@ -53,10 +63,98 @@ namespace ProDomino.ClubSystem
 
             // Pressing Enter in the search field runs the same search as the button
             if (searchInputField)
+            {
                 searchInputField.onSubmit.AddListener(_ => OnSearchClubButtonClicked());
+
+                // Clearing the search field goes back to the Top Clubs list
+                searchInputField.onValueChanged.AddListener(text =>
+                {
+                    if (string.IsNullOrWhiteSpace(text))
+                        SetSearchResultsVisible(false);
+                });
+            }
+
+            // The label text was restyled for the hero heading; it must describe an empty search here
+            if (noClubsFoundLabel && noClubsFoundLabel.TryGetComponent<TMP_Text>(out var noClubsFoundText))
+                noClubsFoundText.text = NoClubsFoundMessage;
 
             searchEntries = searchClubParent.GetComponentsInChildren<ClubSearchEntry>(true).ToList() ?? new();
             leaderboardEntries = leaderboardClubParent.GetComponentsInChildren<ClubSearchLeaderboardEntry>(true).ToList() ?? new();
+
+            BuildSearchResultsPanel();
+        }
+
+        /// <summary>
+        /// Builds the search results panel as a copy of the Top Clubs panel, so search results use the same club cards,
+        /// spacing and horizontal scrolling as the leaderboard. The panel sits in the leaderboard slot and is shown in
+        /// its place while a search is displayed. The original vertical results list (which was laid out below the hero
+        /// section, off-screen) is no longer used.
+        /// </summary>
+        private void BuildSearchResultsPanel()
+        {
+            leaderboardContainer = GetDirectChildContaining(leaderboardClubParent);
+            if (leaderboardContainer == null)
+            {
+                Debug.LogWarning("Top Clubs container not found; search results keep their original layout.", this);
+                return;
+            }
+
+            if (leaderboardClubParent.GetComponentInChildren<ClubSearchLeaderboardEntry>(true) == null)
+            {
+                Debug.LogWarning("No Top Clubs card found to use as the search result card; search results keep their original layout.", this);
+                return;
+            }
+
+            // Path (sibling indices) from the Top Clubs panel down to its cards parent, to find the same object in the copy
+            var pathToCardsParent = new List<int>();
+            for (var current = leaderboardClubParent; current != leaderboardContainer; current = current.parent)
+                pathToCardsParent.Insert(0, current.GetSiblingIndex());
+
+            var panel = Instantiate(leaderboardContainer.gameObject, leaderboardContainer.parent);
+            panel.name = "Search_Results_Container";
+            panel.SetActive(false);
+            panel.transform.SetSiblingIndex(leaderboardContainer.GetSiblingIndex() + 1);
+
+            searchCardsParent = panel.transform;
+            foreach (var siblingIndex in pathToCardsParent)
+                searchCardsParent = searchCardsParent.GetChild(siblingIndex);
+
+            // Reuse the copied cards as the search result entries
+            searchEntries = searchCardsParent.GetComponentsInChildren<ClubSearchLeaderboardEntry>(true).Cast<ClubSearchEntry>().ToList();
+            searchCardTemplate = searchEntries[0];
+            searchResultsScrollRect = panel.GetComponentInChildren<UnityEngine.UI.ScrollRect>(true);
+
+            // Show the "No clubs found" message centred inside the results panel
+            if (noClubsFoundLabel && noClubsFoundLabel.transform is RectTransform labelRect)
+            {
+                labelRect.SetParent(panel.transform, worldPositionStays: false);
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+                labelRect.SetAsLastSibling();
+
+                if (noClubsFoundLabel.TryGetComponent<TMP_Text>(out var labelText))
+                    labelText.alignment = TextAlignmentOptions.Center;
+            }
+
+            // The old vertical results list stays hidden; the new panel takes its role
+            if (searchResultsContainer)
+                searchResultsContainer.SetActive(false);
+
+            searchResultsContainer = panel;
+        }
+
+        /// <summary>
+        /// Returns the ancestor of <paramref name="descendant"/> that is a direct child of this controller's transform.
+        /// </summary>
+        private Transform GetDirectChildContaining(Transform descendant)
+        {
+            var current = descendant;
+            while (current != null && current.parent != transform)
+                current = current.parent;
+
+            return current;
         }
 
         private void Start()
@@ -119,20 +217,28 @@ namespace ProDomino.ClubSystem
             // Configure search entries
             if (searchClubDatas != null && searchClubDatas.Length > 0)
             {
-                // Ensure there are enough search entries
+                // Ensure there are enough search entries (club cards when the results panel was built from Top Clubs)
+                var entryTemplate = searchCardTemplate ? searchCardTemplate : clubSearchEntryPrefab;
+                var entriesParent = searchCardsParent ? searchCardsParent : searchClubParent;
                 while (searchEntries.Count < searchClubDatas.Length)
                 {
-                    var newEntry = Instantiate(clubSearchEntryPrefab, searchClubParent);
-                    newEntry.Initialize(OpenConfirmationSendRequest, getConfigData);
+                    var newEntry = Instantiate(entryTemplate, entriesParent);
                     searchEntries.Add(newEntry);
                 }
 
                 // Configure and show the required number of entries
                 for (int i = 0; i < searchClubDatas.Length; i++)
                 {
+                    if (getConfigData is not null)
+                        searchEntries[i].Initialize(OpenConfirmationSendRequest, getConfigData);
+
                     searchEntries[i].gameObject.SetActive(true);
                     searchEntries[i].Configure(searchClubDatas[i]);
                 }
+
+                // Start from the first card on every new search
+                if (searchResultsScrollRect)
+                    searchResultsScrollRect.horizontalNormalizedPosition = 0f;
 
                 // Hide any extra entries
                 for (int i = searchClubDatas.Length; i < searchEntries.Count; i++)
@@ -262,6 +368,10 @@ namespace ProDomino.ClubSystem
                 searchResultsContainer.SetActive(isVisible);
             else
                 Debug.LogWarning("Search Results Container is not assigned in the inspector; search results may stay hidden.", this);
+
+            // Search results take the Top Clubs slot, so the leaderboard is hidden while they are shown
+            if (leaderboardContainer && searchResultsContainer && leaderboardContainer != searchResultsContainer.transform)
+                leaderboardContainer.gameObject.SetActive(!isVisible);
         }
 
         /// <summary>
