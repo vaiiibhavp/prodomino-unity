@@ -1428,7 +1428,11 @@ namespace ProDomino.GameModes
                         Debug.LogError("LobbyChatContainerObj is null");
                 });
 
-                chatButton.SetButtonInteractableWithAlphaFull(true);
+                // The chat button is authored non-interactable (isInteractable = 0), so CustomButtonUI.Awake
+                // turned its CanvasGroup's blocksRaycasts off. SetButtonInteractableWithAlphaFull doesn't restore
+                // raycasts, and Block/Draw/French/Five hide this class's Update, so nothing re-enables them later.
+                // Make it interactable by default here so clicks reach the button and Update's IsBlocked check keeps working.
+                chatButton.SetButtonInteractable(true, ignoreDefault: true);
 
                 Debug.Log("---c Chat lobby object set successfully.");
             }

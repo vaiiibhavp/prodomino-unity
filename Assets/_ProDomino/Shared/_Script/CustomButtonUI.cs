@@ -369,7 +369,8 @@ public class CustomButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
     public void AddEventToListener(UnityAction action)
     {
-        button.onClick.AddListener(action);
+        // Use the lazy property: listeners can be added before Awake runs (e.g. while the parent is inactive).
+        Button.onClick.AddListener(action);
     }
 
     private void SetupImageStates()
