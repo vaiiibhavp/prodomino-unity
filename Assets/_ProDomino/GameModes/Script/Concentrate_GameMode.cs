@@ -72,6 +72,8 @@ namespace ProDomino.GameModes
         {
             base.RestartGame(restartNewRound);
 
+            isForcingPlay = false;
+
             //fullSides = false;
 
             //UpdateBoneyardText();
@@ -926,39 +928,73 @@ namespace ProDomino.GameModes
         /// Method used to play automatically a tile<br></br>
         /// Mainly use when the t
         /// </summary>
+        private bool isForcingPlay = false;
+
         public void ForcePlayATile()
         {
+            // Only the local player's turn in single player vs AI can be auto-played (AI turns play themselves)
+            if (!isSinglePlayerVsIA || isForcingPlay || extendedGameController.GameIsCompleteAndFinished)
+                return;
+
+            if (extendedGameController.TurnScript.GetCurrentPlayerTurn() != "playerTurn")
+                return;
+
+            isForcingPlay = true;
             auxConcentrateBoard.DisableAllConcentrateSlots();
             StartCoroutine(CompleteSelection());
 
             IEnumerator CompleteSelection()
             {
-                var randomTileIndex = default(int);
-                var auxWaitingTime = default(float);
+                Debug.Log("[ConcentrateGameMode_ForcePlayATile] Turn timed out, auto selecting the remaining tiles...");
 
-                if (tileContainerIndex.Count > 0)
+                // A status other than "waiting" means first/secondTileSelected still hold the previous, already
+                // resolved pair (e.g. the AI's revealed tiles), so nothing has been picked yet in this turn.
+                bool firstPending = statusTileSelection != "waiting" || firstTileSelected == null;
+
+                if (firstPending)
                 {
-                    Debug.Log("[ConcentrateGameMode_ForcePlayATile] Proceding to select lefting tiles...");
+                    if (!TryGetRandomSelectableTile(null, out var firstContainer))
+                    {
+                        isForcingPlay = false;
+                        EndConcentrateGame();
+                        yield break;
+                    }
 
-                    // If the first tile selection is lefting. Proceed to select it
-                    if (!firstTileSelected)
-                        yield return PlayARandomTile();
-
-                    // If the second tile selection is lefting. Proceed to select it
-                    if (!secondTileSelected)
-                        yield return PlayARandomTile();
-                } 
-                else
-                    EndConcentrateGame();
-
-                IEnumerator PlayARandomTile()
-                {
-                    auxWaitingTime = Random.Range(1, 3);
-                    randomTileIndex = Random.Range(0, tileContainerIndex.Count);
-
-                    yield return new WaitForSeconds(auxWaitingTime);
-                    SelectConcentrateTileForPlayer(auxConcentrateBoard.TileContainers[tileContainerIndex[randomTileIndex]]);
+                    yield return new WaitForSeconds(Random.Range(0.5f, 1f));
+                    SelectConcentrateTileForPlayer(firstContainer);
                 }
+
+                if (statusTileSelection == "waiting" && firstTileSelected != null && secondTileSelected == null)
+                {
+                    if (!TryGetRandomSelectableTile(firstTileSelected, out var secondContainer))
+                    {
+                        isForcingPlay = false;
+                        EndConcentrateGame();
+                        yield break;
+                    }
+
+                    yield return new WaitForSeconds(Random.Range(0.5f, 1f));
+                    SelectConcentrateTileForPlayer(secondContainer);
+                }
+
+                isForcingPlay = false;
+
+                // A correct forced pair keeps the turn on the player: the slots were disabled above and the timer
+                // already expired, so give control back and restart the turn timer.
+                if (!extendedGameController.GameIsCompleteAndFinished
+                    && extendedGameController.TurnScript.GetCurrentPlayerTurn() == "playerTurn"
+                    && auxConcentrateBoard.TileContainers.Count > 0)
+                {
+                    auxConcentrateBoard.EnableAllConcentrateSlots();
+                    extendedGameController.TurnScript.OnTurnStartEvent?.Invoke();
+                }
+            }
+
+            bool TryGetRandomSelectableTile(Transform exclude, out Transform container)
+            {
+                var candidates = auxConcentrateBoard.TileContainers.Where(c => c != null && c != exclude).ToList();
+                container = candidates.Count > 0 ? candidates[Random.Range(0, candidates.Count)] : null;
+                return container != null;
             }
         }
 

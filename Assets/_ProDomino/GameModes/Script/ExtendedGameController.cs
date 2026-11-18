@@ -1125,7 +1125,9 @@ namespace ProDomino.GameModes
                 }
             } else if (TryGetComponent<Concentrate_GameMode>(out var concentrate_GameMode))
             {
-                concentrate_GameMode.ForcePlayATile();
+                // Only auto-pick on a real timeout, not when the timer is stopped externally
+                if (isTimeOut)
+                    concentrate_GameMode.ForcePlayATile();
             } else
             {
                 Debug.LogError("[ExtendedGameController_OnFinishTimer] Is concentrate game mode, but its abstract script reference is missing");
