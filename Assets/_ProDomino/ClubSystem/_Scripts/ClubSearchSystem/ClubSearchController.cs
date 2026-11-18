@@ -18,6 +18,8 @@ namespace ProDomino.ClubSystem
         [SerializeField] private CanvasGroup rootCanvas;
         [SerializeField] private TMP_InputField searchInputField;
         [SerializeField] private GameObject noClubsFoundLabel;
+        [Tooltip("Container holding the search results list and the 'no clubs found' label. Hidden until a search is made.")]
+        [SerializeField] private GameObject searchResultsContainer;
         [SerializeField] private Transform searchClubParent;
         [SerializeField] private Transform leaderboardClubParent;
         [SerializeField] private CustomButtonUI createClubButton;
@@ -48,6 +50,10 @@ namespace ProDomino.ClubSystem
                 searchClubButton.onClick.AddListener(OnSearchClubButtonClicked);
             else
                 Debug.LogError("Search Club Button is not assigned in the inspector.", this);
+
+            // Pressing Enter in the search field runs the same search as the button
+            if (searchInputField)
+                searchInputField.onSubmit.AddListener(_ => OnSearchClubButtonClicked());
 
             searchEntries = searchClubParent.GetComponentsInChildren<ClubSearchEntry>(true).ToList() ?? new();
             leaderboardEntries = leaderboardClubParent.GetComponentsInChildren<ClubSearchLeaderboardEntry>(true).ToList() ?? new();
@@ -238,8 +244,24 @@ namespace ProDomino.ClubSystem
             }
             finally
             {
+                // The results list lives in a container that is hidden until the first search,
+                // so reveal it now that it holds either the results or the "no clubs found" label
+                SetSearchResultsVisible(true);
+
                 rootCanvas?.SetActive(true);
             }
+        }
+
+        /// <summary>
+        /// Shows or hides the search results container (results list + "no clubs found" label).
+        /// </summary>
+        /// <param name="isVisible">Whether the container should be visible.</param>
+        private void SetSearchResultsVisible(bool isVisible)
+        {
+            if (searchResultsContainer)
+                searchResultsContainer.SetActive(isVisible);
+            else
+                Debug.LogWarning("Search Results Container is not assigned in the inspector; search results may stay hidden.", this);
         }
 
         /// <summary>
@@ -312,6 +334,10 @@ namespace ProDomino.ClubSystem
         /// </summary>
         internal void OnOpenController()
         {
+            // Start from a clean state: no previous search results until the player searches again
+            ConfigureSearchEntries(Array.Empty<FirestoreClubData>());
+            SetSearchResultsVisible(false);
+
             ConfigureLeaderboardEntries(Array.Empty<FirestoreClubData>());
         }
     }

@@ -306,7 +306,8 @@ namespace ProDomino.ClubSystem
             }
 
             // Check if the player has already sent a join request to the club
-            if (toRequestClubData.applicants.Any(x => x.unityID == authManager.UUID))
+            // Clubs without pending requests may come from Firestore without an applicants list
+            if (toRequestClubData.applicants?.Any(x => x.unityID == authManager.UUID) ?? false)
             {
                 Debug.LogWarning($"You have already sent a join request to the club {toRequestClubData.clubName}.");
                 ClubUI.ShowPrompt($"You have already sent a join request to the club {toRequestClubData.clubName}.");
@@ -368,7 +369,7 @@ namespace ProDomino.ClubSystem
                 }
 
                 // Search inf the member list for the accepted applicant data
-                var acceptedApplicantMemberData = tempfirestorePlayerClubData.applicants.FirstOrDefault(member => member.unityID == authManager.UUID);
+                var acceptedApplicantMemberData = tempfirestorePlayerClubData.applicants?.FirstOrDefault(member => member.unityID == authManager.UUID);
                 if (acceptedApplicantMemberData is null)
                 {
                     Debug.LogWarning($"User {authManager.UUID} was added registered as an applicant into the club but its data is not found in the applicants list.");
@@ -390,7 +391,7 @@ namespace ProDomino.ClubSystem
                     Debug.LogWarning($"Failed to send join request to {toRequestClubData.clubName}");
 
                 // Show an error prompt in the UI
-                ClubUI.ShowPrompt(TryToSendJoinRequestResponse.message ?? $"Failed to send join request to the club {toRequestClubData.clubName}.");
+                ClubUI.ShowPrompt(TryToSendJoinRequestResponse?.message ?? $"Failed to send join request to the club {toRequestClubData.clubName}.");
             }
 
             // Refresh the UI data
