@@ -406,6 +406,8 @@ namespace ProDomino.Dashboard.Editor
         {
             var gradient = MakeRoundedSprite($"PD_GameCard_{id}", 64, 64, (int)CardRadius, colorA, colorB);
             var card = MakeImage(parent, $"{title}_GameCard", gradient, Color.white, Image.Type.Sliced);
+            // Doubles the sliced corner size so the rounding stays visible on the scaled-down canvas.
+            card.GetComponent<Image>().pixelsPerUnitMultiplier = 0.5f;
 
             var illust = LoadArtSprite(illustration);
             if (illust != null)
@@ -464,6 +466,7 @@ namespace ProDomino.Dashboard.Editor
 
             var cardImage = card.GetComponent<Image>();
             cardImage.raycastTarget = false;
+            cardImage.pixelsPerUnitMultiplier = 0.5f;
         }
 
         // ------------------------------------------------------------------ reflection wiring

@@ -211,7 +211,11 @@ namespace ProDomino.AdSystem
             // Parse the string result to a boolean
             var wasShownProperly = wasShownProperlyStr is "true";
 
-            // If the ad wasn't shown properly, exit early
+            // Consume the callback so a late or duplicate render event can never invoke a stale one again
+            var onInterstitialClosed = this.onInterstitialClosed;
+            this.onInterstitialClosed = null;
+
+            // If no caller is waiting for the result, exit early
             if (onInterstitialClosed is null)
             {
                 Debug.LogWarning("[AdManager] No interstitial closed callback registered.");

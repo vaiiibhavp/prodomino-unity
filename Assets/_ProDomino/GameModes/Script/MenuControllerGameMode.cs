@@ -326,26 +326,30 @@ namespace ProDomino.GameModes
 
             EndGame();
 
-            ShowInterstitialThenReturnToLobby();
+            ReturnToLobbyThenShowInterstitial();
         }
 
         /// <summary>
-        /// Once the match is ended, shows an interstitial ad and then reopens the game mode selection.
-        /// The lobby restore must run even when no AdManager is available, otherwise the player is left
-        /// on an empty, non-interactive screen.
+        /// Once the match is ended, reopens the game mode selection right away and then requests the
+        /// interstitial ad on top of it.
+        /// The lobby restore used to run only from the ad's "closed" callback. On WebGL that callback relies on
+        /// GPT's slotRenderEnded event, which can arrive late or never (no fill, blocked/slow request), so the
+        /// board was already destroyed while the lobby never came back: a black screen until a second Lobby
+        /// click happened to get a callback through. A late callback could also fire during the next match and
+        /// throw the player out of it. The lobby restore therefore never waits on the ad.
         /// </summary>
-        private void ShowInterstitialThenReturnToLobby()
+        private void ReturnToLobbyThenShowInterstitial()
         {
+            ReturnToLobby();
+
             if (adManager)
-                adManager.ShowInterstitialAd(ReturnToLobbyAfterAd);
+                // Non-null on purpose: AdManager skips registering the ad view when no callback is given.
+                adManager.ShowInterstitialAd(onInterstitialClosed: static () => { });
             else
-            {
-                Debug.LogWarning($"[{nameof(MenuControllerGameMode)}] AdManager service not found, returning to lobby without interstitial.");
-                ReturnToLobbyAfterAd();
-            }
+                Debug.LogWarning($"[{nameof(MenuControllerGameMode)}] AdManager service not found, returned to lobby without interstitial.");
         }
 
-        private async void ReturnToLobbyAfterAd()
+        private async void ReturnToLobby()
         {
             // This will close inGameMenu;
             _inGameMenu.SetActive(false);
@@ -386,7 +390,7 @@ namespace ProDomino.GameModes
 
             EndGame();
 
-            ShowInterstitialThenReturnToLobby();
+            ReturnToLobbyThenShowInterstitial();
         }
 
         /// <summary>
