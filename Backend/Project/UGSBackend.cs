@@ -14,8 +14,10 @@ internal class UGSBackend
 
     internal class UGSConfigData
     {
-        internal static readonly string blockedEmailDomainsConfig = "29dccedf-b5af-469b-837c-43527abb2011";
-        internal static readonly string bannedWordsDomainsConfig = "57e2462f-6e4b-4034-8b86-8411aabfe0bc";
+        // Remote Config "settings" config ID of the PlayProDomino Dev project's production environment.
+        // Both keys ("blocked_email_domains" and "banned_words") live in this same config.
+        internal static readonly string blockedEmailDomainsConfig = "fa5890fc-bbe3-43fb-85b2-cff0efb97f09";
+        internal static readonly string bannedWordsDomainsConfig = "fa5890fc-bbe3-43fb-85b2-cff0efb97f09";
 
         private const string SecretAuthHeader = "AUTHORIZATION_HEADER";
 
