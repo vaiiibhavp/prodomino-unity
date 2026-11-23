@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Firebase config/service-account types shared by the Cloud Code module (Backend/Project)
+        and the Unity client (compiled copy: Assets/FirebaseWebGL/Plugins/FirebaseSharedLibrary.dll).
+        Keep netstandard2.1 so the DLL stays loadable by Unity.
+    -->
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <LangVersion>12</LangVersion>
+        <Nullable>disable</Nullable>
+        <RootNamespace>FirebaseSharedLibrary</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+
+</Project>

@@ -15,7 +15,6 @@ using Unity.Services.CloudCode.Apis;
 using Unity.Services.CloudCode.Core;
 using Unity.Services.CloudCode.Shared;
 using static Backend.UGSBackend;
-using static Google.Apis.Requests.BatchRequest;
 using static HelperSharedLibrary.Enums;
 using static HelperSharedLibrary.ExceptionHelper;
 

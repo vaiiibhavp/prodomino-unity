@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Shared data/validation types used by both the Cloud Code module (Backend/Project)
+        and the Unity client (compiled copy: Assets/FirebaseWebGL/Plugins/HelperSharedLibrary.dll).
+        Keep netstandard2.1 so the DLL stays loadable by Unity.
+    -->
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <LangVersion>12</LangVersion>
+        <Nullable>disable</Nullable>
+        <RootNamespace>HelperSharedLibrary</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+
+</Project>

@@ -76,6 +76,10 @@ crashlytics-build.properties
 # .NET build output (Backend / FirebaseFunctions)
 /[Bb]ackend/**/bin/
 /[Bb]ackend/**/obj/
+
+# Cloud Code module solution/projects are hand-written (not Unity-generated) — keep them tracked.
+!/[Bb]ackend/*.sln
+!/[Bb]ackend/**/*.csproj
 node_modules/
 
 # Antigravity AI config — intentionally tracked for portability

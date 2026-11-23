@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
   m_Name: RemoteConfigDataStoreAsset
   m_EditorClassIdentifier: 
-  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"e9001fee-8f39-49e4-aacd-b92d5d1e18bf\"\r\n   
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"0183cd0f-bfe1-43a7-82e3-5d55b806fce1\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"blocked_email_domains\",\r\n      \"type\":
     \"json\",\r\n      \"schemaId\": null,\r\n      \"value\": {\r\n        \"blockedDomains\":
     [\r\n          \"0-mail.com\",\r\n          \"027168.com\",\r\n          \"0815.ru\",\r\n         
@@ -40,8 +40,758 @@ MonoBehaviour:
     \"1clck2.com\",\r\n          \"1fsdfdsfsdf.tk\",\r\n          \"1mail.ml\",\r\n         
     \"1pad.de\",\r\n          \"1s.fr\",\r\n          \"1sec.site\",\r\n         
     \"1secmail.com\",\r\n          \"1secmail.net\",\r\n          \"1secmail.org\"\r\n       
-    ]\r\n      }\r\n    }\r\n  }\r\n]"
-  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"e9001fee-8f39-49e4-aacd-b92d5d1e18bf\"\r\n   
+    ]\r\n      }\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"afabc843-9a75-4723-a1f2-9e7ff0c7b1ad\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"banned_words\",\r\n      \"type\": \"json\",\r\n      \"schemaId\":
+    null,\r\n      \"value\": [\r\n        \"\U0001F595\",\r\n        \"@$$\",\r\n       
+    \"2 girls 1 cup\",\r\n        \"2g1c\",\r\n        \"4r5e\",\r\n        \"5h1t\",\r\n       
+    \"5hit\",\r\n        \"5ht\",\r\n        \"a s s\",\r\n        \"a s shole\",\r\n       
+    \"a_s_s\",\r\n        \"a55\",\r\n        \"a55hole\",\r\n        \"abbo\",\r\n       
+    \"abeed\",\r\n        \"abuse\",\r\n        \"acrotomophilia\",\r\n        \"africoon\",\r\n       
+    \"ahole\",\r\n        \"alabama hot pocket\",\r\n        \"alaskan pipeline\",\r\n       
+    \"alligator bait\",\r\n        \"alligatorbait\",\r\n        \"amcik\",\r\n       
+    \"anal\",\r\n        \"analannie\",\r\n        \"analprobe\",\r\n        \"analsex\",\r\n       
+    \"andskota\",\r\n        \"anilingus\",\r\n        \"anus\",\r\n        \"apeshit\",\r\n       
+    \"ar5e\",\r\n        \"arabush\",\r\n        \"arabushs\",\r\n        \"areola\",\r\n       
+    \"areole\",\r\n        \"argie\",\r\n        \"armo\",\r\n        \"armos\",\r\n       
+    \"arrse\",\r\n        \"arschloch\",\r\n        \"arse\",\r\n        \"arsehole\",\r\n       
+    \"aryan\",\r\n        \"ash0le\",\r\n        \"ash0les\",\r\n        \"asholes\",\r\n       
+    \"ass monkey\",\r\n        \"ass\",\r\n        \"assbag\",\r\n        \"assbagger\",\r\n       
+    \"assbandit\",\r\n        \"assbang\",\r\n        \"assbanged\",\r\n        \"assbanger\",\r\n       
+    \"assbangs\",\r\n        \"assbite\",\r\n        \"assblaster\",\r\n        \"assclown\",\r\n       
+    \"asscock\",\r\n        \"asscowboy\",\r\n        \"asscracker\",\r\n       
+    \"asses\",\r\n        \"assface\",\r\n        \"assfuck\",\r\n        \"assfucker\",\r\n       
+    \"ass-fucker\",\r\n        \"assfukka\",\r\n        \"assgoblin\",\r\n       
+    \"assh0le\",\r\n        \"assh0lez\",\r\n        \"asshat\",\r\n        \"ass-hat\",\r\n       
+    \"asshead\",\r\n        \"assho1e\",\r\n        \"asshole\",\r\n        \"assholes\",\r\n       
+    \"assholz\",\r\n        \"asshopper\",\r\n        \"asshore\",\r\n        \"assjacker\",\r\n       
+    \"assjockey\",\r\n        \"asskiss\",\r\n        \"asskisser\",\r\n        \"assklown\",\r\n       
+    \"asslick\",\r\n        \"asslicker\",\r\n        \"asslover\",\r\n        \"assman\",\r\n       
+    \"assmaster\",\r\n        \"assmonkey\",\r\n        \"assmunch\",\r\n       
+    \"assmuncher\",\r\n        \"assnigger\",\r\n        \"asspacker\",\r\n       
+    \"asspirate\",\r\n        \"ass-pirate\",\r\n        \"asspuppies\",\r\n       
+    \"assrammer\",\r\n        \"assranger\",\r\n        \"assshit\",\r\n        \"assshole\",\r\n       
+    \"asssucker\",\r\n        \"asswad\",\r\n        \"asswhole\",\r\n        \"asswhore\",\r\n       
+    \"asswipe\",\r\n        \"asswipes\",\r\n        \"auto erotic\",\r\n       
+    \"autoerotic\",\r\n        \"ayir\",\r\n        \"azazel\",\r\n        \"azz\",\r\n       
+    \"azzhole\",\r\n        \"b a s t a r d\",\r\n        \"b i t c h\",\r\n       
+    \"b o o b\",\r\n        \"b!+ch\",\r\n        \"b!tch\",\r\n        \"b!tchin\",\r\n       
+    \"b*tch\",\r\n        \"b00b\",\r\n        \"b00bies\",\r\n        \"b00biez\",\r\n       
+    \"b00bs\",\r\n        \"b00bz\",\r\n        \"b17ch\",\r\n        \"b1tch\",\r\n       
+    \"b7ch\",\r\n        \"babeland\",\r\n        \"babes\",\r\n        \"baby batter\",\r\n       
+    \"baby juice\",\r\n        \"backdoorman\",\r\n        \"badfuck\",\r\n       
+    \"ball gag\",\r\n        \"ball gravy\",\r\n        \"ball kicking\",\r\n       
+    \"ball licking\",\r\n        \"ball sack\",\r\n        \"ball sucking\",\r\n       
+    \"ballbag\",\r\n        \"balllicker\",\r\n        \"ballsack\",\r\n        \"bampot\",\r\n       
+    \"bangbro\",\r\n        \"bangbros\",\r\n        \"bangbus\",\r\n        \"bareback\",\r\n       
+    \"barely legal\",\r\n        \"barelylegal\",\r\n        \"barenaked\",\r\n       
+    \"barface\",\r\n        \"barfface\",\r\n        \"bassterd\",\r\n        \"bassterds\",\r\n       
+    \"bastard\",\r\n        \"bastardo\",\r\n        \"bastards\",\r\n        \"bastardz\",\r\n       
+    \"basterds\",\r\n        \"basterdz\",\r\n        \"bastinado\",\r\n        \"bazongas\",\r\n       
+    \"bazooms\",\r\n        \"bbw\",\r\n        \"bdsm\",\r\n        \"beaner\",\r\n       
+    \"beaners\",\r\n        \"beaney\",\r\n        \"beaneys\",\r\n        \"beardedclam\",\r\n       
+    \"beastality\",\r\n        \"beastial\",\r\n        \"beastiality\",\r\n       
+    \"beastility\",\r\n        \"beatch\",\r\n        \"beatoff\",\r\n        \"beatyourmeat\",\r\n       
+    \"beaver cleaver\",\r\n        \"beaver lips\",\r\n        \"beef curtains\",\r\n       
+    \"beeyotch\",\r\n        \"bellend\",\r\n        \"beotch\",\r\n        \"bestial\",\r\n       
+    \"bestiality\",\r\n        \"bi curious\",\r\n        \"bi+ch\",\r\n        \"bi7ch\",\r\n       
+    \"biatch\",\r\n        \"bicurious\",\r\n        \"big black\",\r\n        \"big
+    breasts\",\r\n        \"big knockers\",\r\n        \"big tits\",\r\n        \"bigass\",\r\n       
+    \"bigbastard\",\r\n        \"bigbreasts\",\r\n        \"bigbutt\",\r\n       
+    \"bigtits\",\r\n        \"bimbo\",\r\n        \"bimbos\",\r\n        \"bint\",\r\n       
+    \"birdlock\",\r\n        \"bitch\",\r\n        \"bitchass\",\r\n        \"bitched\",\r\n       
+    \"bitcher\",\r\n        \"bitchers\",\r\n        \"bitches\",\r\n        \"bitchez\",\r\n       
+    \"bitchin\",\r\n        \"bitching\",\r\n        \"bitchslap\",\r\n        \"bitchtit\",\r\n       
+    \"bitchy\",\r\n        \"biteme\",\r\n        \"bitties\",\r\n        \"black
+    cock\",\r\n        \"blackcock\",\r\n        \"blackman\",\r\n        \"blacks\",\r\n       
+    \"blonde action\",\r\n        \"blonde on blonde action\",\r\n        \"blonde
+    on blonde\",\r\n        \"bloodclaat\",\r\n        \"blow j\",\r\n        \"blow
+    job\",\r\n        \"blow your l\",\r\n        \"blow your load\",\r\n       
+    \"blowjob\",\r\n        \"blowjobs\",\r\n        \"blue waffle\",\r\n       
+    \"bluegum\",\r\n        \"bluegums\",\r\n        \"blumpkin\",\r\n        \"bo
+    ob\",\r\n        \"bo obs\",\r\n        \"boang\",\r\n        \"boche\",\r\n       
+    \"boches\",\r\n        \"boffing\",\r\n        \"bogan\",\r\n        \"bohunk\",\r\n       
+    \"boink\",\r\n        \"boiolas\",\r\n        \"bollick\",\r\n        \"bollock\",\r\n       
+    \"bollocks\",\r\n        \"bollok\",\r\n        \"bollox\",\r\n        \"bombers\",\r\n       
+    \"bomd\",\r\n        \"bondage\",\r\n        \"boned\",\r\n        \"boner\",\r\n       
+    \"boners\",\r\n        \"bong\",\r\n        \"boong\",\r\n        \"boonga\",\r\n       
+    \"boongas\",\r\n        \"boongs\",\r\n        \"boonie\",\r\n        \"boonies\",\r\n       
+    \"booobs\",\r\n        \"boooobs\",\r\n        \"booooobs\",\r\n        \"booooooobs\",\r\n       
+    \"bootee\",\r\n        \"bootlip\",\r\n        \"bootlips\",\r\n        \"boozer\",\r\n       
+    \"bosch\",\r\n        \"bosche\",\r\n        \"bosches\",\r\n        \"boschs\",\r\n       
+    \"bosomy\",\r\n        \"bounty bar\",\r\n        \"bounty bars\",\r\n       
+    \"bountybar\",\r\n        \"brea5t\",\r\n        \"breastjob\",\r\n        \"breastlover\",\r\n       
+    \"breastman\",\r\n        \"brown shower\",\r\n        \"brown showers\",\r\n       
+    \"brunette action\",\r\n        \"btch\",\r\n        \"buceta\",\r\n        \"buddhahead\",\r\n       
+    \"buddhaheads\",\r\n        \"buffies\",\r\n        \"bugger\",\r\n        \"buggered\",\r\n       
+    \"buggery\",\r\n        \"bukake\",\r\n        \"bukkake\",\r\n        \"bullcrap\",\r\n       
+    \"bulldike\",\r\n        \"bulldyke\",\r\n        \"bullet vibe\",\r\n       
+    \"bullshit\",\r\n        \"bullshits\",\r\n        \"bullshitted\",\r\n       
+    \"bullturds\",\r\n        \"bumblefuck\",\r\n        \"bumfuck\",\r\n       
+    \"bung hole\",\r\n        \"bung\",\r\n        \"bunga\",\r\n        \"bungas\",\r\n       
+    \"bunghole\",\r\n        \"bunny fucker\",\r\n        \"burr head\",\r\n       
+    \"burr heads\",\r\n        \"burrhead\",\r\n        \"burrheads\",\r\n       
+    \"butchbabes\",\r\n        \"butchdike\",\r\n        \"butchdyke\",\r\n       
+    \"butt plug\",\r\n        \"buttbang\",\r\n        \"buttcheeks\",\r\n       
+    \"buttface\",\r\n        \"buttfuck\",\r\n        \"buttfucker\",\r\n       
+    \"buttfuckers\",\r\n        \"butthead\",\r\n        \"butthole\",\r\n       
+    \"buttman\",\r\n        \"buttmuch\",\r\n        \"buttmunch\",\r\n        \"buttmuncher\",\r\n       
+    \"buttpirate\",\r\n        \"butt-pirate\",\r\n        \"buttplug\",\r\n       
+    \"buttstain\",\r\n        \"buttwipe\",\r\n        \"byatch\",\r\n        \"c
+    u n t\",\r\n        \"c.0.c.k\",\r\n        \"c.o.c.k.\",\r\n        \"c.u.n.t\",\r\n       
+    \"c0ck\",\r\n        \"c-0-c-k\",\r\n        \"c0cks\",\r\n        \"c0cksucker\",\r\n       
+    \"c0k\",\r\n        \"cabron\",\r\n        \"caca\",\r\n        \"cacker\",\r\n       
+    \"cahone\",\r\n        \"camel jockey\",\r\n        \"camel jockeys\",\r\n       
+    \"camel toe\",\r\n        \"cameljockey\",\r\n        \"cameltoe\",\r\n       
+    \"camgirl\",\r\n        \"camslut\",\r\n        \"camwhore\",\r\n        \"carpet
+    muncher\",\r\n        \"carpetmuncher\",\r\n        \"carruth\",\r\n        \"cawk\",\r\n       
+    \"cawks\",\r\n        \"cazzo\",\r\n        \"chav\",\r\n        \"cheese eating
+    surrender monkey\",\r\n        \"cheese eating surrender monkies\",\r\n       
+    \"cheeseeating surrender monkey\",\r\n        \"cheeseeating surrender monkies\",\r\n       
+    \"cheesehead\",\r\n        \"cheeseheads\",\r\n        \"cherrypopper\",\r\n       
+    \"chickslick\",\r\n        \"china swede\",\r\n        \"china swedes\",\r\n       
+    \"chinaman\",\r\n        \"chinamen\",\r\n        \"chinaswede\",\r\n       
+    \"chinaswedes\",\r\n        \"chinc\",\r\n        \"chincs\",\r\n        \"ching
+    chong\",\r\n        \"ching chongs\",\r\n        \"chinga\",\r\n        \"chingchong\",\r\n       
+    \"chingchongs\",\r\n        \"chink\",\r\n        \"chinks\",\r\n        \"chinky\",\r\n       
+    \"choad\",\r\n        \"chocolate rosebuds\",\r\n        \"chode\",\r\n       
+    \"chodes\",\r\n        \"chonkies\",\r\n        \"chonky\",\r\n        \"chonkys\",\r\n       
+    \"chraa\",\r\n        \"christ killer\",\r\n        \"christ killers\",\r\n       
+    \"chug\",\r\n        \"chugs\",\r\n        \"chuj\",\r\n        \"chunger\",\r\n       
+    \"chungers\",\r\n        \"chunkies\",\r\n        \"chunkys\",\r\n        \"cipa\",\r\n       
+    \"circlejerk\",\r\n        \"cl1t\",\r\n        \"clamdigger\",\r\n        \"clamdiver\",\r\n       
+    \"clamps\",\r\n        \"clansman\",\r\n        \"clansmen\",\r\n        \"clanswoman\",\r\n       
+    \"clanswomen\",\r\n        \"cleveland steamer\",\r\n        \"clit\",\r\n       
+    \"clitface\",\r\n        \"clitfuck\",\r\n        \"clitoris\",\r\n        \"clitorus\",\r\n       
+    \"clits\",\r\n        \"clitty\",\r\n        \"clogwog\",\r\n        \"clover
+    clamps\",\r\n        \"clusterfuck\",\r\n        \"cnts\",\r\n        \"cntz\",\r\n       
+    \"cnut\",\r\n        \"cocain\",\r\n        \"cocaine\",\r\n        \"cock\",\r\n       
+    \"c-o-c-k\",\r\n        \"cockbite\",\r\n        \"cockblock\",\r\n        \"cockblocker\",\r\n       
+    \"cockburger\",\r\n        \"cockcowboy\",\r\n        \"cockface\",\r\n       
+    \"cockfight\",\r\n        \"cockfucker\",\r\n        \"cockhead\",\r\n       
+    \"cock-head\",\r\n        \"cockholster\",\r\n        \"cockjockey\",\r\n       
+    \"cockknob\",\r\n        \"cockknocker\",\r\n        \"cockknoker\",\r\n       
+    \"cocklicker\",\r\n        \"cocklover\",\r\n        \"cockmaster\",\r\n       
+    \"cockmongler\",\r\n        \"cockmongruel\",\r\n        \"cockmonkey\",\r\n       
+    \"cockmunch\",\r\n        \"cockmuncher\",\r\n        \"cocknob\",\r\n       
+    \"cocknose\",\r\n        \"cocknugget\",\r\n        \"cockqueen\",\r\n       
+    \"cockrider\",\r\n        \"cocks\",\r\n        \"cockshit\",\r\n        \"cocksman\",\r\n       
+    \"cocksmith\",\r\n        \"cocksmoker\",\r\n        \"cocksucer\",\r\n       
+    \"cocksuck\",\r\n        \"cocksucked\",\r\n        \"cocksucker\",\r\n       
+    \"cock-sucker\",\r\n        \"cocksucking\",\r\n        \"cocksucks\",\r\n       
+    \"cocksuka\",\r\n        \"cocksukka\",\r\n        \"cocktease\",\r\n       
+    \"cocky\",\r\n        \"cohee\",\r\n        \"coital\",\r\n        \"coitus\",\r\n       
+    \"cok\",\r\n        \"cokmuncher\",\r\n        \"coksucka\",\r\n        \"condom\",\r\n       
+    \"coochie\",\r\n        \"coochy\",\r\n        \"coolie\",\r\n        \"coolies\",\r\n       
+    \"cooly\",\r\n        \"coon ass\",\r\n        \"coon asses\",\r\n        \"coonass\",\r\n       
+    \"coonasses\",\r\n        \"coondog\",\r\n        \"coons\",\r\n        \"cooter\",\r\n       
+    \"coprolagnia\",\r\n        \"coprophilia\",\r\n        \"copulate\",\r\n       
+    \"corksucker\",\r\n        \"cornhole\",\r\n        \"cra5h\",\r\n        \"crackcocain\",\r\n       
+    \"crackpipe\",\r\n        \"crackwhore\",\r\n        \"crap\",\r\n        \"crapola\",\r\n       
+    \"crapper\",\r\n        \"crappy\",\r\n        \"creampie\",\r\n        \"crotchjockey\",\r\n       
+    \"crotchmonkey\",\r\n        \"crotchrot\",\r\n        \"cuck\",\r\n        \"cum
+    face\",\r\n        \"cum licker\",\r\n        \"cum\",\r\n        \"cumbubble\",\r\n       
+    \"cumdumpster\",\r\n        \"cumfest\",\r\n        \"cumguzzler\",\r\n       
+    \"cuming\",\r\n        \"cumjockey\",\r\n        \"cumlickr\",\r\n        \"cumm\",\r\n       
+    \"cummer\",\r\n        \"cummin\",\r\n        \"cumming\",\r\n        \"cumquat\",\r\n       
+    \"cumqueen\",\r\n        \"cums\",\r\n        \"cumshot\",\r\n        \"cumshots\",\r\n       
+    \"cumslut\",\r\n        \"cumstain\",\r\n        \"cumsucker\",\r\n        \"cumtart\",\r\n       
+    \"cunilingus\",\r\n        \"cunillingus\",\r\n        \"cunn\",\r\n        \"cunnie\",\r\n       
+    \"cunnilingus\",\r\n        \"cunntt\",\r\n        \"cunny\",\r\n        \"cunt\",\r\n       
+    \"c-u-n-t\",\r\n        \"cunteyed\",\r\n        \"cuntface\",\r\n        \"cuntfuck\",\r\n       
+    \"cuntfucker\",\r\n        \"cunthole\",\r\n        \"cunthunter\",\r\n       
+    \"cuntlick\",\r\n        \"cuntlicker\",\r\n        \"cuntlicking\",\r\n       
+    \"cuntrag\",\r\n        \"cunts\",\r\n        \"cuntslut\",\r\n        \"cuntsucker\",\r\n       
+    \"cuntz\",\r\n        \"curry muncher\",\r\n        \"curry munchers\",\r\n       
+    \"currymuncher\",\r\n        \"currymunchers\",\r\n        \"cushi\",\r\n       
+    \"cushis\",\r\n        \"cyalis\",\r\n        \"cyberfuc\",\r\n        \"cyberfuck\",\r\n       
+    \"cyberfucked\",\r\n        \"cyberfucker\",\r\n        \"cyberfuckers\",\r\n       
+    \"cyberfucking\",\r\n        \"cybersex\",\r\n        \"cyberslimer\",\r\n       
+    \"d0ng\",\r\n        \"d0uch3\",\r\n        \"d0uche\",\r\n        \"d1ck\",\r\n       
+    \"d1ld0\",\r\n        \"d1ldo\",\r\n        \"d4mn\",\r\n        \"dago\",\r\n       
+    \"dagos\",\r\n        \"dahmer\",\r\n        \"damm\",\r\n        \"dammit\",\r\n       
+    \"damn\",\r\n        \"damnit\",\r\n        \"darkey\",\r\n        \"darkeys\",\r\n       
+    \"darkie\",\r\n        \"darkies\",\r\n        \"darky\",\r\n        \"date rape\",\r\n       
+    \"daterape\",\r\n        \"datnigga\",\r\n        \"dawgie style\",\r\n       
+    \"dawgie-style\",\r\n        \"daygo\",\r\n        \"deapthroat\",\r\n       
+    \"deep throat\",\r\n        \"deep throating\",\r\n        \"deepaction\",\r\n       
+    \"deepthroat\",\r\n        \"deepthroating\",\r\n        \"defecate\",\r\n       
+    \"deggo\",\r\n        \"dego\",\r\n        \"degos\",\r\n        \"dendrophilia\",\r\n       
+    \"destroyyourpussy\",\r\n        \"deth\",\r\n        \"diaper daddy\",\r\n       
+    \"diaper head\",\r\n        \"diaper heads\",\r\n        \"diaperdaddy\",\r\n       
+    \"diaperhead\",\r\n        \"diaperheads\",\r\n        \"dick pic\",\r\n       
+    \"dick\",\r\n        \"dickbag\",\r\n        \"dickbeater\",\r\n        \"dickbeaters\",\r\n       
+    \"dickbrain\",\r\n        \"dickdipper\",\r\n        \"dickface\",\r\n       
+    \"dickflipper\",\r\n        \"dickforbrains\",\r\n        \"dickfuck\",\r\n       
+    \"dickhead\",\r\n        \"dickheads\",\r\n        \"dickhole\",\r\n        \"dickish\",\r\n       
+    \"dick-ish\",\r\n        \"dickjuice\",\r\n        \"dickless\",\r\n        \"dicklick\",\r\n       
+    \"dicklicker\",\r\n        \"dickman\",\r\n        \"dickmilk\",\r\n        \"dickmonger\",\r\n       
+    \"dickpic\",\r\n        \"dickripper\",\r\n        \"dicks\",\r\n        \"dicksipper\",\r\n       
+    \"dickslap\",\r\n        \"dickslicker\",\r\n        \"dicksucker\",\r\n       
+    \"dickwad\",\r\n        \"dickweasel\",\r\n        \"dickweed\",\r\n        \"dickwhipper\",\r\n       
+    \"dickwod\",\r\n        \"dickzipper\",\r\n        \"diddle\",\r\n        \"dike\",\r\n       
+    \"dild0\",\r\n        \"dild0s\",\r\n        \"dildo\",\r\n        \"dildos\",\r\n       
+    \"dilf\",\r\n        \"diligaf\",\r\n        \"dilld0\",\r\n        \"dilld0s\",\r\n       
+    \"dillweed\",\r\n        \"dimwit\",\r\n        \"dingle\",\r\n        \"dingleberries\",\r\n       
+    \"dingleberry\",\r\n        \"dink\",\r\n        \"dinks\",\r\n        \"dipship\",\r\n       
+    \"dipshit\",\r\n        \"dipstick\",\r\n        \"dirsa\",\r\n        \"dirty
+    pillows\",\r\n        \"dirty sanchez\",\r\n        \"dix\",\r\n        \"dixiedike\",\r\n       
+    \"dixiedyke\",\r\n        \"dlck\",\r\n        \"dog style\",\r\n        \"dog-fucker\",\r\n       
+    \"doggie style\",\r\n        \"doggie\",\r\n        \"doggiestyle\",\r\n       
+    \"doggie-style\",\r\n        \"doggin\",\r\n        \"dogging\",\r\n        \"doggy
+    style\",\r\n        \"doggystyle\",\r\n        \"doggy-style\",\r\n        \"dolcett\",\r\n       
+    \"dominatricks\",\r\n        \"dominatrics\",\r\n        \"dominatrix\",\r\n       
+    \"dommes\",\r\n        \"dong\",\r\n        \"donkey punch\",\r\n        \"donkeypunch\",\r\n       
+    \"donkeyribber\",\r\n        \"doochbag\",\r\n        \"doodoo\",\r\n       
+    \"doofus\",\r\n        \"dookie\",\r\n        \"doosh\",\r\n        \"dot head\",\r\n       
+    \"dot heads\",\r\n        \"dothead\",\r\n        \"dotheads\",\r\n        \"double
+    dong\",\r\n        \"double penetration\",\r\n        \"doubledong\",\r\n       
+    \"doublepenetration\",\r\n        \"douch3\",\r\n        \"douche bag\",\r\n       
+    \"douche\",\r\n        \"douchebag\",\r\n        \"douchebags\",\r\n        \"douche-fag\",\r\n       
+    \"douchewaffle\",\r\n        \"douchey\",\r\n        \"dp action\",\r\n       
+    \"dpaction\",\r\n        \"dragqueen\",\r\n        \"dragqween\",\r\n       
+    \"dripdick\",\r\n        \"dry hump\",\r\n        \"dryhump\",\r\n        \"duche\",\r\n       
+    \"dudette\",\r\n        \"dumass\",\r\n        \"dumb ass\",\r\n        \"dumbass\",\r\n       
+    \"dumbasses\",\r\n        \"dumbbitch\",\r\n        \"dumbfuck\",\r\n       
+    \"dumbshit\",\r\n        \"dumshit\",\r\n        \"dune coon\",\r\n        \"dune
+    coons\",\r\n        \"dupa\",\r\n        \"dvda\",\r\n        \"dyefly\",\r\n       
+    \"dyke\",\r\n        \"dykes\",\r\n        \"dziwka\",\r\n        \"earotics\",\r\n       
+    \"easyslut\",\r\n        \"eat my ass\",\r\n        \"eat my\",\r\n        \"eatadick\",\r\n       
+    \"eatballs\",\r\n        \"eathairpie\",\r\n        \"eatme\",\r\n        \"eatmyass\",\r\n       
+    \"eatpussy\",\r\n        \"ecchi\",\r\n        \"ejackulate\",\r\n        \"ejakulate\",\r\n       
+    \"ekrem\",\r\n        \"ekto\",\r\n        \"enculer\",\r\n        \"enema\",\r\n       
+    \"erection\",\r\n        \"ero\",\r\n        \"erotic\",\r\n        \"erotism\",\r\n       
+    \"esqua\",\r\n        \"essohbee\",\r\n        \"ethical slut\",\r\n        \"evl\",\r\n       
+    \"excrement\",\r\n        \"exkwew\",\r\n        \"extacy\",\r\n        \"extasy\",\r\n       
+    \"f u c k e r\",\r\n        \"f u c k e\",\r\n        \"f u c k\",\r\n       
+    \"f u k\",\r\n        \"f*ck\",\r\n        \"f.u.c.k\",\r\n        \"f_u_c_k\",\r\n       
+    \"f4nny\",\r\n        \"facefucker\",\r\n        \"fack\",\r\n        \"faeces\",\r\n       
+    \"faen\",\r\n        \"fag\",\r\n        \"fag1t\",\r\n        \"fagbag\",\r\n       
+    \"faget\",\r\n        \"fagfucker\",\r\n        \"fagg\",\r\n        \"fagg1t\",\r\n       
+    \"fagged\",\r\n        \"fagging\",\r\n        \"faggit\",\r\n        \"faggitt\",\r\n       
+    \"faggot\",\r\n        \"faggotcock\",\r\n        \"faggs\",\r\n        \"fagit\",\r\n       
+    \"fagot\",\r\n        \"fagots\",\r\n        \"fags\",\r\n        \"fagt\",\r\n       
+    \"fagtard\",\r\n        \"fagz\",\r\n        \"faig\",\r\n        \"faigs\",\r\n       
+    \"faigt\",\r\n        \"fanculo\",\r\n        \"fannybandit\",\r\n        \"fannyflaps\",\r\n       
+    \"fannyfucker\",\r\n        \"fanyy\",\r\n        \"fartknocker\",\r\n       
+    \"fastfuck\",\r\n        \"fatah\",\r\n        \"fatfuck\",\r\n        \"fatfucker\",\r\n       
+    \"fatso\",\r\n        \"fck\",\r\n        \"fckcum\",\r\n        \"fckd\",\r\n       
+    \"fcuk\",\r\n        \"fcuker\",\r\n        \"fcuking\",\r\n        \"fecal\",\r\n       
+    \"feck\",\r\n        \"fecker\",\r\n        \"feg\",\r\n        \"felatio\",\r\n       
+    \"felch\",\r\n        \"felcher\",\r\n        \"felching\",\r\n        \"fellate\",\r\n       
+    \"fellatio\",\r\n        \"feltch\",\r\n        \"feltcher\",\r\n        \"feltching\",\r\n       
+    \"female squirting\",\r\n        \"femalesquirtin\",\r\n        \"femalesquirting\",\r\n       
+    \"femdom\",\r\n        \"fetish\",\r\n        \"ficken\",\r\n        \"figging\",\r\n       
+    \"fingerbang\",\r\n        \"fingerfood\",\r\n        \"fingerfuck\",\r\n       
+    \"fingerfucked\",\r\n        \"fingerfucker\",\r\n        \"fingerfuckers\",\r\n       
+    \"fingerfucking\",\r\n        \"fingerfucks\",\r\n        \"fingering\",\r\n       
+    \"fisted\",\r\n        \"fister\",\r\n        \"fistfuck\",\r\n        \"fistfucked\",\r\n       
+    \"fistfucker\",\r\n        \"fistfuckers\",\r\n        \"fistfucking\",\r\n       
+    \"fistfuckings\",\r\n        \"fistfucks\",\r\n        \"fisting\",\r\n       
+    \"fisty\",\r\n        \"fitt\",\r\n        \"flamer\",\r\n        \"flasher\",\r\n       
+    \"flikker\",\r\n        \"flipping the bird\",\r\n        \"flogthelog\",\r\n       
+    \"floo\",\r\n        \"floozy\",\r\n        \"flydie\",\r\n        \"flydye\",\r\n       
+    \"foad\",\r\n        \"fok\",\r\n        \"fondle\",\r\n        \"foobar\",\r\n       
+    \"fook\",\r\n        \"fooker\",\r\n        \"foot fetish\",\r\n        \"footaction\",\r\n       
+    \"footfetish\",\r\n        \"footfuck\",\r\n        \"footfucker\",\r\n       
+    \"footjob\",\r\n        \"footlicker\",\r\n        \"footstar\",\r\n        \"foreskin\",\r\n       
+    \"forni\",\r\n        \"fornicate\",\r\n        \"fotze\",\r\n        \"foursome\",\r\n       
+    \"fourtwenty\",\r\n        \"freakfuck\",\r\n        \"freakyfucker\",\r\n       
+    \"freefuck\",\r\n        \"freex\",\r\n        \"frigg\",\r\n        \"frigga\",\r\n       
+    \"frigger\",\r\n        \"frotting\",\r\n        \"fucck\",\r\n        \"fuck\",\r\n       
+    \"f-u-c-k\",\r\n        \"fucka\",\r\n        \"fuckable\",\r\n        \"fuckass\",\r\n       
+    \"fuckbag\",\r\n        \"fuckbitch\",\r\n        \"fuckbook\",\r\n        \"fuckboy\",\r\n       
+    \"fuckbrain\",\r\n        \"fuckbuddy\",\r\n        \"fuckbutt\",\r\n       
+    \"fuckd\",\r\n        \"fucked\",\r\n        \"fuckedup\",\r\n        \"fucker\",\r\n       
+    \"fuckers\",\r\n        \"fuckersucker\",\r\n        \"fuckface\",\r\n       
+    \"fuckfest\",\r\n        \"fuckfreak\",\r\n        \"fuckfriend\",\r\n       
+    \"fuckhead\",\r\n        \"fuckheads\",\r\n        \"fuckher\",\r\n        \"fuckhole\",\r\n       
+    \"fuckin\",\r\n        \"fuckina\",\r\n        \"fucking\",\r\n        \"fuckingbitch\",\r\n       
+    \"fuckings\",\r\n        \"fuckingshitmotherfucker\",\r\n        \"fuckinnuts\",\r\n       
+    \"fuckinright\",\r\n        \"fuckit\",\r\n        \"fuckknob\",\r\n        \"fuckme\",\r\n       
+    \"fuckmeat\",\r\n        \"fuckmehard\",\r\n        \"fuckmonkey\",\r\n       
+    \"fuckn\",\r\n        \"fucknugget\",\r\n        \"fucknut\",\r\n        \"fucknuts\",\r\n       
+    \"fucknutt\",\r\n        \"fucknutz\",\r\n        \"fuckoff\",\r\n        \"fuckpig\",\r\n       
+    \"fuckpuppet\",\r\n        \"fuckr\",\r\n        \"fucks\",\r\n        \"fuckstick\",\r\n       
+    \"fucktard\",\r\n        \"fuck-tard\",\r\n        \"fucktards\",\r\n       
+    \"fucktoy\",\r\n        \"fucktrophy\",\r\n        \"fuckup\",\r\n        \"fuckwad\",\r\n       
+    \"fuckwhit\",\r\n        \"fuckwhore\",\r\n        \"fuckwit\",\r\n        \"fuckwitt\",\r\n       
+    \"fuckyomama\",\r\n        \"fuckyou\",\r\n        \"fudge packer\",\r\n       
+    \"fudgepacker\",\r\n        \"fugly\",\r\n        \"fuk\",\r\n        \"fukah\",\r\n       
+    \"fuken\",\r\n        \"fuker\",\r\n        \"fukin\",\r\n        \"fuking\",\r\n       
+    \"fukk\",\r\n        \"fukkah\",\r\n        \"fukken\",\r\n        \"fukker\",\r\n       
+    \"fukkin\",\r\n        \"fukking\",\r\n        \"fuks\",\r\n        \"fuktard\",\r\n       
+    \"fuktards\",\r\n        \"fukwhit\",\r\n        \"fukwit\",\r\n        \"funfuck\",\r\n       
+    \"futanari\",\r\n        \"futanary\",\r\n        \"futkretzn\",\r\n        \"fuuck\",\r\n       
+    \"fux\",\r\n        \"fux0r\",\r\n        \"fuxor\",\r\n        \"fvck\",\r\n       
+    \"fvk\",\r\n        \"fxck\",\r\n        \"g00k\",\r\n        \"gae\",\r\n       
+    \"gai\",\r\n        \"gang bang\",\r\n        \"gangbang\",\r\n        \"gangbanged\",\r\n       
+    \"gangbanger\",\r\n        \"gangbangs\",\r\n        \"ganja\",\r\n        \"gassyass\",\r\n       
+    \"gator bait\",\r\n        \"gatorbait\",\r\n        \"gay sex\",\r\n       
+    \"gayass\",\r\n        \"gaybob\",\r\n        \"gayboy\",\r\n        \"gaydo\",\r\n       
+    \"gaygirl\",\r\n        \"gaylord\",\r\n        \"gaymuthafuckinwhore\",\r\n       
+    \"gays\",\r\n        \"gaysex\",\r\n        \"gaytard\",\r\n        \"gaywad\",\r\n       
+    \"gayz\",\r\n        \"geezer\",\r\n        \"geni\",\r\n        \"genital\",\r\n       
+    \"genitals\",\r\n        \"getiton\",\r\n        \"gey\",\r\n        \"gfy\",\r\n       
+    \"ghay\",\r\n        \"ghey\",\r\n        \"giant cock\",\r\n        \"gigolo\",\r\n       
+    \"ginzo\",\r\n        \"ginzos\",\r\n        \"gipp\",\r\n        \"gippo\",\r\n       
+    \"gippos\",\r\n        \"gipps\",\r\n        \"girl on top\",\r\n        \"girl
+    on\",\r\n        \"girls gone wild\",\r\n        \"givehead\",\r\n        \"glans\",\r\n       
+    \"glazeddonut\",\r\n        \"goatcx\",\r\n        \"goatse\",\r\n        \"god
+    dammit\",\r\n        \"god damn\",\r\n        \"god damnit\",\r\n        \"godam\",\r\n       
+    \"godammit\",\r\n        \"godamn\",\r\n        \"godamnit\",\r\n        \"goddam\",\r\n       
+    \"god-dam\",\r\n        \"goddamit\",\r\n        \"goddamm\",\r\n        \"goddammit\",\r\n       
+    \"goddamn\",\r\n        \"goddamned\",\r\n        \"god-damned\",\r\n       
+    \"goddamnes\",\r\n        \"goddamnit\",\r\n        \"goddamnmuthafucker\",\r\n       
+    \"godsdamn\",\r\n        \"gokkun\",\r\n        \"golden shower\",\r\n       
+    \"goldenshower\",\r\n        \"golliwog\",\r\n        \"golliwogs\",\r\n       
+    \"gonad\",\r\n        \"gonads\",\r\n        \"gonorrehea\",\r\n        \"gonzagas\",\r\n       
+    \"goo girl\",\r\n        \"gooch\",\r\n        \"goodpoop\",\r\n        \"gook
+    eye\",\r\n        \"gook eyes\",\r\n        \"gook\",\r\n        \"gookeye\",\r\n       
+    \"gookeyes\",\r\n        \"gookies\",\r\n        \"gooks\",\r\n        \"gooky\",\r\n       
+    \"gora\",\r\n        \"goras\",\r\n        \"goregasm\",\r\n        \"gotohell\",\r\n       
+    \"goy\",\r\n        \"goyim\",\r\n        \"greaseball\",\r\n        \"greaseballs\",\r\n       
+    \"groe\",\r\n        \"groid\",\r\n        \"groids\",\r\n        \"grope\",\r\n       
+    \"grostulation\",\r\n        \"group sex\",\r\n        \"gspot\",\r\n       
+    \"g-spot\",\r\n        \"gstring\",\r\n        \"gtfo\",\r\n        \"gub\",\r\n       
+    \"gubba\",\r\n        \"gubbas\",\r\n        \"gubs\",\r\n        \"guido\",\r\n       
+    \"guiena\",\r\n        \"guineas\",\r\n        \"guizi\",\r\n        \"gummer\",\r\n       
+    \"guro\",\r\n        \"gwailo\",\r\n        \"gwailos\",\r\n        \"gweilo\",\r\n       
+    \"gweilos\",\r\n        \"gyopo\",\r\n        \"gyopos\",\r\n        \"gyp\",\r\n       
+    \"gyped\",\r\n        \"gypo\",\r\n        \"gypos\",\r\n        \"gypp\",\r\n       
+    \"gypped\",\r\n        \"gyppie\",\r\n        \"gyppies\",\r\n        \"gyppo\",\r\n       
+    \"gyppos\",\r\n        \"gyppy\",\r\n        \"gyppys\",\r\n        \"gypsys\",\r\n       
+    \"h e l l\",\r\n        \"h o m\",\r\n        \"h00r\",\r\n        \"h0ar\",\r\n       
+    \"h0m0\",\r\n        \"h0mo\",\r\n        \"h0r\",\r\n        \"h0re\",\r\n       
+    \"h4x0r\",\r\n        \"hadji\",\r\n        \"hadjis\",\r\n        \"hairyback\",\r\n       
+    \"hairybacks\",\r\n        \"haji\",\r\n        \"hajis\",\r\n        \"hajji\",\r\n       
+    \"hajjis\",\r\n        \"half breed\",\r\n        \"half caste\",\r\n       
+    \"halfbreed\",\r\n        \"halfcaste\",\r\n        \"hamas\",\r\n        \"hamflap\",\r\n       
+    \"hand job\",\r\n        \"handjob\",\r\n        \"haole\",\r\n        \"haoles\",\r\n       
+    \"hapa\",\r\n        \"hard core\",\r\n        \"hardcore\",\r\n        \"hardcoresex\",\r\n       
+    \"hardon\",\r\n        \"he11\",\r\n        \"headfuck\",\r\n        \"hebe\",\r\n       
+    \"hebes\",\r\n        \"heeb\",\r\n        \"heebs\",\r\n        \"hells\",\r\n       
+    \"helvete\",\r\n        \"hentai\",\r\n        \"heroin\",\r\n        \"herp\",\r\n       
+    \"herpes\",\r\n        \"herpy\",\r\n        \"heshe\",\r\n        \"hijacking\",\r\n       
+    \"hillbillies\",\r\n        \"hillbilly\",\r\n        \"hindoo\",\r\n       
+    \"hiscock\",\r\n        \"hitler\",\r\n        \"hitlerism\",\r\n        \"hitlerist\",\r\n       
+    \"hoare\",\r\n        \"hobag\",\r\n        \"hodgie\",\r\n        \"hoer\",\r\n       
+    \"hoes\",\r\n        \"holestuffer\",\r\n        \"hom0\",\r\n        \"homo\",\r\n       
+    \"homobangers\",\r\n        \"homodumbshit\",\r\n        \"homoey\",\r\n       
+    \"honger\",\r\n        \"honkers\",\r\n        \"honkey\",\r\n        \"honkeys\",\r\n       
+    \"honkie\",\r\n        \"honkies\",\r\n        \"honky\",\r\n        \"hooch\",\r\n       
+    \"hooker\",\r\n        \"hookers\",\r\n        \"hoor\",\r\n        \"hoore\",\r\n       
+    \"hootch\",\r\n        \"hooter\",\r\n        \"hooters\",\r\n        \"hore\",\r\n       
+    \"hori\",\r\n        \"horis\",\r\n        \"hork\",\r\n        \"horndawg\",\r\n       
+    \"horndog\",\r\n        \"horney\",\r\n        \"horniest\",\r\n        \"horny\",\r\n       
+    \"horseshit\",\r\n        \"hosejob\",\r\n        \"hoser\",\r\n        \"hot
+    carl\",\r\n        \"hot chick\",\r\n        \"hotcarl\",\r\n        \"hotdamn\",\r\n       
+    \"hotpussy\",\r\n        \"hotsex\",\r\n        \"hottotrot\",\r\n        \"how
+    to kill\",\r\n        \"how to murder\",\r\n        \"howtokill\",\r\n       
+    \"howtomurdep\",\r\n        \"huevon\",\r\n        \"huge fat\",\r\n        \"hugefat\",\r\n       
+    \"hui\",\r\n        \"hummer\",\r\n        \"humped\",\r\n        \"humper\",\r\n       
+    \"humpher\",\r\n        \"humphim\",\r\n        \"humpin\",\r\n        \"humping\",\r\n       
+    \"hussy\",\r\n        \"hustler\",\r\n        \"hymen\",\r\n        \"hymie\",\r\n       
+    \"hymies\",\r\n        \"iblowu\",\r\n        \"ike\",\r\n        \"ikes\",\r\n       
+    \"ikey\",\r\n        \"ikeymo\",\r\n        \"ikeymos\",\r\n        \"ikwe\",\r\n       
+    \"illegals\",\r\n        \"incest\",\r\n        \"indon\",\r\n        \"indons\",\r\n       
+    \"injun\",\r\n        \"injuns\",\r\n        \"insest\",\r\n        \"intercourse\",\r\n       
+    \"intheass\",\r\n        \"inthebuff\",\r\n        \"israels\",\r\n        \"j3rk0ff\",\r\n       
+    \"jack off\",\r\n        \"jackass\",\r\n        \"jackhole\",\r\n        \"jackoff\",\r\n       
+    \"jack-off\",\r\n        \"jackshit\",\r\n        \"jacktheripper\",\r\n       
+    \"jail bait\",\r\n        \"jailbait\",\r\n        \"jap\",\r\n        \"japcrap\",\r\n       
+    \"japie\",\r\n        \"japies\",\r\n        \"japs\",\r\n        \"jebus\",\r\n       
+    \"jelly donut\",\r\n        \"jerk off\",\r\n        \"jerk0ff\",\r\n       
+    \"jerked\",\r\n        \"jerkoff\",\r\n        \"jerk-off\",\r\n        \"jerries\",\r\n       
+    \"jerry\",\r\n        \"jewboy\",\r\n        \"jewed\",\r\n        \"jewess\",\r\n       
+    \"jiga\",\r\n        \"jigaboo\",\r\n        \"jigaboos\",\r\n        \"jigarooni\",\r\n       
+    \"jigaroonis\",\r\n        \"jigg\",\r\n        \"jigga\",\r\n        \"jiggabo\",\r\n       
+    \"jiggaboo\",\r\n        \"jiggabos\",\r\n        \"jiggas\",\r\n        \"jigger\",\r\n       
+    \"jiggerboo\",\r\n        \"jiggers\",\r\n        \"jiggs\",\r\n        \"jiggy\",\r\n       
+    \"jigs\",\r\n        \"jihad\",\r\n        \"jijjiboo\",\r\n        \"jijjiboos\",\r\n       
+    \"jimfish\",\r\n        \"jisim\",\r\n        \"jism\",\r\n        \"jiss\",\r\n       
+    \"jiz\",\r\n        \"jizim\",\r\n        \"jizin\",\r\n        \"jizjuice\",\r\n       
+    \"jizm\",\r\n        \"jizn\",\r\n        \"jizz\",\r\n        \"jizzd\",\r\n       
+    \"jizzed\",\r\n        \"jizzim\",\r\n        \"jizzin\",\r\n        \"jizzn\",\r\n       
+    \"jizzum\",\r\n        \"jugg\",\r\n        \"juggs\",\r\n        \"jungle bunnies\",\r\n       
+    \"jungle bunny\",\r\n        \"junglebunny\",\r\n        \"junkie\",\r\n       
+    \"junky\",\r\n        \"kacap\",\r\n        \"kacapas\",\r\n        \"kacaps\",\r\n       
+    \"kaffer\",\r\n        \"kaffir\",\r\n        \"kaffre\",\r\n        \"kafir\",\r\n       
+    \"kanake\",\r\n        \"kanker\",\r\n        \"katsap\",\r\n        \"katsaps\",\r\n       
+    \"kawk\",\r\n        \"khokhol\",\r\n        \"khokhols\",\r\n        \"kigger\",\r\n       
+    \"kike\",\r\n        \"kikes\",\r\n        \"kimchis\",\r\n        \"kinbaku\",\r\n       
+    \"kink\",\r\n        \"kinkster\",\r\n        \"kinky\",\r\n        \"kinkyjesus\",\r\n       
+    \"kissass\",\r\n        \"kiunt\",\r\n        \"kkk\",\r\n        \"klan\",\r\n       
+    \"klansman\",\r\n        \"klansmen\",\r\n        \"klanswoman\",\r\n       
+    \"klanswomen\",\r\n        \"klootzak\",\r\n        \"knobbing\",\r\n       
+    \"knobead\",\r\n        \"knobed\",\r\n        \"knobend\",\r\n        \"knobhead\",\r\n       
+    \"knobjocky\",\r\n        \"knobjokey\",\r\n        \"knobz\",\r\n        \"knockers\",\r\n       
+    \"knulle\",\r\n        \"kock\",\r\n        \"kondum\",\r\n        \"kondums\",\r\n       
+    \"kooch\",\r\n        \"kooches\",\r\n        \"koon\",\r\n        \"kootch\",\r\n       
+    \"krap\",\r\n        \"krappy\",\r\n        \"kraut\",\r\n        \"krauts\",\r\n       
+    \"kuffar\",\r\n        \"kuk\",\r\n        \"kuksuger\",\r\n        \"kum\",\r\n       
+    \"kumbubble\",\r\n        \"kumbullbe\",\r\n        \"kumer\",\r\n        \"kummer\",\r\n       
+    \"kumming\",\r\n        \"kums\",\r\n        \"kunilingus\",\r\n        \"kunnilingus\",\r\n       
+    \"kunt\",\r\n        \"kunts\",\r\n        \"kuntz\",\r\n        \"kurac\",\r\n       
+    \"kurwa\",\r\n        \"kushi\",\r\n        \"kushis\",\r\n        \"kusi\",\r\n       
+    \"kwa\",\r\n        \"kwai lo\",\r\n        \"kwai los\",\r\n        \"kwif\",\r\n       
+    \"kyke\",\r\n        \"kykes\",\r\n        \"kyopo\",\r\n        \"kyopos\",\r\n       
+    \"kyrpa\",\r\n        \"l3i\\\\+ch\",\r\n        \"l3i+ch\",\r\n        \"l3itch\",\r\n       
+    \"labia\",\r\n        \"lapdance\",\r\n        \"leather restraint\",\r\n       
+    \"leather straight\",\r\n        \"leatherrestraint\",\r\n        \"lebos\",\r\n       
+    \"lech\",\r\n        \"lemon party\",\r\n        \"lemonparty\",\r\n        \"leper\",\r\n       
+    \"lesbain\",\r\n        \"lesbayn\",\r\n        \"lesbin\",\r\n        \"lesbo\",\r\n       
+    \"lesbos\",\r\n        \"lez\",\r\n        \"lezbe\",\r\n        \"lezbefriends\",\r\n       
+    \"lezbian\",\r\n        \"lezbians\",\r\n        \"lezbo\",\r\n        \"lezbos\",\r\n       
+    \"lezz\",\r\n        \"lezzian\",\r\n        \"lezzie\",\r\n        \"lezzies\",\r\n       
+    \"lezzo\",\r\n        \"lezzy\",\r\n        \"libido\",\r\n        \"licker\",\r\n       
+    \"licking\",\r\n        \"lickme\",\r\n        \"lilniglet\",\r\n        \"limey\",\r\n       
+    \"limpdick\",\r\n        \"limy\",\r\n        \"lingerie\",\r\n        \"lipshits\",\r\n       
+    \"lipshitz\",\r\n        \"livesex\",\r\n        \"loadedgun\",\r\n        \"lolita\",\r\n       
+    \"lovebone\",\r\n        \"lovegoo\",\r\n        \"lovegun\",\r\n        \"lovejuice\",\r\n       
+    \"lovemuscle\",\r\n        \"lovepistol\",\r\n        \"loverocket\",\r\n       
+    \"lowlife\",\r\n        \"lsd\",\r\n        \"lubejob\",\r\n        \"lubra\",\r\n       
+    \"lucifer\",\r\n        \"luckycammeltoe\",\r\n        \"lugan\",\r\n       
+    \"lugans\",\r\n        \"lusting\",\r\n        \"lusty\",\r\n        \"lynch\",\r\n       
+    \"m0f0\",\r\n        \"m0fo\",\r\n        \"m45terbate\",\r\n        \"ma5terb8\",\r\n       
+    \"ma5terbate\",\r\n        \"mabuno\",\r\n        \"mabunos\",\r\n        \"macaca\",\r\n       
+    \"macacas\",\r\n        \"mafugly\",\r\n        \"magicwand\",\r\n        \"mahbuno\",\r\n       
+    \"mahbunos\",\r\n        \"make me come\",\r\n        \"makemecome\",\r\n       
+    \"makemecum\",\r\n        \"male squirting\",\r\n        \"mamhoon\",\r\n       
+    \"mams\",\r\n        \"manhater\",\r\n        \"manpaste\",\r\n        \"maricon\",\r\n       
+    \"maric\xF3n\",\r\n        \"marijuana\",\r\n        \"masochist\",\r\n       
+    \"masokist\",\r\n        \"massa\",\r\n        \"massterbait\",\r\n        \"masstrbait\",\r\n       
+    \"masstrbate\",\r\n        \"mastabate\",\r\n        \"mastabater\",\r\n       
+    \"masterb8\",\r\n        \"masterbaiter\",\r\n        \"masterbat\",\r\n       
+    \"masterbat3\",\r\n        \"masterbate\",\r\n        \"master-bate\",\r\n       
+    \"masterbates\",\r\n        \"masterbating\",\r\n        \"masterbation\",\r\n       
+    \"masterbations\",\r\n        \"masterblaster\",\r\n        \"mastrabator\",\r\n       
+    \"masturbat\",\r\n        \"masturbate\",\r\n        \"masturbating\",\r\n       
+    \"masturbation\",\r\n        \"mattressprincess\",\r\n        \"mau mau\",\r\n       
+    \"mau maus\",\r\n        \"maumau\",\r\n        \"maumaus\",\r\n        \"mcfagget\",\r\n       
+    \"meatbeatter\",\r\n        \"meatrack\",\r\n        \"menage\",\r\n        \"merd\",\r\n       
+    \"m-fucking\",\r\n        \"mgger\",\r\n        \"mggor\",\r\n        \"mibun\",\r\n       
+    \"mick\",\r\n        \"mickeyfinn\",\r\n        \"mideast\",\r\n        \"mierda\",\r\n       
+    \"milf\",\r\n        \"mindfuck\",\r\n        \"minge\",\r\n        \"minger\",\r\n       
+    \"mockey\",\r\n        \"mockie\",\r\n        \"mocky\",\r\n        \"mof0\",\r\n       
+    \"mofo\",\r\n        \"mo-fo\",\r\n        \"moky\",\r\n        \"molest\",\r\n       
+    \"molestation\",\r\n        \"molester\",\r\n        \"molestor\",\r\n       
+    \"moneyshot\",\r\n        \"mong\",\r\n        \"monkleigh\",\r\n        \"moolie\",\r\n       
+    \"moon cricket\",\r\n        \"moon crickets\",\r\n        \"mooncricket\",\r\n       
+    \"mooncrickets\",\r\n        \"moron\",\r\n        \"moskal\",\r\n        \"moskals\",\r\n       
+    \"moslem\",\r\n        \"mosshead\",\r\n        \"motha fucker\",\r\n       
+    \"motha fuker\",\r\n        \"motha fukkah\",\r\n        \"motha fukker\",\r\n       
+    \"mothafuck\",\r\n        \"mothafucka\",\r\n        \"mothafuckas\",\r\n       
+    \"mothafuckaz\",\r\n        \"mothafucked\",\r\n        \"mothafucker\",\r\n       
+    \"mothafuckers\",\r\n        \"mothafuckin\",\r\n        \"mothafucking\",\r\n       
+    \"mothafuckings\",\r\n        \"mothafucks\",\r\n        \"mother fucker\",\r\n       
+    \"mother fukah\",\r\n        \"mother fuker\",\r\n        \"mother fukkah\",\r\n       
+    \"mother fukker\",\r\n        \"motherfuck\",\r\n        \"motherfucka\",\r\n       
+    \"motherfucked\",\r\n        \"motherfucker\",\r\n        \"mother-fucker\",\r\n       
+    \"motherfuckers\",\r\n        \"motherfuckin\",\r\n        \"motherfucking\",\r\n       
+    \"motherfuckings\",\r\n        \"motherfuckka\",\r\n        \"motherfucks\",\r\n       
+    \"motherfvcker\",\r\n        \"motherlovebone\",\r\n        \"mothrfucker\",\r\n       
+    \"mouliewop\",\r\n        \"mound of venus\",\r\n        \"moundofvenus\",\r\n       
+    \"mr hands\",\r\n        \"mrhands\",\r\n        \"mtherfucker\",\r\n       
+    \"mthrfuck\",\r\n        \"mthrfucker\",\r\n        \"mthrfucking\",\r\n       
+    \"mtrfck\",\r\n        \"mtrfuck\",\r\n        \"mtrfucker\",\r\n        \"muff
+    diver\",\r\n        \"muff\",\r\n        \"muffdive\",\r\n        \"muffdiver\",\r\n       
+    \"muffdiving\",\r\n        \"muffindiver\",\r\n        \"mufflikcer\",\r\n       
+    \"muffpuff\",\r\n        \"muie\",\r\n        \"mulatto\",\r\n        \"mulkku\",\r\n       
+    \"muncher\",\r\n        \"munging\",\r\n        \"munt\",\r\n        \"munter\",\r\n       
+    \"muschi\",\r\n        \"mutha fucker\",\r\n        \"mutha fukah\",\r\n       
+    \"mutha fuker\",\r\n        \"mutha fukkah\",\r\n        \"mutha fukker\",\r\n       
+    \"muthafecker\",\r\n        \"muthafuckaz\",\r\n        \"muthafucker\",\r\n       
+    \"muthafuckker\",\r\n        \"muther\",\r\n        \"mutherfucker\",\r\n       
+    \"mutherfucking\",\r\n        \"muthrfucking\",\r\n        \"mzungu\",\r\n       
+    \"mzungus\",\r\n        \"n1gga\",\r\n        \"n1gger\",\r\n        \"n1gr\",\r\n       
+    \"nads\",\r\n        \"naked\",\r\n        \"nambla\",\r\n        \"nastt\",\r\n       
+    \"nastybitch\",\r\n        \"nastyho\",\r\n        \"nastyslut\",\r\n       
+    \"nastywhore\",\r\n        \"nawashi\",\r\n        \"nazi\",\r\n        \"nazis\",\r\n       
+    \"nazism\",\r\n        \"necro\",\r\n        \"needthedick\",\r\n        \"negres\",\r\n       
+    \"negress\",\r\n        \"negro\",\r\n        \"negroes\",\r\n        \"negroid\",\r\n       
+    \"negros\",\r\n        \"neonazi\",\r\n        \"nepesaurio\",\r\n        \"nig
+    nog\",\r\n        \"nig\",\r\n        \"niga\",\r\n        \"nigar\",\r\n       
+    \"nigars\",\r\n        \"nigas\",\r\n        \"nigers\",\r\n        \"nigette\",\r\n       
+    \"nigettes\",\r\n        \"nigg\",\r\n        \"nigg3r\",\r\n        \"nigg4h\",\r\n       
+    \"nigga\",\r\n        \"niggah\",\r\n        \"niggahs\",\r\n        \"niggar\",\r\n       
+    \"niggaracci\",\r\n        \"niggard\",\r\n        \"niggarded\",\r\n       
+    \"niggarding\",\r\n        \"niggardliness\",\r\n        \"niggardlinesss\",\r\n       
+    \"niggardly\",\r\n        \"niggards\",\r\n        \"niggars\",\r\n        \"niggas\",\r\n       
+    \"niggaz\",\r\n        \"nigger\",\r\n        \"niggerhead\",\r\n        \"niggerhole\",\r\n       
+    \"niggers\",\r\n        \"niggle\",\r\n        \"niggled\",\r\n        \"niggles\",\r\n       
+    \"nigglings\",\r\n        \"niggor\",\r\n        \"niggress\",\r\n        \"niggresses\",\r\n       
+    \"nigguh\",\r\n        \"nigguhs\",\r\n        \"niggur\",\r\n        \"niggurs\",\r\n       
+    \"niglet\",\r\n        \"nignog\",\r\n        \"nigor\",\r\n        \"nigors\",\r\n       
+    \"nigr\",\r\n        \"nigra\",\r\n        \"nigras\",\r\n        \"nigre\",\r\n       
+    \"nigres\",\r\n        \"nigress\",\r\n        \"nigs\",\r\n        \"nigur\",\r\n       
+    \"niiger\",\r\n        \"niigr\",\r\n        \"nimphomania\",\r\n        \"nimrod\",\r\n       
+    \"ninny\",\r\n        \"nipple\",\r\n        \"nipplering\",\r\n        \"nipples\",\r\n       
+    \"nips\",\r\n        \"nittit\",\r\n        \"nlgger\",\r\n        \"nlggor\",\r\n       
+    \"nob jokey\",\r\n        \"nob\",\r\n        \"nobhead\",\r\n        \"nobjocky\",\r\n       
+    \"nobjokey\",\r\n        \"nofuckingway\",\r\n        \"nog\",\r\n        \"nookey\",\r\n       
+    \"nookie\",\r\n        \"nooky\",\r\n        \"noonan\",\r\n        \"nooner\",\r\n       
+    \"nsfw images\",\r\n        \"nsfw\",\r\n        \"nudger\",\r\n        \"nudie\",\r\n       
+    \"nudies\",\r\n        \"numbnuts\",\r\n        \"nut sack\",\r\n        \"nutbutter\",\r\n       
+    \"nutfucker\",\r\n        \"nutsack\",\r\n        \"nutten\",\r\n        \"nympho\",\r\n       
+    \"nymphomania\",\r\n        \"o c k\",\r\n        \"octopussy\",\r\n        \"omorashi\",\r\n       
+    \"one cup two girls\",\r\n        \"one guy one jar\",\r\n        \"one guy\",\r\n       
+    \"one jar\",\r\n        \"ontherag\",\r\n        \"orafis\",\r\n        \"orga\",\r\n       
+    \"orgasim\",\r\n        \"orgasim;\",\r\n        \"orgasims\",\r\n        \"orgasm\",\r\n       
+    \"orgasmic\",\r\n        \"orgasms\",\r\n        \"orgasum\",\r\n        \"orgies\",\r\n       
+    \"orgy\",\r\n        \"oriface\",\r\n        \"orifiss\",\r\n        \"orospu\",\r\n       
+    \"osama\",\r\n        \"ovum\",\r\n        \"ovums\",\r\n        \"p e n i s\",\r\n       
+    \"p i s\",\r\n        \"p u s s y\",\r\n        \"p.u.s.s.y.\",\r\n        \"p0rn\",\r\n       
+    \"packi\",\r\n        \"packie\",\r\n        \"packy\",\r\n        \"paddy\",\r\n       
+    \"paedophile\",\r\n        \"paki\",\r\n        \"pakie\",\r\n        \"pakis\",\r\n       
+    \"paky\",\r\n        \"palesimian\",\r\n        \"pancake face\",\r\n       
+    \"pancake faces\",\r\n        \"panooch\",\r\n        \"pansies\",\r\n       
+    \"pansy\",\r\n        \"panti\",\r\n        \"pantie\",\r\n        \"panties\",\r\n       
+    \"panty\",\r\n        \"paska\",\r\n        \"payo\",\r\n        \"pcp\",\r\n       
+    \"pearlnecklace\",\r\n        \"pecker\",\r\n        \"peckerhead\",\r\n       
+    \"peckerwood\",\r\n        \"pedo\",\r\n        \"pedobear\",\r\n        \"pedophile\",\r\n       
+    \"pedophilia\",\r\n        \"pedophiliac\",\r\n        \"peeenus\",\r\n       
+    \"peeenusss\",\r\n        \"peehole\",\r\n        \"peenus\",\r\n        \"peepee\",\r\n       
+    \"peepshow\",\r\n        \"peepshpw\",\r\n        \"pegging\",\r\n        \"peinus\",\r\n       
+    \"pen1s\",\r\n        \"penas\",\r\n        \"pendejo\",\r\n        \"pendy\",\r\n       
+    \"penetrate\",\r\n        \"penetration\",\r\n        \"peni5\",\r\n        \"penial\",\r\n       
+    \"penile\",\r\n        \"penis\",\r\n        \"penis-breath\",\r\n        \"penises\",\r\n       
+    \"penisfucker\",\r\n        \"penisland\",\r\n        \"penislick\",\r\n       
+    \"penislicker\",\r\n        \"penispuffer\",\r\n        \"penthouse\",\r\n       
+    \"penus\",\r\n        \"penuus\",\r\n        \"perse\",\r\n        \"perv\",\r\n       
+    \"perversion\",\r\n        \"peyote\",\r\n        \"phalli\",\r\n        \"phallic\",\r\n       
+    \"phone sex\",\r\n        \"phonesex\",\r\n        \"phuc\",\r\n        \"phuck\",\r\n       
+    \"phuk\",\r\n        \"phuked\",\r\n        \"phuker\",\r\n        \"phuking\",\r\n       
+    \"phukked\",\r\n        \"phukker\",\r\n        \"phukking\",\r\n        \"phuks\",\r\n       
+    \"phungky\",\r\n        \"phuq\",\r\n        \"pi55\",\r\n        \"picaninny\",\r\n       
+    \"piccaninny\",\r\n        \"picka\",\r\n        \"pickaninnies\",\r\n       
+    \"pickaninny\",\r\n        \"piece of shit\",\r\n        \"pieceofshit\",\r\n       
+    \"piefke\",\r\n        \"piefkes\",\r\n        \"pierdol\",\r\n        \"pigfucker\",\r\n       
+    \"piker\",\r\n        \"pikey\",\r\n        \"piky\",\r\n        \"pillowbiter\",\r\n       
+    \"pillu\",\r\n        \"pimmel\",\r\n        \"pimp\",\r\n        \"pimped\",\r\n       
+    \"pimper\",\r\n        \"pimpis\",\r\n        \"pimpjuic\",\r\n        \"pimpjuice\",\r\n       
+    \"pimpsimp\",\r\n        \"pindick\",\r\n        \"pinko\",\r\n        \"pis\",\r\n       
+    \"pises\",\r\n        \"pisin\",\r\n        \"pising\",\r\n        \"pisof\",\r\n       
+    \"piss pig\",\r\n        \"piss\",\r\n        \"pissed\",\r\n        \"pisser\",\r\n       
+    \"pissers\",\r\n        \"pisses\",\r\n        \"pissflap\",\r\n        \"pissflaps\",\r\n       
+    \"pisshead\",\r\n        \"pissin\",\r\n        \"pissing\",\r\n        \"pissoff\",\r\n       
+    \"piss-off\",\r\n        \"pisspig\",\r\n        \"pizda\",\r\n        \"playboy\",\r\n       
+    \"playgirl\",\r\n        \"pleasure chest\",\r\n        \"pleasurechest\",\r\n       
+    \"pocha\",\r\n        \"pochas\",\r\n        \"pocho\",\r\n        \"pochos\",\r\n       
+    \"pocketpool\",\r\n        \"pohm\",\r\n        \"pohms\",\r\n        \"polac\",\r\n       
+    \"polack\",\r\n        \"polacks\",\r\n        \"polak\",\r\n        \"pole smoker\",\r\n       
+    \"polesmoker\",\r\n        \"pollock\",\r\n        \"pollocks\",\r\n        \"pommie
+    grant\",\r\n        \"pommie grants\",\r\n        \"pommy\",\r\n        \"ponyplay\",\r\n       
+    \"poof\",\r\n        \"poon\",\r\n        \"poonani\",\r\n        \"poonany\",\r\n       
+    \"poontang\",\r\n        \"poontsee\",\r\n        \"poop chute\",\r\n       
+    \"poopchute\",\r\n        \"pooper\",\r\n        \"pooperscooper\",\r\n       
+    \"pooping\",\r\n        \"poorwhitetrash\",\r\n        \"popimp\",\r\n       
+    \"porch monkey\",\r\n        \"porch monkies\",\r\n        \"porchmonkey\",\r\n       
+    \"porn\",\r\n        \"pornflick\",\r\n        \"pornking\",\r\n        \"porno\",\r\n       
+    \"pornography\",\r\n        \"pornos\",\r\n        \"pornprincess\",\r\n       
+    \"pound town\",\r\n        \"poundtown\",\r\n        \"pplicker\",\r\n       
+    \"pr0n\",\r\n        \"pr1c\",\r\n        \"pr1ck\",\r\n        \"pr1k\",\r\n       
+    \"prairie nigger\",\r\n        \"prairie niggers\",\r\n        \"preteen\",\r\n       
+    \"pric\",\r\n        \"prickhead\",\r\n        \"pricks\",\r\n        \"prig\",\r\n       
+    \"prince albert piercing\",\r\n        \"pron\",\r\n        \"prostitute\",\r\n       
+    \"pthc\",\r\n        \"pu55i\",\r\n        \"pu55y\",\r\n        \"pube\",\r\n       
+    \"pubes\",\r\n        \"pubic\",\r\n        \"pubiclice\",\r\n        \"pubis\",\r\n       
+    \"pudboy\",\r\n        \"pudd\",\r\n        \"puddboy\",\r\n        \"pula\",\r\n       
+    \"punani\",\r\n        \"punanny\",\r\n        \"punany\",\r\n        \"punkass\",\r\n       
+    \"punky\",\r\n        \"punta\",\r\n        \"puntang\",\r\n        \"purinapricness\",\r\n       
+    \"pusies\",\r\n        \"puss\",\r\n        \"pusse\",\r\n        \"pussee\",\r\n       
+    \"pussi\",\r\n        \"pussie\",\r\n        \"pussies\",\r\n        \"pussy\",\r\n       
+    \"pussycat\",\r\n        \"pussydestroyer\",\r\n        \"pussyeater\",\r\n       
+    \"pussyfart\",\r\n        \"pussyfuck\",\r\n        \"pussyfucker\",\r\n       
+    \"pussylicker\",\r\n        \"pussylicking\",\r\n        \"pussylips\",\r\n       
+    \"pussylover\",\r\n        \"pussypalace\",\r\n        \"pussypounder\",\r\n       
+    \"pussys\",\r\n        \"pusy\",\r\n        \"puta\",\r\n        \"puto\",\r\n       
+    \"puuke\",\r\n        \"puuker\",\r\n        \"qahbeh\",\r\n        \"quashie\",\r\n       
+    \"queaf\",\r\n        \"queef\",\r\n        \"queerhole\",\r\n        \"queero\",\r\n       
+    \"queers\",\r\n        \"queerz\",\r\n        \"quickie\",\r\n        \"quicky\",\r\n       
+    \"quiff\",\r\n        \"quim\",\r\n        \"qweers\",\r\n        \"qweerz\",\r\n       
+    \"qweir\",\r\n        \"r5e\",\r\n        \"ra8s\",\r\n        \"raghead\",\r\n       
+    \"ragheads\",\r\n        \"rape\",\r\n        \"raped\",\r\n        \"raper\",\r\n       
+    \"raping\",\r\n        \"rapist\",\r\n        \"rautenberg\",\r\n        \"rearend\",\r\n       
+    \"rearentry\",\r\n        \"recktum\",\r\n        \"rectal\",\r\n        \"rectum\",\r\n       
+    \"rectus\",\r\n        \"redleg\",\r\n        \"redlegs\",\r\n        \"redlight\",\r\n       
+    \"redskin\",\r\n        \"redskins\",\r\n        \"reefer\",\r\n        \"reestie\",\r\n       
+    \"reetard\",\r\n        \"reich\",\r\n        \"renob\",\r\n        \"rentafuck\",\r\n       
+    \"rere\",\r\n        \"retard\",\r\n        \"retarded\",\r\n        \"retards\",\r\n       
+    \"retardz\",\r\n        \"reverse cowgirl\",\r\n        \"reversecowgirl\",\r\n       
+    \"rimjaw\",\r\n        \"rimjob\",\r\n        \"rimming\",\r\n        \"ritard\",\r\n       
+    \"rosebuds\",\r\n        \"rosy palm and her 5 sisters\",\r\n        \"rosy palm\",\r\n       
+    \"rosypalm\",\r\n        \"rosypalmandher5sisters\",\r\n        \"rosypalmandherefivesisters\",\r\n       
+    \"round eyes\",\r\n        \"roundeye\",\r\n        \"rtard\",\r\n        \"r-tard\",\r\n       
+    \"rtards\",\r\n        \"r-tards\",\r\n        \"rumprammer\",\r\n        \"ruski\",\r\n       
+    \"russki\",\r\n        \"russkie\",\r\n        \"rusty trombone\",\r\n       
+    \"rustytrombone\",\r\n        \"s h i t\",\r\n        \"s hit\",\r\n        \"s&m\",\r\n       
+    \"s.h.i.t.\",\r\n        \"s.o.b.\",\r\n        \"s_h_i_t\",\r\n        \"s0b\",\r\n       
+    \"sadis\",\r\n        \"sadism\",\r\n        \"sadist\",\r\n        \"sadom\",\r\n       
+    \"sambo\",\r\n        \"sambos\",\r\n        \"samckdaddy\",\r\n        \"sanchez\",\r\n       
+    \"sand nigger\",\r\n        \"sand niggers\",\r\n        \"sandm\",\r\n       
+    \"sandnigger\",\r\n        \"santorum\",\r\n        \"sausagequeen\",\r\n       
+    \"scag\",\r\n        \"scallywag\",\r\n        \"scank\",\r\n        \"scantily\",\r\n       
+    \"scat\",\r\n        \"schaffer\",\r\n        \"scheiss\",\r\n        \"schizo\",\r\n       
+    \"schlampe\",\r\n        \"schlong\",\r\n        \"schmuck\",\r\n        \"schvartse\",\r\n       
+    \"schvartsen\",\r\n        \"schwartze\",\r\n        \"schwartzen\",\r\n       
+    \"scissoring\",\r\n        \"screwyou\",\r\n        \"scroat\",\r\n        \"scrog\",\r\n       
+    \"scrote\",\r\n        \"scrotum\",\r\n        \"scrud\",\r\n        \"seduce\",\r\n       
+    \"semen\",\r\n        \"seppo\",\r\n        \"seppos\",\r\n        \"septics\",\r\n       
+    \"sex\",\r\n        \"sexcam\",\r\n        \"sexed\",\r\n        \"sexfarm\",\r\n       
+    \"sexhound\",\r\n        \"sexhouse\",\r\n        \"sexi\",\r\n        \"sexing\",\r\n       
+    \"sexkitten\",\r\n        \"sexo\",\r\n        \"sexpot\",\r\n        \"sexslave\",\r\n       
+    \"sextogo\",\r\n        \"sextoy\",\r\n        \"sextoys\",\r\n        \"sexual\",\r\n       
+    \"sexually\",\r\n        \"sexwhore\",\r\n        \"sexx\",\r\n        \"sexxi\",\r\n       
+    \"sexxx\",\r\n        \"sexxxi\",\r\n        \"sexxxy\",\r\n        \"sexxy\",\r\n       
+    \"sexy\",\r\n        \"sexymoma\",\r\n        \"sexyslim\",\r\n        \"sh!+\",\r\n       
+    \"sh!t\",\r\n        \"sh1t\",\r\n        \"s-h-1-t\",\r\n        \"sh1ter\",\r\n       
+    \"sh1ts\",\r\n        \"sh1tter\",\r\n        \"sh1tz\",\r\n        \"shag\",\r\n       
+    \"shagger\",\r\n        \"shaggin\",\r\n        \"shagging\",\r\n        \"shamedame\",\r\n       
+    \"sharmuta\",\r\n        \"sharmute\",\r\n        \"shat\",\r\n        \"shav\",\r\n       
+    \"shaved beaver\",\r\n        \"shaved pussy\",\r\n        \"shavedbeaver\",\r\n       
+    \"shavedpussy\",\r\n        \"shawtypimp\",\r\n        \"sheeney\",\r\n       
+    \"shemale\",\r\n        \"shhit\",\r\n        \"shi+\",\r\n        \"shibari\",\r\n       
+    \"shibary\",\r\n        \"shinola\",\r\n        \"shipal\",\r\n        \"shit
+    ass\",\r\n        \"shit\",\r\n        \"s-h-i-t\",\r\n        \"shitass\",\r\n       
+    \"shit-ass\",\r\n        \"shitbag\",\r\n        \"shit-bag\",\r\n        \"shitbagger\",\r\n       
+    \"shit-bagger\",\r\n        \"shitblimp\",\r\n        \"shitbrain\",\r\n       
+    \"shit-brain\",\r\n        \"shitbreath\",\r\n        \"shit-breath\",\r\n       
+    \"shitcan\",\r\n        \"shitcunt\",\r\n        \"shit-cunt\",\r\n        \"shitdick\",\r\n       
+    \"shit-dick\",\r\n        \"shite\",\r\n        \"shiteater\",\r\n        \"shiteating\",\r\n       
+    \"shit-eating\",\r\n        \"shited\",\r\n        \"shitey\",\r\n        \"shitface\",\r\n       
+    \"shit-face\",\r\n        \"shitfaced\",\r\n        \"shit-faced\",\r\n       
+    \"shitfit\",\r\n        \"shit-fit\",\r\n        \"shitforbrains\",\r\n       
+    \"shitfuck\",\r\n        \"shitfucker\",\r\n        \"shitfull\",\r\n       
+    \"shithapens\",\r\n        \"shithappens\",\r\n        \"shithead\",\r\n       
+    \"shit-head\",\r\n        \"shitheel\",\r\n        \"shit-heel\",\r\n       
+    \"shithole\",\r\n        \"shit-hole\",\r\n        \"shithouse\",\r\n       
+    \"shit-house\",\r\n        \"shiting\",\r\n        \"shitings\",\r\n        \"shitlist\",\r\n       
+    \"shitload\",\r\n        \"shit-load\",\r\n        \"shitola\",\r\n        \"shitoutofluck\",\r\n       
+    \"shitpot\",\r\n        \"shit-pot\",\r\n        \"shits\",\r\n        \"shitspitter\",\r\n       
+    \"shit-spitter\",\r\n        \"shitstain\",\r\n        \"shit-stain\",\r\n       
+    \"shitt\",\r\n        \"shitted\",\r\n        \"shitter\",\r\n        \"shitters\",\r\n       
+    \"shittiest\",\r\n        \"shitting\",\r\n        \"shittings\",\r\n       
+    \"shitty\",\r\n        \"shity\",\r\n        \"shitz\",\r\n        \"shiz\",\r\n       
+    \"shiznit\",\r\n        \"shortfuck\",\r\n        \"shota\",\r\n        \"shylock\",\r\n       
+    \"shylocks\",\r\n        \"shyt\",\r\n        \"shyte\",\r\n        \"shytty\",\r\n       
+    \"shyty\",\r\n        \"simp\",\r\n        \"sissy\",\r\n        \"sixsixsix\",\r\n       
+    \"sixtynine\",\r\n        \"sixtyniner\",\r\n        \"skag\",\r\n        \"skanck\",\r\n       
+    \"skank\",\r\n        \"skankbitch\",\r\n        \"skankee\",\r\n        \"skankey\",\r\n       
+    \"skankfuck\",\r\n        \"skanks\",\r\n        \"skankwhore\",\r\n        \"skanky\",\r\n       
+    \"skankybitch\",\r\n        \"skankywhore\",\r\n        \"skeet\",\r\n       
+    \"skinflute\",\r\n        \"skribz\",\r\n        \"skullfuck\",\r\n        \"skum\",\r\n       
+    \"skumbag\",\r\n        \"skurwysyn\",\r\n        \"skwa\",\r\n        \"skwe\",\r\n       
+    \"slag\",\r\n        \"slanteye\",\r\n        \"slanty\",\r\n        \"slapper\",\r\n       
+    \"sleezeball\",\r\n        \"slideitin\",\r\n        \"slimeball\",\r\n       
+    \"slimebucket\",\r\n        \"slopehead\",\r\n        \"slopeheads\",\r\n       
+    \"sloper\",\r\n        \"slopers\",\r\n        \"slopey\",\r\n        \"slopeys\",\r\n       
+    \"slopies\",\r\n        \"slopy\",\r\n        \"slut\",\r\n        \"slutbag\",\r\n       
+    \"slutbucket\",\r\n        \"slutdumper\",\r\n        \"slutkiss\",\r\n       
+    \"sluts\",\r\n        \"slutt\",\r\n        \"slutting\",\r\n        \"slutty\",\r\n       
+    \"slutwear\",\r\n        \"slutwhore\",\r\n        \"slutz\",\r\n        \"smackthemonkey\",\r\n       
+    \"smeg\",\r\n        \"smegma\",\r\n        \"smut\",\r\n        \"smutty\",\r\n       
+    \"snatchpatch\",\r\n        \"sniggered\",\r\n        \"sniggering\",\r\n       
+    \"sniggers\",\r\n        \"snowback\",\r\n        \"snowballing\",\r\n       
+    \"snownigger\",\r\n        \"snuff\",\r\n        \"s-o-b\",\r\n        \"socksucker\",\r\n       
+    \"sodom\",\r\n        \"sodomise\",\r\n        \"sodomite\",\r\n        \"sodomize\",\r\n       
+    \"sodomy\",\r\n        \"son of a bitch\",\r\n        \"son of a whore\",\r\n       
+    \"sonofabitch\",\r\n        \"son-of-a-bitch\",\r\n        \"son-of-a-whore\",\r\n       
+    \"sonofbitch\",\r\n        \"sooties\",\r\n        \"souse\",\r\n        \"soused\",\r\n       
+    \"soyboy\",\r\n        \"spac\",\r\n        \"spaghettibender\",\r\n        \"spaghettinigger\",\r\n       
+    \"spank\",\r\n        \"spankthemonkey\",\r\n        \"spastic\",\r\n       
+    \"spearchucker\",\r\n        \"spearchuckers\",\r\n        \"sperm\",\r\n       
+    \"spermacide\",\r\n        \"spermbag\",\r\n        \"spermhearder\",\r\n       
+    \"spermherder\",\r\n        \"sphencter\",\r\n        \"spic\",\r\n        \"spick\",\r\n       
+    \"spicks\",\r\n        \"spics\",\r\n        \"spierdalaj\",\r\n        \"spig\",\r\n       
+    \"spigotty\",\r\n        \"spik\",\r\n        \"spiks\",\r\n        \"splittail\",\r\n       
+    \"splooge\",\r\n        \"spludge\",\r\n        \"spooge\",\r\n        \"spread
+    legs\",\r\n        \"spreadeagle\",\r\n        \"spunk\",\r\n        \"spunky\",\r\n       
+    \"sqeh\",\r\n        \"squa\",\r\n        \"squarehead\",\r\n        \"squareheads\",\r\n       
+    \"squaw\",\r\n        \"squinty\",\r\n        \"squirting\",\r\n        \"stagg\",\r\n       
+    \"stfu\",\r\n        \"stiffy\",\r\n        \"stoned\",\r\n        \"stoner\",\r\n       
+    \"strap on\",\r\n        \"strapon\",\r\n        \"strappado\",\r\n        \"strip
+    club\",\r\n        \"stripclub\",\r\n        \"stroking\",\r\n        \"stuinties\",\r\n       
+    \"stupidfuck\",\r\n        \"stupidfucker\",\r\n        \"style doggy\",\r\n       
+    \"suckdick\",\r\n        \"sucked\",\r\n        \"sucker\",\r\n        \"sucking\",\r\n       
+    \"suckme\",\r\n        \"suckmyass\",\r\n        \"suckmydick\",\r\n        \"suckmytit\",\r\n       
+    \"suckoff\",\r\n        \"suicide girl\",\r\n        \"suicide girls\",\r\n       
+    \"suicidegirl\",\r\n        \"suicidegirls\",\r\n        \"suka\",\r\n       
+    \"sultrywoman\",\r\n        \"sultrywomen\",\r\n        \"sumofabiatch\",\r\n       
+    \"swallower\",\r\n        \"swalow\",\r\n        \"swamp guinea\",\r\n       
+    \"swamp guineas\",\r\n        \"swastika\",\r\n        \"syphilis\",\r\n       
+    \"t i t\",\r\n        \"t i ts\",\r\n        \"t1t\",\r\n        \"t1tt1e5\",\r\n       
+    \"t1tties\",\r\n        \"tacohead\",\r\n        \"tacoheads\",\r\n        \"taff\",\r\n       
+    \"take off your\",\r\n        \"tar babies\",\r\n        \"tar baby\",\r\n       
+    \"tarbaby\",\r\n        \"tard\",\r\n        \"taste my\",\r\n        \"tastemy\",\r\n       
+    \"tawdry\",\r\n        \"tea bagging\",\r\n        \"teabagging\",\r\n       
+    \"teat\",\r\n        \"teets\",\r\n        \"teez\",\r\n        \"terd\",\r\n       
+    \"teste\",\r\n        \"testee\",\r\n        \"testes\",\r\n        \"testical\",\r\n       
+    \"testicle\",\r\n        \"testicles\",\r\n        \"testis\",\r\n        \"thicklip\",\r\n       
+    \"thicklips\",\r\n        \"thirdeye\",\r\n        \"thirdleg\",\r\n        \"threesome\",\r\n       
+    \"threeway\",\r\n        \"throating\",\r\n        \"thumbzilla\",\r\n       
+    \"thundercunt\",\r\n        \"tied up\",\r\n        \"tig ol bitties\",\r\n       
+    \"tig old bitties\",\r\n        \"tight white\",\r\n        \"timber nigger\",\r\n       
+    \"timber niggers\",\r\n        \"timbernigger\",\r\n        \"tit\",\r\n       
+    \"titbitnipply\",\r\n        \"titfuck\",\r\n        \"titfucker\",\r\n       
+    \"titfuckin\",\r\n        \"titi\",\r\n        \"titjob\",\r\n        \"titlicker\",\r\n       
+    \"titlover\",\r\n        \"tits\",\r\n        \"titt\",\r\n        \"tittie\",\r\n       
+    \"tittie5\",\r\n        \"tittiefucker\",\r\n        \"titties\",\r\n       
+    \"tittis\",\r\n        \"titty\",\r\n        \"tittyfuck\",\r\n        \"tittyfucker\",\r\n       
+    \"tittys\",\r\n        \"tittywank\",\r\n        \"titwank\",\r\n        \"tity\",\r\n       
+    \"to murder\",\r\n        \"tongethruster\",\r\n        \"tongue in a\",\r\n       
+    \"tongueina\",\r\n        \"tonguethrust\",\r\n        \"tonguetramp\",\r\n       
+    \"toots\",\r\n        \"topless\",\r\n        \"tortur\",\r\n        \"torture\",\r\n       
+    \"tosser\",\r\n        \"towel head\",\r\n        \"towel heads\",\r\n       
+    \"towelhead\",\r\n        \"tr00n\",\r\n        \"tr00ns\",\r\n        \"trailertrash\",\r\n       
+    \"trannie\",\r\n        \"tranny\",\r\n        \"transsexual\",\r\n        \"transvestite\",\r\n       
+    \"tribadism\",\r\n        \"trisexual\",\r\n        \"trois\",\r\n        \"troon\",\r\n       
+    \"troons\",\r\n        \"trots\",\r\n        \"tub girl\",\r\n        \"tubgirl\",\r\n       
+    \"tuckahoe\",\r\n        \"tunneloflove\",\r\n        \"turd burgler\",\r\n       
+    \"turnon\",\r\n        \"tush\",\r\n        \"tushy\",\r\n        \"tw4t\",\r\n       
+    \"twat\",\r\n        \"twathead\",\r\n        \"twatlips\",\r\n        \"twats\",\r\n       
+    \"twatty\",\r\n        \"twatwaffle\",\r\n        \"twink\",\r\n        \"twinkie\",\r\n       
+    \"two girls one cup\",\r\n        \"twobitwhore\",\r\n        \"twunt\",\r\n       
+    \"twunter\",\r\n        \"udge packer\",\r\n        \"ukrop\",\r\n        \"unclefucker\",\r\n       
+    \"unfuckable\",\r\n        \"upskirt\",\r\n        \"uptheass\",\r\n        \"upthebutt\",\r\n       
+    \"urethra play\",\r\n        \"urethraplay\",\r\n        \"urophilia\",\r\n       
+    \"usama\",\r\n        \"ussys\",\r\n        \"uzi\",\r\n        \"v a g i n a\",\r\n       
+    \"v14gra\",\r\n        \"v1gra\",\r\n        \"v4gra\",\r\n        \"va1jina\",\r\n       
+    \"vag\",\r\n        \"vag1na\",\r\n        \"vagiina\",\r\n        \"vaj1na\",\r\n       
+    \"vajina\",\r\n        \"va-j-j\",\r\n        \"valium\",\r\n        \"venus
+    mound\",\r\n        \"vgra\",\r\n        \"vibr\",\r\n        \"vibrater\",\r\n       
+    \"vibrator\",\r\n        \"vigra\",\r\n        \"violet wand\",\r\n        \"virginbreaker\",\r\n       
+    \"vittu\",\r\n        \"vixen\",\r\n        \"vjayjay\",\r\n        \"vorarephilia\",\r\n       
+    \"voyeurweb\",\r\n        \"voyuer\",\r\n        \"vullva\",\r\n        \"vulva\",\r\n       
+    \"w00se\",\r\n        \"w0p\",\r\n        \"wab\",\r\n        \"wang\",\r\n       
+    \"wank\",\r\n        \"wanker\",\r\n        \"wanking\",\r\n        \"wanky\",\r\n       
+    \"waysted\",\r\n        \"wazoo\",\r\n        \"weenie\",\r\n        \"weewee\",\r\n       
+    \"weiner\",\r\n        \"welcher\",\r\n        \"wench\",\r\n        \"wet dream\",\r\n       
+    \"wetb\",\r\n        \"wetback\",\r\n        \"wetbacks\",\r\n        \"wetdream\",\r\n       
+    \"wetspot\",\r\n        \"wh00r\",\r\n        \"wh0re\",\r\n        \"wh0reface\",\r\n       
+    \"whacker\",\r\n        \"whash\",\r\n        \"whigger\",\r\n        \"whiggers\",\r\n       
+    \"whiskeydick\",\r\n        \"whiskydick\",\r\n        \"whit\",\r\n        \"white
+    power\",\r\n        \"white trash\",\r\n        \"whitenigger\",\r\n        \"whitepower\",\r\n       
+    \"whitetrash\",\r\n        \"whitey\",\r\n        \"whiteys\",\r\n        \"whities\",\r\n       
+    \"whoar\",\r\n        \"whop\",\r\n        \"whoralicious\",\r\n        \"whore\",\r\n       
+    \"whorealicious\",\r\n        \"whorebag\",\r\n        \"whored\",\r\n       
+    \"whoreface\",\r\n        \"whorefucker\",\r\n        \"whorehopper\",\r\n       
+    \"whorehouse\",\r\n        \"whores\",\r\n        \"whoring\",\r\n        \"wichser\",\r\n       
+    \"wigga\",\r\n        \"wiggas\",\r\n        \"wigger\",\r\n        \"wiggers\",\r\n       
+    \"willie\",\r\n        \"willies\",\r\n        \"williewanker\",\r\n        \"willy\",\r\n       
+    \"wog\",\r\n        \"wogs\",\r\n        \"woose\",\r\n        \"wop\",\r\n       
+    \"worldsex\",\r\n        \"wrapping men\",\r\n        \"wrinkled starfish\",\r\n       
+    \"wtf\",\r\n        \"wuss\",\r\n        \"wuzzie\",\r\n        \"xkwe\",\r\n       
+    \"xrated\",\r\n        \"x-rated\",\r\n        \"x-rated2g1c\",\r\n        \"xtc\",\r\n       
+    \"xx\",\r\n        \"xxx\",\r\n        \"xxxxxx\",\r\n        \"yank\",\r\n       
+    \"yaoi\",\r\n        \"yarpie\",\r\n        \"yarpies\",\r\n        \"yed\",\r\n       
+    \"yellow showers\",\r\n        \"yellowman\",\r\n        \"yellowshowers\",\r\n       
+    \"yid\",\r\n        \"yids\",\r\n        \"yiffy\",\r\n        \"yobbo\",\r\n       
+    \"yourboobs\",\r\n        \"yourpenis\",\r\n        \"yourtits\",\r\n       
+    \"yury\",\r\n        \"zabourah\",\r\n        \"zigabo\",\r\n        \"zigabos\",\r\n       
+    \"zipperhead\",\r\n        \"zipperheads\",\r\n        \"zoophile\",\r\n       
+    \"zoophilia\"\r\n      ]\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"0183cd0f-bfe1-43a7-82e3-5d55b806fce1\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"blocked_email_domains\",\r\n      \"type\":
     \"json\",\r\n      \"schemaId\": null,\r\n      \"value\": {\r\n        \"blockedDomains\":
     [\r\n          \"0-mail.com\",\r\n          \"027168.com\",\r\n          \"0815.ru\",\r\n         
@@ -69,7 +819,757 @@ MonoBehaviour:
     \"1clck2.com\",\r\n          \"1fsdfdsfsdf.tk\",\r\n          \"1mail.ml\",\r\n         
     \"1pad.de\",\r\n          \"1s.fr\",\r\n          \"1sec.site\",\r\n         
     \"1secmail.com\",\r\n          \"1secmail.net\",\r\n          \"1secmail.org\"\r\n       
-    ]\r\n      }\r\n    }\r\n  }\r\n]"
+    ]\r\n      }\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"afabc843-9a75-4723-a1f2-9e7ff0c7b1ad\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"banned_words\",\r\n      \"type\": \"json\",\r\n      \"schemaId\":
+    null,\r\n      \"value\": [\r\n        \"\U0001F595\",\r\n        \"@$$\",\r\n       
+    \"2 girls 1 cup\",\r\n        \"2g1c\",\r\n        \"4r5e\",\r\n        \"5h1t\",\r\n       
+    \"5hit\",\r\n        \"5ht\",\r\n        \"a s s\",\r\n        \"a s shole\",\r\n       
+    \"a_s_s\",\r\n        \"a55\",\r\n        \"a55hole\",\r\n        \"abbo\",\r\n       
+    \"abeed\",\r\n        \"abuse\",\r\n        \"acrotomophilia\",\r\n        \"africoon\",\r\n       
+    \"ahole\",\r\n        \"alabama hot pocket\",\r\n        \"alaskan pipeline\",\r\n       
+    \"alligator bait\",\r\n        \"alligatorbait\",\r\n        \"amcik\",\r\n       
+    \"anal\",\r\n        \"analannie\",\r\n        \"analprobe\",\r\n        \"analsex\",\r\n       
+    \"andskota\",\r\n        \"anilingus\",\r\n        \"anus\",\r\n        \"apeshit\",\r\n       
+    \"ar5e\",\r\n        \"arabush\",\r\n        \"arabushs\",\r\n        \"areola\",\r\n       
+    \"areole\",\r\n        \"argie\",\r\n        \"armo\",\r\n        \"armos\",\r\n       
+    \"arrse\",\r\n        \"arschloch\",\r\n        \"arse\",\r\n        \"arsehole\",\r\n       
+    \"aryan\",\r\n        \"ash0le\",\r\n        \"ash0les\",\r\n        \"asholes\",\r\n       
+    \"ass monkey\",\r\n        \"ass\",\r\n        \"assbag\",\r\n        \"assbagger\",\r\n       
+    \"assbandit\",\r\n        \"assbang\",\r\n        \"assbanged\",\r\n        \"assbanger\",\r\n       
+    \"assbangs\",\r\n        \"assbite\",\r\n        \"assblaster\",\r\n        \"assclown\",\r\n       
+    \"asscock\",\r\n        \"asscowboy\",\r\n        \"asscracker\",\r\n       
+    \"asses\",\r\n        \"assface\",\r\n        \"assfuck\",\r\n        \"assfucker\",\r\n       
+    \"ass-fucker\",\r\n        \"assfukka\",\r\n        \"assgoblin\",\r\n       
+    \"assh0le\",\r\n        \"assh0lez\",\r\n        \"asshat\",\r\n        \"ass-hat\",\r\n       
+    \"asshead\",\r\n        \"assho1e\",\r\n        \"asshole\",\r\n        \"assholes\",\r\n       
+    \"assholz\",\r\n        \"asshopper\",\r\n        \"asshore\",\r\n        \"assjacker\",\r\n       
+    \"assjockey\",\r\n        \"asskiss\",\r\n        \"asskisser\",\r\n        \"assklown\",\r\n       
+    \"asslick\",\r\n        \"asslicker\",\r\n        \"asslover\",\r\n        \"assman\",\r\n       
+    \"assmaster\",\r\n        \"assmonkey\",\r\n        \"assmunch\",\r\n       
+    \"assmuncher\",\r\n        \"assnigger\",\r\n        \"asspacker\",\r\n       
+    \"asspirate\",\r\n        \"ass-pirate\",\r\n        \"asspuppies\",\r\n       
+    \"assrammer\",\r\n        \"assranger\",\r\n        \"assshit\",\r\n        \"assshole\",\r\n       
+    \"asssucker\",\r\n        \"asswad\",\r\n        \"asswhole\",\r\n        \"asswhore\",\r\n       
+    \"asswipe\",\r\n        \"asswipes\",\r\n        \"auto erotic\",\r\n       
+    \"autoerotic\",\r\n        \"ayir\",\r\n        \"azazel\",\r\n        \"azz\",\r\n       
+    \"azzhole\",\r\n        \"b a s t a r d\",\r\n        \"b i t c h\",\r\n       
+    \"b o o b\",\r\n        \"b!+ch\",\r\n        \"b!tch\",\r\n        \"b!tchin\",\r\n       
+    \"b*tch\",\r\n        \"b00b\",\r\n        \"b00bies\",\r\n        \"b00biez\",\r\n       
+    \"b00bs\",\r\n        \"b00bz\",\r\n        \"b17ch\",\r\n        \"b1tch\",\r\n       
+    \"b7ch\",\r\n        \"babeland\",\r\n        \"babes\",\r\n        \"baby batter\",\r\n       
+    \"baby juice\",\r\n        \"backdoorman\",\r\n        \"badfuck\",\r\n       
+    \"ball gag\",\r\n        \"ball gravy\",\r\n        \"ball kicking\",\r\n       
+    \"ball licking\",\r\n        \"ball sack\",\r\n        \"ball sucking\",\r\n       
+    \"ballbag\",\r\n        \"balllicker\",\r\n        \"ballsack\",\r\n        \"bampot\",\r\n       
+    \"bangbro\",\r\n        \"bangbros\",\r\n        \"bangbus\",\r\n        \"bareback\",\r\n       
+    \"barely legal\",\r\n        \"barelylegal\",\r\n        \"barenaked\",\r\n       
+    \"barface\",\r\n        \"barfface\",\r\n        \"bassterd\",\r\n        \"bassterds\",\r\n       
+    \"bastard\",\r\n        \"bastardo\",\r\n        \"bastards\",\r\n        \"bastardz\",\r\n       
+    \"basterds\",\r\n        \"basterdz\",\r\n        \"bastinado\",\r\n        \"bazongas\",\r\n       
+    \"bazooms\",\r\n        \"bbw\",\r\n        \"bdsm\",\r\n        \"beaner\",\r\n       
+    \"beaners\",\r\n        \"beaney\",\r\n        \"beaneys\",\r\n        \"beardedclam\",\r\n       
+    \"beastality\",\r\n        \"beastial\",\r\n        \"beastiality\",\r\n       
+    \"beastility\",\r\n        \"beatch\",\r\n        \"beatoff\",\r\n        \"beatyourmeat\",\r\n       
+    \"beaver cleaver\",\r\n        \"beaver lips\",\r\n        \"beef curtains\",\r\n       
+    \"beeyotch\",\r\n        \"bellend\",\r\n        \"beotch\",\r\n        \"bestial\",\r\n       
+    \"bestiality\",\r\n        \"bi curious\",\r\n        \"bi+ch\",\r\n        \"bi7ch\",\r\n       
+    \"biatch\",\r\n        \"bicurious\",\r\n        \"big black\",\r\n        \"big
+    breasts\",\r\n        \"big knockers\",\r\n        \"big tits\",\r\n        \"bigass\",\r\n       
+    \"bigbastard\",\r\n        \"bigbreasts\",\r\n        \"bigbutt\",\r\n       
+    \"bigtits\",\r\n        \"bimbo\",\r\n        \"bimbos\",\r\n        \"bint\",\r\n       
+    \"birdlock\",\r\n        \"bitch\",\r\n        \"bitchass\",\r\n        \"bitched\",\r\n       
+    \"bitcher\",\r\n        \"bitchers\",\r\n        \"bitches\",\r\n        \"bitchez\",\r\n       
+    \"bitchin\",\r\n        \"bitching\",\r\n        \"bitchslap\",\r\n        \"bitchtit\",\r\n       
+    \"bitchy\",\r\n        \"biteme\",\r\n        \"bitties\",\r\n        \"black
+    cock\",\r\n        \"blackcock\",\r\n        \"blackman\",\r\n        \"blacks\",\r\n       
+    \"blonde action\",\r\n        \"blonde on blonde action\",\r\n        \"blonde
+    on blonde\",\r\n        \"bloodclaat\",\r\n        \"blow j\",\r\n        \"blow
+    job\",\r\n        \"blow your l\",\r\n        \"blow your load\",\r\n       
+    \"blowjob\",\r\n        \"blowjobs\",\r\n        \"blue waffle\",\r\n       
+    \"bluegum\",\r\n        \"bluegums\",\r\n        \"blumpkin\",\r\n        \"bo
+    ob\",\r\n        \"bo obs\",\r\n        \"boang\",\r\n        \"boche\",\r\n       
+    \"boches\",\r\n        \"boffing\",\r\n        \"bogan\",\r\n        \"bohunk\",\r\n       
+    \"boink\",\r\n        \"boiolas\",\r\n        \"bollick\",\r\n        \"bollock\",\r\n       
+    \"bollocks\",\r\n        \"bollok\",\r\n        \"bollox\",\r\n        \"bombers\",\r\n       
+    \"bomd\",\r\n        \"bondage\",\r\n        \"boned\",\r\n        \"boner\",\r\n       
+    \"boners\",\r\n        \"bong\",\r\n        \"boong\",\r\n        \"boonga\",\r\n       
+    \"boongas\",\r\n        \"boongs\",\r\n        \"boonie\",\r\n        \"boonies\",\r\n       
+    \"booobs\",\r\n        \"boooobs\",\r\n        \"booooobs\",\r\n        \"booooooobs\",\r\n       
+    \"bootee\",\r\n        \"bootlip\",\r\n        \"bootlips\",\r\n        \"boozer\",\r\n       
+    \"bosch\",\r\n        \"bosche\",\r\n        \"bosches\",\r\n        \"boschs\",\r\n       
+    \"bosomy\",\r\n        \"bounty bar\",\r\n        \"bounty bars\",\r\n       
+    \"bountybar\",\r\n        \"brea5t\",\r\n        \"breastjob\",\r\n        \"breastlover\",\r\n       
+    \"breastman\",\r\n        \"brown shower\",\r\n        \"brown showers\",\r\n       
+    \"brunette action\",\r\n        \"btch\",\r\n        \"buceta\",\r\n        \"buddhahead\",\r\n       
+    \"buddhaheads\",\r\n        \"buffies\",\r\n        \"bugger\",\r\n        \"buggered\",\r\n       
+    \"buggery\",\r\n        \"bukake\",\r\n        \"bukkake\",\r\n        \"bullcrap\",\r\n       
+    \"bulldike\",\r\n        \"bulldyke\",\r\n        \"bullet vibe\",\r\n       
+    \"bullshit\",\r\n        \"bullshits\",\r\n        \"bullshitted\",\r\n       
+    \"bullturds\",\r\n        \"bumblefuck\",\r\n        \"bumfuck\",\r\n       
+    \"bung hole\",\r\n        \"bung\",\r\n        \"bunga\",\r\n        \"bungas\",\r\n       
+    \"bunghole\",\r\n        \"bunny fucker\",\r\n        \"burr head\",\r\n       
+    \"burr heads\",\r\n        \"burrhead\",\r\n        \"burrheads\",\r\n       
+    \"butchbabes\",\r\n        \"butchdike\",\r\n        \"butchdyke\",\r\n       
+    \"butt plug\",\r\n        \"buttbang\",\r\n        \"buttcheeks\",\r\n       
+    \"buttface\",\r\n        \"buttfuck\",\r\n        \"buttfucker\",\r\n       
+    \"buttfuckers\",\r\n        \"butthead\",\r\n        \"butthole\",\r\n       
+    \"buttman\",\r\n        \"buttmuch\",\r\n        \"buttmunch\",\r\n        \"buttmuncher\",\r\n       
+    \"buttpirate\",\r\n        \"butt-pirate\",\r\n        \"buttplug\",\r\n       
+    \"buttstain\",\r\n        \"buttwipe\",\r\n        \"byatch\",\r\n        \"c
+    u n t\",\r\n        \"c.0.c.k\",\r\n        \"c.o.c.k.\",\r\n        \"c.u.n.t\",\r\n       
+    \"c0ck\",\r\n        \"c-0-c-k\",\r\n        \"c0cks\",\r\n        \"c0cksucker\",\r\n       
+    \"c0k\",\r\n        \"cabron\",\r\n        \"caca\",\r\n        \"cacker\",\r\n       
+    \"cahone\",\r\n        \"camel jockey\",\r\n        \"camel jockeys\",\r\n       
+    \"camel toe\",\r\n        \"cameljockey\",\r\n        \"cameltoe\",\r\n       
+    \"camgirl\",\r\n        \"camslut\",\r\n        \"camwhore\",\r\n        \"carpet
+    muncher\",\r\n        \"carpetmuncher\",\r\n        \"carruth\",\r\n        \"cawk\",\r\n       
+    \"cawks\",\r\n        \"cazzo\",\r\n        \"chav\",\r\n        \"cheese eating
+    surrender monkey\",\r\n        \"cheese eating surrender monkies\",\r\n       
+    \"cheeseeating surrender monkey\",\r\n        \"cheeseeating surrender monkies\",\r\n       
+    \"cheesehead\",\r\n        \"cheeseheads\",\r\n        \"cherrypopper\",\r\n       
+    \"chickslick\",\r\n        \"china swede\",\r\n        \"china swedes\",\r\n       
+    \"chinaman\",\r\n        \"chinamen\",\r\n        \"chinaswede\",\r\n       
+    \"chinaswedes\",\r\n        \"chinc\",\r\n        \"chincs\",\r\n        \"ching
+    chong\",\r\n        \"ching chongs\",\r\n        \"chinga\",\r\n        \"chingchong\",\r\n       
+    \"chingchongs\",\r\n        \"chink\",\r\n        \"chinks\",\r\n        \"chinky\",\r\n       
+    \"choad\",\r\n        \"chocolate rosebuds\",\r\n        \"chode\",\r\n       
+    \"chodes\",\r\n        \"chonkies\",\r\n        \"chonky\",\r\n        \"chonkys\",\r\n       
+    \"chraa\",\r\n        \"christ killer\",\r\n        \"christ killers\",\r\n       
+    \"chug\",\r\n        \"chugs\",\r\n        \"chuj\",\r\n        \"chunger\",\r\n       
+    \"chungers\",\r\n        \"chunkies\",\r\n        \"chunkys\",\r\n        \"cipa\",\r\n       
+    \"circlejerk\",\r\n        \"cl1t\",\r\n        \"clamdigger\",\r\n        \"clamdiver\",\r\n       
+    \"clamps\",\r\n        \"clansman\",\r\n        \"clansmen\",\r\n        \"clanswoman\",\r\n       
+    \"clanswomen\",\r\n        \"cleveland steamer\",\r\n        \"clit\",\r\n       
+    \"clitface\",\r\n        \"clitfuck\",\r\n        \"clitoris\",\r\n        \"clitorus\",\r\n       
+    \"clits\",\r\n        \"clitty\",\r\n        \"clogwog\",\r\n        \"clover
+    clamps\",\r\n        \"clusterfuck\",\r\n        \"cnts\",\r\n        \"cntz\",\r\n       
+    \"cnut\",\r\n        \"cocain\",\r\n        \"cocaine\",\r\n        \"cock\",\r\n       
+    \"c-o-c-k\",\r\n        \"cockbite\",\r\n        \"cockblock\",\r\n        \"cockblocker\",\r\n       
+    \"cockburger\",\r\n        \"cockcowboy\",\r\n        \"cockface\",\r\n       
+    \"cockfight\",\r\n        \"cockfucker\",\r\n        \"cockhead\",\r\n       
+    \"cock-head\",\r\n        \"cockholster\",\r\n        \"cockjockey\",\r\n       
+    \"cockknob\",\r\n        \"cockknocker\",\r\n        \"cockknoker\",\r\n       
+    \"cocklicker\",\r\n        \"cocklover\",\r\n        \"cockmaster\",\r\n       
+    \"cockmongler\",\r\n        \"cockmongruel\",\r\n        \"cockmonkey\",\r\n       
+    \"cockmunch\",\r\n        \"cockmuncher\",\r\n        \"cocknob\",\r\n       
+    \"cocknose\",\r\n        \"cocknugget\",\r\n        \"cockqueen\",\r\n       
+    \"cockrider\",\r\n        \"cocks\",\r\n        \"cockshit\",\r\n        \"cocksman\",\r\n       
+    \"cocksmith\",\r\n        \"cocksmoker\",\r\n        \"cocksucer\",\r\n       
+    \"cocksuck\",\r\n        \"cocksucked\",\r\n        \"cocksucker\",\r\n       
+    \"cock-sucker\",\r\n        \"cocksucking\",\r\n        \"cocksucks\",\r\n       
+    \"cocksuka\",\r\n        \"cocksukka\",\r\n        \"cocktease\",\r\n       
+    \"cocky\",\r\n        \"cohee\",\r\n        \"coital\",\r\n        \"coitus\",\r\n       
+    \"cok\",\r\n        \"cokmuncher\",\r\n        \"coksucka\",\r\n        \"condom\",\r\n       
+    \"coochie\",\r\n        \"coochy\",\r\n        \"coolie\",\r\n        \"coolies\",\r\n       
+    \"cooly\",\r\n        \"coon ass\",\r\n        \"coon asses\",\r\n        \"coonass\",\r\n       
+    \"coonasses\",\r\n        \"coondog\",\r\n        \"coons\",\r\n        \"cooter\",\r\n       
+    \"coprolagnia\",\r\n        \"coprophilia\",\r\n        \"copulate\",\r\n       
+    \"corksucker\",\r\n        \"cornhole\",\r\n        \"cra5h\",\r\n        \"crackcocain\",\r\n       
+    \"crackpipe\",\r\n        \"crackwhore\",\r\n        \"crap\",\r\n        \"crapola\",\r\n       
+    \"crapper\",\r\n        \"crappy\",\r\n        \"creampie\",\r\n        \"crotchjockey\",\r\n       
+    \"crotchmonkey\",\r\n        \"crotchrot\",\r\n        \"cuck\",\r\n        \"cum
+    face\",\r\n        \"cum licker\",\r\n        \"cum\",\r\n        \"cumbubble\",\r\n       
+    \"cumdumpster\",\r\n        \"cumfest\",\r\n        \"cumguzzler\",\r\n       
+    \"cuming\",\r\n        \"cumjockey\",\r\n        \"cumlickr\",\r\n        \"cumm\",\r\n       
+    \"cummer\",\r\n        \"cummin\",\r\n        \"cumming\",\r\n        \"cumquat\",\r\n       
+    \"cumqueen\",\r\n        \"cums\",\r\n        \"cumshot\",\r\n        \"cumshots\",\r\n       
+    \"cumslut\",\r\n        \"cumstain\",\r\n        \"cumsucker\",\r\n        \"cumtart\",\r\n       
+    \"cunilingus\",\r\n        \"cunillingus\",\r\n        \"cunn\",\r\n        \"cunnie\",\r\n       
+    \"cunnilingus\",\r\n        \"cunntt\",\r\n        \"cunny\",\r\n        \"cunt\",\r\n       
+    \"c-u-n-t\",\r\n        \"cunteyed\",\r\n        \"cuntface\",\r\n        \"cuntfuck\",\r\n       
+    \"cuntfucker\",\r\n        \"cunthole\",\r\n        \"cunthunter\",\r\n       
+    \"cuntlick\",\r\n        \"cuntlicker\",\r\n        \"cuntlicking\",\r\n       
+    \"cuntrag\",\r\n        \"cunts\",\r\n        \"cuntslut\",\r\n        \"cuntsucker\",\r\n       
+    \"cuntz\",\r\n        \"curry muncher\",\r\n        \"curry munchers\",\r\n       
+    \"currymuncher\",\r\n        \"currymunchers\",\r\n        \"cushi\",\r\n       
+    \"cushis\",\r\n        \"cyalis\",\r\n        \"cyberfuc\",\r\n        \"cyberfuck\",\r\n       
+    \"cyberfucked\",\r\n        \"cyberfucker\",\r\n        \"cyberfuckers\",\r\n       
+    \"cyberfucking\",\r\n        \"cybersex\",\r\n        \"cyberslimer\",\r\n       
+    \"d0ng\",\r\n        \"d0uch3\",\r\n        \"d0uche\",\r\n        \"d1ck\",\r\n       
+    \"d1ld0\",\r\n        \"d1ldo\",\r\n        \"d4mn\",\r\n        \"dago\",\r\n       
+    \"dagos\",\r\n        \"dahmer\",\r\n        \"damm\",\r\n        \"dammit\",\r\n       
+    \"damn\",\r\n        \"damnit\",\r\n        \"darkey\",\r\n        \"darkeys\",\r\n       
+    \"darkie\",\r\n        \"darkies\",\r\n        \"darky\",\r\n        \"date rape\",\r\n       
+    \"daterape\",\r\n        \"datnigga\",\r\n        \"dawgie style\",\r\n       
+    \"dawgie-style\",\r\n        \"daygo\",\r\n        \"deapthroat\",\r\n       
+    \"deep throat\",\r\n        \"deep throating\",\r\n        \"deepaction\",\r\n       
+    \"deepthroat\",\r\n        \"deepthroating\",\r\n        \"defecate\",\r\n       
+    \"deggo\",\r\n        \"dego\",\r\n        \"degos\",\r\n        \"dendrophilia\",\r\n       
+    \"destroyyourpussy\",\r\n        \"deth\",\r\n        \"diaper daddy\",\r\n       
+    \"diaper head\",\r\n        \"diaper heads\",\r\n        \"diaperdaddy\",\r\n       
+    \"diaperhead\",\r\n        \"diaperheads\",\r\n        \"dick pic\",\r\n       
+    \"dick\",\r\n        \"dickbag\",\r\n        \"dickbeater\",\r\n        \"dickbeaters\",\r\n       
+    \"dickbrain\",\r\n        \"dickdipper\",\r\n        \"dickface\",\r\n       
+    \"dickflipper\",\r\n        \"dickforbrains\",\r\n        \"dickfuck\",\r\n       
+    \"dickhead\",\r\n        \"dickheads\",\r\n        \"dickhole\",\r\n        \"dickish\",\r\n       
+    \"dick-ish\",\r\n        \"dickjuice\",\r\n        \"dickless\",\r\n        \"dicklick\",\r\n       
+    \"dicklicker\",\r\n        \"dickman\",\r\n        \"dickmilk\",\r\n        \"dickmonger\",\r\n       
+    \"dickpic\",\r\n        \"dickripper\",\r\n        \"dicks\",\r\n        \"dicksipper\",\r\n       
+    \"dickslap\",\r\n        \"dickslicker\",\r\n        \"dicksucker\",\r\n       
+    \"dickwad\",\r\n        \"dickweasel\",\r\n        \"dickweed\",\r\n        \"dickwhipper\",\r\n       
+    \"dickwod\",\r\n        \"dickzipper\",\r\n        \"diddle\",\r\n        \"dike\",\r\n       
+    \"dild0\",\r\n        \"dild0s\",\r\n        \"dildo\",\r\n        \"dildos\",\r\n       
+    \"dilf\",\r\n        \"diligaf\",\r\n        \"dilld0\",\r\n        \"dilld0s\",\r\n       
+    \"dillweed\",\r\n        \"dimwit\",\r\n        \"dingle\",\r\n        \"dingleberries\",\r\n       
+    \"dingleberry\",\r\n        \"dink\",\r\n        \"dinks\",\r\n        \"dipship\",\r\n       
+    \"dipshit\",\r\n        \"dipstick\",\r\n        \"dirsa\",\r\n        \"dirty
+    pillows\",\r\n        \"dirty sanchez\",\r\n        \"dix\",\r\n        \"dixiedike\",\r\n       
+    \"dixiedyke\",\r\n        \"dlck\",\r\n        \"dog style\",\r\n        \"dog-fucker\",\r\n       
+    \"doggie style\",\r\n        \"doggie\",\r\n        \"doggiestyle\",\r\n       
+    \"doggie-style\",\r\n        \"doggin\",\r\n        \"dogging\",\r\n        \"doggy
+    style\",\r\n        \"doggystyle\",\r\n        \"doggy-style\",\r\n        \"dolcett\",\r\n       
+    \"dominatricks\",\r\n        \"dominatrics\",\r\n        \"dominatrix\",\r\n       
+    \"dommes\",\r\n        \"dong\",\r\n        \"donkey punch\",\r\n        \"donkeypunch\",\r\n       
+    \"donkeyribber\",\r\n        \"doochbag\",\r\n        \"doodoo\",\r\n       
+    \"doofus\",\r\n        \"dookie\",\r\n        \"doosh\",\r\n        \"dot head\",\r\n       
+    \"dot heads\",\r\n        \"dothead\",\r\n        \"dotheads\",\r\n        \"double
+    dong\",\r\n        \"double penetration\",\r\n        \"doubledong\",\r\n       
+    \"doublepenetration\",\r\n        \"douch3\",\r\n        \"douche bag\",\r\n       
+    \"douche\",\r\n        \"douchebag\",\r\n        \"douchebags\",\r\n        \"douche-fag\",\r\n       
+    \"douchewaffle\",\r\n        \"douchey\",\r\n        \"dp action\",\r\n       
+    \"dpaction\",\r\n        \"dragqueen\",\r\n        \"dragqween\",\r\n       
+    \"dripdick\",\r\n        \"dry hump\",\r\n        \"dryhump\",\r\n        \"duche\",\r\n       
+    \"dudette\",\r\n        \"dumass\",\r\n        \"dumb ass\",\r\n        \"dumbass\",\r\n       
+    \"dumbasses\",\r\n        \"dumbbitch\",\r\n        \"dumbfuck\",\r\n       
+    \"dumbshit\",\r\n        \"dumshit\",\r\n        \"dune coon\",\r\n        \"dune
+    coons\",\r\n        \"dupa\",\r\n        \"dvda\",\r\n        \"dyefly\",\r\n       
+    \"dyke\",\r\n        \"dykes\",\r\n        \"dziwka\",\r\n        \"earotics\",\r\n       
+    \"easyslut\",\r\n        \"eat my ass\",\r\n        \"eat my\",\r\n        \"eatadick\",\r\n       
+    \"eatballs\",\r\n        \"eathairpie\",\r\n        \"eatme\",\r\n        \"eatmyass\",\r\n       
+    \"eatpussy\",\r\n        \"ecchi\",\r\n        \"ejackulate\",\r\n        \"ejakulate\",\r\n       
+    \"ekrem\",\r\n        \"ekto\",\r\n        \"enculer\",\r\n        \"enema\",\r\n       
+    \"erection\",\r\n        \"ero\",\r\n        \"erotic\",\r\n        \"erotism\",\r\n       
+    \"esqua\",\r\n        \"essohbee\",\r\n        \"ethical slut\",\r\n        \"evl\",\r\n       
+    \"excrement\",\r\n        \"exkwew\",\r\n        \"extacy\",\r\n        \"extasy\",\r\n       
+    \"f u c k e r\",\r\n        \"f u c k e\",\r\n        \"f u c k\",\r\n       
+    \"f u k\",\r\n        \"f*ck\",\r\n        \"f.u.c.k\",\r\n        \"f_u_c_k\",\r\n       
+    \"f4nny\",\r\n        \"facefucker\",\r\n        \"fack\",\r\n        \"faeces\",\r\n       
+    \"faen\",\r\n        \"fag\",\r\n        \"fag1t\",\r\n        \"fagbag\",\r\n       
+    \"faget\",\r\n        \"fagfucker\",\r\n        \"fagg\",\r\n        \"fagg1t\",\r\n       
+    \"fagged\",\r\n        \"fagging\",\r\n        \"faggit\",\r\n        \"faggitt\",\r\n       
+    \"faggot\",\r\n        \"faggotcock\",\r\n        \"faggs\",\r\n        \"fagit\",\r\n       
+    \"fagot\",\r\n        \"fagots\",\r\n        \"fags\",\r\n        \"fagt\",\r\n       
+    \"fagtard\",\r\n        \"fagz\",\r\n        \"faig\",\r\n        \"faigs\",\r\n       
+    \"faigt\",\r\n        \"fanculo\",\r\n        \"fannybandit\",\r\n        \"fannyflaps\",\r\n       
+    \"fannyfucker\",\r\n        \"fanyy\",\r\n        \"fartknocker\",\r\n       
+    \"fastfuck\",\r\n        \"fatah\",\r\n        \"fatfuck\",\r\n        \"fatfucker\",\r\n       
+    \"fatso\",\r\n        \"fck\",\r\n        \"fckcum\",\r\n        \"fckd\",\r\n       
+    \"fcuk\",\r\n        \"fcuker\",\r\n        \"fcuking\",\r\n        \"fecal\",\r\n       
+    \"feck\",\r\n        \"fecker\",\r\n        \"feg\",\r\n        \"felatio\",\r\n       
+    \"felch\",\r\n        \"felcher\",\r\n        \"felching\",\r\n        \"fellate\",\r\n       
+    \"fellatio\",\r\n        \"feltch\",\r\n        \"feltcher\",\r\n        \"feltching\",\r\n       
+    \"female squirting\",\r\n        \"femalesquirtin\",\r\n        \"femalesquirting\",\r\n       
+    \"femdom\",\r\n        \"fetish\",\r\n        \"ficken\",\r\n        \"figging\",\r\n       
+    \"fingerbang\",\r\n        \"fingerfood\",\r\n        \"fingerfuck\",\r\n       
+    \"fingerfucked\",\r\n        \"fingerfucker\",\r\n        \"fingerfuckers\",\r\n       
+    \"fingerfucking\",\r\n        \"fingerfucks\",\r\n        \"fingering\",\r\n       
+    \"fisted\",\r\n        \"fister\",\r\n        \"fistfuck\",\r\n        \"fistfucked\",\r\n       
+    \"fistfucker\",\r\n        \"fistfuckers\",\r\n        \"fistfucking\",\r\n       
+    \"fistfuckings\",\r\n        \"fistfucks\",\r\n        \"fisting\",\r\n       
+    \"fisty\",\r\n        \"fitt\",\r\n        \"flamer\",\r\n        \"flasher\",\r\n       
+    \"flikker\",\r\n        \"flipping the bird\",\r\n        \"flogthelog\",\r\n       
+    \"floo\",\r\n        \"floozy\",\r\n        \"flydie\",\r\n        \"flydye\",\r\n       
+    \"foad\",\r\n        \"fok\",\r\n        \"fondle\",\r\n        \"foobar\",\r\n       
+    \"fook\",\r\n        \"fooker\",\r\n        \"foot fetish\",\r\n        \"footaction\",\r\n       
+    \"footfetish\",\r\n        \"footfuck\",\r\n        \"footfucker\",\r\n       
+    \"footjob\",\r\n        \"footlicker\",\r\n        \"footstar\",\r\n        \"foreskin\",\r\n       
+    \"forni\",\r\n        \"fornicate\",\r\n        \"fotze\",\r\n        \"foursome\",\r\n       
+    \"fourtwenty\",\r\n        \"freakfuck\",\r\n        \"freakyfucker\",\r\n       
+    \"freefuck\",\r\n        \"freex\",\r\n        \"frigg\",\r\n        \"frigga\",\r\n       
+    \"frigger\",\r\n        \"frotting\",\r\n        \"fucck\",\r\n        \"fuck\",\r\n       
+    \"f-u-c-k\",\r\n        \"fucka\",\r\n        \"fuckable\",\r\n        \"fuckass\",\r\n       
+    \"fuckbag\",\r\n        \"fuckbitch\",\r\n        \"fuckbook\",\r\n        \"fuckboy\",\r\n       
+    \"fuckbrain\",\r\n        \"fuckbuddy\",\r\n        \"fuckbutt\",\r\n       
+    \"fuckd\",\r\n        \"fucked\",\r\n        \"fuckedup\",\r\n        \"fucker\",\r\n       
+    \"fuckers\",\r\n        \"fuckersucker\",\r\n        \"fuckface\",\r\n       
+    \"fuckfest\",\r\n        \"fuckfreak\",\r\n        \"fuckfriend\",\r\n       
+    \"fuckhead\",\r\n        \"fuckheads\",\r\n        \"fuckher\",\r\n        \"fuckhole\",\r\n       
+    \"fuckin\",\r\n        \"fuckina\",\r\n        \"fucking\",\r\n        \"fuckingbitch\",\r\n       
+    \"fuckings\",\r\n        \"fuckingshitmotherfucker\",\r\n        \"fuckinnuts\",\r\n       
+    \"fuckinright\",\r\n        \"fuckit\",\r\n        \"fuckknob\",\r\n        \"fuckme\",\r\n       
+    \"fuckmeat\",\r\n        \"fuckmehard\",\r\n        \"fuckmonkey\",\r\n       
+    \"fuckn\",\r\n        \"fucknugget\",\r\n        \"fucknut\",\r\n        \"fucknuts\",\r\n       
+    \"fucknutt\",\r\n        \"fucknutz\",\r\n        \"fuckoff\",\r\n        \"fuckpig\",\r\n       
+    \"fuckpuppet\",\r\n        \"fuckr\",\r\n        \"fucks\",\r\n        \"fuckstick\",\r\n       
+    \"fucktard\",\r\n        \"fuck-tard\",\r\n        \"fucktards\",\r\n       
+    \"fucktoy\",\r\n        \"fucktrophy\",\r\n        \"fuckup\",\r\n        \"fuckwad\",\r\n       
+    \"fuckwhit\",\r\n        \"fuckwhore\",\r\n        \"fuckwit\",\r\n        \"fuckwitt\",\r\n       
+    \"fuckyomama\",\r\n        \"fuckyou\",\r\n        \"fudge packer\",\r\n       
+    \"fudgepacker\",\r\n        \"fugly\",\r\n        \"fuk\",\r\n        \"fukah\",\r\n       
+    \"fuken\",\r\n        \"fuker\",\r\n        \"fukin\",\r\n        \"fuking\",\r\n       
+    \"fukk\",\r\n        \"fukkah\",\r\n        \"fukken\",\r\n        \"fukker\",\r\n       
+    \"fukkin\",\r\n        \"fukking\",\r\n        \"fuks\",\r\n        \"fuktard\",\r\n       
+    \"fuktards\",\r\n        \"fukwhit\",\r\n        \"fukwit\",\r\n        \"funfuck\",\r\n       
+    \"futanari\",\r\n        \"futanary\",\r\n        \"futkretzn\",\r\n        \"fuuck\",\r\n       
+    \"fux\",\r\n        \"fux0r\",\r\n        \"fuxor\",\r\n        \"fvck\",\r\n       
+    \"fvk\",\r\n        \"fxck\",\r\n        \"g00k\",\r\n        \"gae\",\r\n       
+    \"gai\",\r\n        \"gang bang\",\r\n        \"gangbang\",\r\n        \"gangbanged\",\r\n       
+    \"gangbanger\",\r\n        \"gangbangs\",\r\n        \"ganja\",\r\n        \"gassyass\",\r\n       
+    \"gator bait\",\r\n        \"gatorbait\",\r\n        \"gay sex\",\r\n       
+    \"gayass\",\r\n        \"gaybob\",\r\n        \"gayboy\",\r\n        \"gaydo\",\r\n       
+    \"gaygirl\",\r\n        \"gaylord\",\r\n        \"gaymuthafuckinwhore\",\r\n       
+    \"gays\",\r\n        \"gaysex\",\r\n        \"gaytard\",\r\n        \"gaywad\",\r\n       
+    \"gayz\",\r\n        \"geezer\",\r\n        \"geni\",\r\n        \"genital\",\r\n       
+    \"genitals\",\r\n        \"getiton\",\r\n        \"gey\",\r\n        \"gfy\",\r\n       
+    \"ghay\",\r\n        \"ghey\",\r\n        \"giant cock\",\r\n        \"gigolo\",\r\n       
+    \"ginzo\",\r\n        \"ginzos\",\r\n        \"gipp\",\r\n        \"gippo\",\r\n       
+    \"gippos\",\r\n        \"gipps\",\r\n        \"girl on top\",\r\n        \"girl
+    on\",\r\n        \"girls gone wild\",\r\n        \"givehead\",\r\n        \"glans\",\r\n       
+    \"glazeddonut\",\r\n        \"goatcx\",\r\n        \"goatse\",\r\n        \"god
+    dammit\",\r\n        \"god damn\",\r\n        \"god damnit\",\r\n        \"godam\",\r\n       
+    \"godammit\",\r\n        \"godamn\",\r\n        \"godamnit\",\r\n        \"goddam\",\r\n       
+    \"god-dam\",\r\n        \"goddamit\",\r\n        \"goddamm\",\r\n        \"goddammit\",\r\n       
+    \"goddamn\",\r\n        \"goddamned\",\r\n        \"god-damned\",\r\n       
+    \"goddamnes\",\r\n        \"goddamnit\",\r\n        \"goddamnmuthafucker\",\r\n       
+    \"godsdamn\",\r\n        \"gokkun\",\r\n        \"golden shower\",\r\n       
+    \"goldenshower\",\r\n        \"golliwog\",\r\n        \"golliwogs\",\r\n       
+    \"gonad\",\r\n        \"gonads\",\r\n        \"gonorrehea\",\r\n        \"gonzagas\",\r\n       
+    \"goo girl\",\r\n        \"gooch\",\r\n        \"goodpoop\",\r\n        \"gook
+    eye\",\r\n        \"gook eyes\",\r\n        \"gook\",\r\n        \"gookeye\",\r\n       
+    \"gookeyes\",\r\n        \"gookies\",\r\n        \"gooks\",\r\n        \"gooky\",\r\n       
+    \"gora\",\r\n        \"goras\",\r\n        \"goregasm\",\r\n        \"gotohell\",\r\n       
+    \"goy\",\r\n        \"goyim\",\r\n        \"greaseball\",\r\n        \"greaseballs\",\r\n       
+    \"groe\",\r\n        \"groid\",\r\n        \"groids\",\r\n        \"grope\",\r\n       
+    \"grostulation\",\r\n        \"group sex\",\r\n        \"gspot\",\r\n       
+    \"g-spot\",\r\n        \"gstring\",\r\n        \"gtfo\",\r\n        \"gub\",\r\n       
+    \"gubba\",\r\n        \"gubbas\",\r\n        \"gubs\",\r\n        \"guido\",\r\n       
+    \"guiena\",\r\n        \"guineas\",\r\n        \"guizi\",\r\n        \"gummer\",\r\n       
+    \"guro\",\r\n        \"gwailo\",\r\n        \"gwailos\",\r\n        \"gweilo\",\r\n       
+    \"gweilos\",\r\n        \"gyopo\",\r\n        \"gyopos\",\r\n        \"gyp\",\r\n       
+    \"gyped\",\r\n        \"gypo\",\r\n        \"gypos\",\r\n        \"gypp\",\r\n       
+    \"gypped\",\r\n        \"gyppie\",\r\n        \"gyppies\",\r\n        \"gyppo\",\r\n       
+    \"gyppos\",\r\n        \"gyppy\",\r\n        \"gyppys\",\r\n        \"gypsys\",\r\n       
+    \"h e l l\",\r\n        \"h o m\",\r\n        \"h00r\",\r\n        \"h0ar\",\r\n       
+    \"h0m0\",\r\n        \"h0mo\",\r\n        \"h0r\",\r\n        \"h0re\",\r\n       
+    \"h4x0r\",\r\n        \"hadji\",\r\n        \"hadjis\",\r\n        \"hairyback\",\r\n       
+    \"hairybacks\",\r\n        \"haji\",\r\n        \"hajis\",\r\n        \"hajji\",\r\n       
+    \"hajjis\",\r\n        \"half breed\",\r\n        \"half caste\",\r\n       
+    \"halfbreed\",\r\n        \"halfcaste\",\r\n        \"hamas\",\r\n        \"hamflap\",\r\n       
+    \"hand job\",\r\n        \"handjob\",\r\n        \"haole\",\r\n        \"haoles\",\r\n       
+    \"hapa\",\r\n        \"hard core\",\r\n        \"hardcore\",\r\n        \"hardcoresex\",\r\n       
+    \"hardon\",\r\n        \"he11\",\r\n        \"headfuck\",\r\n        \"hebe\",\r\n       
+    \"hebes\",\r\n        \"heeb\",\r\n        \"heebs\",\r\n        \"hells\",\r\n       
+    \"helvete\",\r\n        \"hentai\",\r\n        \"heroin\",\r\n        \"herp\",\r\n       
+    \"herpes\",\r\n        \"herpy\",\r\n        \"heshe\",\r\n        \"hijacking\",\r\n       
+    \"hillbillies\",\r\n        \"hillbilly\",\r\n        \"hindoo\",\r\n       
+    \"hiscock\",\r\n        \"hitler\",\r\n        \"hitlerism\",\r\n        \"hitlerist\",\r\n       
+    \"hoare\",\r\n        \"hobag\",\r\n        \"hodgie\",\r\n        \"hoer\",\r\n       
+    \"hoes\",\r\n        \"holestuffer\",\r\n        \"hom0\",\r\n        \"homo\",\r\n       
+    \"homobangers\",\r\n        \"homodumbshit\",\r\n        \"homoey\",\r\n       
+    \"honger\",\r\n        \"honkers\",\r\n        \"honkey\",\r\n        \"honkeys\",\r\n       
+    \"honkie\",\r\n        \"honkies\",\r\n        \"honky\",\r\n        \"hooch\",\r\n       
+    \"hooker\",\r\n        \"hookers\",\r\n        \"hoor\",\r\n        \"hoore\",\r\n       
+    \"hootch\",\r\n        \"hooter\",\r\n        \"hooters\",\r\n        \"hore\",\r\n       
+    \"hori\",\r\n        \"horis\",\r\n        \"hork\",\r\n        \"horndawg\",\r\n       
+    \"horndog\",\r\n        \"horney\",\r\n        \"horniest\",\r\n        \"horny\",\r\n       
+    \"horseshit\",\r\n        \"hosejob\",\r\n        \"hoser\",\r\n        \"hot
+    carl\",\r\n        \"hot chick\",\r\n        \"hotcarl\",\r\n        \"hotdamn\",\r\n       
+    \"hotpussy\",\r\n        \"hotsex\",\r\n        \"hottotrot\",\r\n        \"how
+    to kill\",\r\n        \"how to murder\",\r\n        \"howtokill\",\r\n       
+    \"howtomurdep\",\r\n        \"huevon\",\r\n        \"huge fat\",\r\n        \"hugefat\",\r\n       
+    \"hui\",\r\n        \"hummer\",\r\n        \"humped\",\r\n        \"humper\",\r\n       
+    \"humpher\",\r\n        \"humphim\",\r\n        \"humpin\",\r\n        \"humping\",\r\n       
+    \"hussy\",\r\n        \"hustler\",\r\n        \"hymen\",\r\n        \"hymie\",\r\n       
+    \"hymies\",\r\n        \"iblowu\",\r\n        \"ike\",\r\n        \"ikes\",\r\n       
+    \"ikey\",\r\n        \"ikeymo\",\r\n        \"ikeymos\",\r\n        \"ikwe\",\r\n       
+    \"illegals\",\r\n        \"incest\",\r\n        \"indon\",\r\n        \"indons\",\r\n       
+    \"injun\",\r\n        \"injuns\",\r\n        \"insest\",\r\n        \"intercourse\",\r\n       
+    \"intheass\",\r\n        \"inthebuff\",\r\n        \"israels\",\r\n        \"j3rk0ff\",\r\n       
+    \"jack off\",\r\n        \"jackass\",\r\n        \"jackhole\",\r\n        \"jackoff\",\r\n       
+    \"jack-off\",\r\n        \"jackshit\",\r\n        \"jacktheripper\",\r\n       
+    \"jail bait\",\r\n        \"jailbait\",\r\n        \"jap\",\r\n        \"japcrap\",\r\n       
+    \"japie\",\r\n        \"japies\",\r\n        \"japs\",\r\n        \"jebus\",\r\n       
+    \"jelly donut\",\r\n        \"jerk off\",\r\n        \"jerk0ff\",\r\n       
+    \"jerked\",\r\n        \"jerkoff\",\r\n        \"jerk-off\",\r\n        \"jerries\",\r\n       
+    \"jerry\",\r\n        \"jewboy\",\r\n        \"jewed\",\r\n        \"jewess\",\r\n       
+    \"jiga\",\r\n        \"jigaboo\",\r\n        \"jigaboos\",\r\n        \"jigarooni\",\r\n       
+    \"jigaroonis\",\r\n        \"jigg\",\r\n        \"jigga\",\r\n        \"jiggabo\",\r\n       
+    \"jiggaboo\",\r\n        \"jiggabos\",\r\n        \"jiggas\",\r\n        \"jigger\",\r\n       
+    \"jiggerboo\",\r\n        \"jiggers\",\r\n        \"jiggs\",\r\n        \"jiggy\",\r\n       
+    \"jigs\",\r\n        \"jihad\",\r\n        \"jijjiboo\",\r\n        \"jijjiboos\",\r\n       
+    \"jimfish\",\r\n        \"jisim\",\r\n        \"jism\",\r\n        \"jiss\",\r\n       
+    \"jiz\",\r\n        \"jizim\",\r\n        \"jizin\",\r\n        \"jizjuice\",\r\n       
+    \"jizm\",\r\n        \"jizn\",\r\n        \"jizz\",\r\n        \"jizzd\",\r\n       
+    \"jizzed\",\r\n        \"jizzim\",\r\n        \"jizzin\",\r\n        \"jizzn\",\r\n       
+    \"jizzum\",\r\n        \"jugg\",\r\n        \"juggs\",\r\n        \"jungle bunnies\",\r\n       
+    \"jungle bunny\",\r\n        \"junglebunny\",\r\n        \"junkie\",\r\n       
+    \"junky\",\r\n        \"kacap\",\r\n        \"kacapas\",\r\n        \"kacaps\",\r\n       
+    \"kaffer\",\r\n        \"kaffir\",\r\n        \"kaffre\",\r\n        \"kafir\",\r\n       
+    \"kanake\",\r\n        \"kanker\",\r\n        \"katsap\",\r\n        \"katsaps\",\r\n       
+    \"kawk\",\r\n        \"khokhol\",\r\n        \"khokhols\",\r\n        \"kigger\",\r\n       
+    \"kike\",\r\n        \"kikes\",\r\n        \"kimchis\",\r\n        \"kinbaku\",\r\n       
+    \"kink\",\r\n        \"kinkster\",\r\n        \"kinky\",\r\n        \"kinkyjesus\",\r\n       
+    \"kissass\",\r\n        \"kiunt\",\r\n        \"kkk\",\r\n        \"klan\",\r\n       
+    \"klansman\",\r\n        \"klansmen\",\r\n        \"klanswoman\",\r\n       
+    \"klanswomen\",\r\n        \"klootzak\",\r\n        \"knobbing\",\r\n       
+    \"knobead\",\r\n        \"knobed\",\r\n        \"knobend\",\r\n        \"knobhead\",\r\n       
+    \"knobjocky\",\r\n        \"knobjokey\",\r\n        \"knobz\",\r\n        \"knockers\",\r\n       
+    \"knulle\",\r\n        \"kock\",\r\n        \"kondum\",\r\n        \"kondums\",\r\n       
+    \"kooch\",\r\n        \"kooches\",\r\n        \"koon\",\r\n        \"kootch\",\r\n       
+    \"krap\",\r\n        \"krappy\",\r\n        \"kraut\",\r\n        \"krauts\",\r\n       
+    \"kuffar\",\r\n        \"kuk\",\r\n        \"kuksuger\",\r\n        \"kum\",\r\n       
+    \"kumbubble\",\r\n        \"kumbullbe\",\r\n        \"kumer\",\r\n        \"kummer\",\r\n       
+    \"kumming\",\r\n        \"kums\",\r\n        \"kunilingus\",\r\n        \"kunnilingus\",\r\n       
+    \"kunt\",\r\n        \"kunts\",\r\n        \"kuntz\",\r\n        \"kurac\",\r\n       
+    \"kurwa\",\r\n        \"kushi\",\r\n        \"kushis\",\r\n        \"kusi\",\r\n       
+    \"kwa\",\r\n        \"kwai lo\",\r\n        \"kwai los\",\r\n        \"kwif\",\r\n       
+    \"kyke\",\r\n        \"kykes\",\r\n        \"kyopo\",\r\n        \"kyopos\",\r\n       
+    \"kyrpa\",\r\n        \"l3i\\\\+ch\",\r\n        \"l3i+ch\",\r\n        \"l3itch\",\r\n       
+    \"labia\",\r\n        \"lapdance\",\r\n        \"leather restraint\",\r\n       
+    \"leather straight\",\r\n        \"leatherrestraint\",\r\n        \"lebos\",\r\n       
+    \"lech\",\r\n        \"lemon party\",\r\n        \"lemonparty\",\r\n        \"leper\",\r\n       
+    \"lesbain\",\r\n        \"lesbayn\",\r\n        \"lesbin\",\r\n        \"lesbo\",\r\n       
+    \"lesbos\",\r\n        \"lez\",\r\n        \"lezbe\",\r\n        \"lezbefriends\",\r\n       
+    \"lezbian\",\r\n        \"lezbians\",\r\n        \"lezbo\",\r\n        \"lezbos\",\r\n       
+    \"lezz\",\r\n        \"lezzian\",\r\n        \"lezzie\",\r\n        \"lezzies\",\r\n       
+    \"lezzo\",\r\n        \"lezzy\",\r\n        \"libido\",\r\n        \"licker\",\r\n       
+    \"licking\",\r\n        \"lickme\",\r\n        \"lilniglet\",\r\n        \"limey\",\r\n       
+    \"limpdick\",\r\n        \"limy\",\r\n        \"lingerie\",\r\n        \"lipshits\",\r\n       
+    \"lipshitz\",\r\n        \"livesex\",\r\n        \"loadedgun\",\r\n        \"lolita\",\r\n       
+    \"lovebone\",\r\n        \"lovegoo\",\r\n        \"lovegun\",\r\n        \"lovejuice\",\r\n       
+    \"lovemuscle\",\r\n        \"lovepistol\",\r\n        \"loverocket\",\r\n       
+    \"lowlife\",\r\n        \"lsd\",\r\n        \"lubejob\",\r\n        \"lubra\",\r\n       
+    \"lucifer\",\r\n        \"luckycammeltoe\",\r\n        \"lugan\",\r\n       
+    \"lugans\",\r\n        \"lusting\",\r\n        \"lusty\",\r\n        \"lynch\",\r\n       
+    \"m0f0\",\r\n        \"m0fo\",\r\n        \"m45terbate\",\r\n        \"ma5terb8\",\r\n       
+    \"ma5terbate\",\r\n        \"mabuno\",\r\n        \"mabunos\",\r\n        \"macaca\",\r\n       
+    \"macacas\",\r\n        \"mafugly\",\r\n        \"magicwand\",\r\n        \"mahbuno\",\r\n       
+    \"mahbunos\",\r\n        \"make me come\",\r\n        \"makemecome\",\r\n       
+    \"makemecum\",\r\n        \"male squirting\",\r\n        \"mamhoon\",\r\n       
+    \"mams\",\r\n        \"manhater\",\r\n        \"manpaste\",\r\n        \"maricon\",\r\n       
+    \"maric\xF3n\",\r\n        \"marijuana\",\r\n        \"masochist\",\r\n       
+    \"masokist\",\r\n        \"massa\",\r\n        \"massterbait\",\r\n        \"masstrbait\",\r\n       
+    \"masstrbate\",\r\n        \"mastabate\",\r\n        \"mastabater\",\r\n       
+    \"masterb8\",\r\n        \"masterbaiter\",\r\n        \"masterbat\",\r\n       
+    \"masterbat3\",\r\n        \"masterbate\",\r\n        \"master-bate\",\r\n       
+    \"masterbates\",\r\n        \"masterbating\",\r\n        \"masterbation\",\r\n       
+    \"masterbations\",\r\n        \"masterblaster\",\r\n        \"mastrabator\",\r\n       
+    \"masturbat\",\r\n        \"masturbate\",\r\n        \"masturbating\",\r\n       
+    \"masturbation\",\r\n        \"mattressprincess\",\r\n        \"mau mau\",\r\n       
+    \"mau maus\",\r\n        \"maumau\",\r\n        \"maumaus\",\r\n        \"mcfagget\",\r\n       
+    \"meatbeatter\",\r\n        \"meatrack\",\r\n        \"menage\",\r\n        \"merd\",\r\n       
+    \"m-fucking\",\r\n        \"mgger\",\r\n        \"mggor\",\r\n        \"mibun\",\r\n       
+    \"mick\",\r\n        \"mickeyfinn\",\r\n        \"mideast\",\r\n        \"mierda\",\r\n       
+    \"milf\",\r\n        \"mindfuck\",\r\n        \"minge\",\r\n        \"minger\",\r\n       
+    \"mockey\",\r\n        \"mockie\",\r\n        \"mocky\",\r\n        \"mof0\",\r\n       
+    \"mofo\",\r\n        \"mo-fo\",\r\n        \"moky\",\r\n        \"molest\",\r\n       
+    \"molestation\",\r\n        \"molester\",\r\n        \"molestor\",\r\n       
+    \"moneyshot\",\r\n        \"mong\",\r\n        \"monkleigh\",\r\n        \"moolie\",\r\n       
+    \"moon cricket\",\r\n        \"moon crickets\",\r\n        \"mooncricket\",\r\n       
+    \"mooncrickets\",\r\n        \"moron\",\r\n        \"moskal\",\r\n        \"moskals\",\r\n       
+    \"moslem\",\r\n        \"mosshead\",\r\n        \"motha fucker\",\r\n       
+    \"motha fuker\",\r\n        \"motha fukkah\",\r\n        \"motha fukker\",\r\n       
+    \"mothafuck\",\r\n        \"mothafucka\",\r\n        \"mothafuckas\",\r\n       
+    \"mothafuckaz\",\r\n        \"mothafucked\",\r\n        \"mothafucker\",\r\n       
+    \"mothafuckers\",\r\n        \"mothafuckin\",\r\n        \"mothafucking\",\r\n       
+    \"mothafuckings\",\r\n        \"mothafucks\",\r\n        \"mother fucker\",\r\n       
+    \"mother fukah\",\r\n        \"mother fuker\",\r\n        \"mother fukkah\",\r\n       
+    \"mother fukker\",\r\n        \"motherfuck\",\r\n        \"motherfucka\",\r\n       
+    \"motherfucked\",\r\n        \"motherfucker\",\r\n        \"mother-fucker\",\r\n       
+    \"motherfuckers\",\r\n        \"motherfuckin\",\r\n        \"motherfucking\",\r\n       
+    \"motherfuckings\",\r\n        \"motherfuckka\",\r\n        \"motherfucks\",\r\n       
+    \"motherfvcker\",\r\n        \"motherlovebone\",\r\n        \"mothrfucker\",\r\n       
+    \"mouliewop\",\r\n        \"mound of venus\",\r\n        \"moundofvenus\",\r\n       
+    \"mr hands\",\r\n        \"mrhands\",\r\n        \"mtherfucker\",\r\n       
+    \"mthrfuck\",\r\n        \"mthrfucker\",\r\n        \"mthrfucking\",\r\n       
+    \"mtrfck\",\r\n        \"mtrfuck\",\r\n        \"mtrfucker\",\r\n        \"muff
+    diver\",\r\n        \"muff\",\r\n        \"muffdive\",\r\n        \"muffdiver\",\r\n       
+    \"muffdiving\",\r\n        \"muffindiver\",\r\n        \"mufflikcer\",\r\n       
+    \"muffpuff\",\r\n        \"muie\",\r\n        \"mulatto\",\r\n        \"mulkku\",\r\n       
+    \"muncher\",\r\n        \"munging\",\r\n        \"munt\",\r\n        \"munter\",\r\n       
+    \"muschi\",\r\n        \"mutha fucker\",\r\n        \"mutha fukah\",\r\n       
+    \"mutha fuker\",\r\n        \"mutha fukkah\",\r\n        \"mutha fukker\",\r\n       
+    \"muthafecker\",\r\n        \"muthafuckaz\",\r\n        \"muthafucker\",\r\n       
+    \"muthafuckker\",\r\n        \"muther\",\r\n        \"mutherfucker\",\r\n       
+    \"mutherfucking\",\r\n        \"muthrfucking\",\r\n        \"mzungu\",\r\n       
+    \"mzungus\",\r\n        \"n1gga\",\r\n        \"n1gger\",\r\n        \"n1gr\",\r\n       
+    \"nads\",\r\n        \"naked\",\r\n        \"nambla\",\r\n        \"nastt\",\r\n       
+    \"nastybitch\",\r\n        \"nastyho\",\r\n        \"nastyslut\",\r\n       
+    \"nastywhore\",\r\n        \"nawashi\",\r\n        \"nazi\",\r\n        \"nazis\",\r\n       
+    \"nazism\",\r\n        \"necro\",\r\n        \"needthedick\",\r\n        \"negres\",\r\n       
+    \"negress\",\r\n        \"negro\",\r\n        \"negroes\",\r\n        \"negroid\",\r\n       
+    \"negros\",\r\n        \"neonazi\",\r\n        \"nepesaurio\",\r\n        \"nig
+    nog\",\r\n        \"nig\",\r\n        \"niga\",\r\n        \"nigar\",\r\n       
+    \"nigars\",\r\n        \"nigas\",\r\n        \"nigers\",\r\n        \"nigette\",\r\n       
+    \"nigettes\",\r\n        \"nigg\",\r\n        \"nigg3r\",\r\n        \"nigg4h\",\r\n       
+    \"nigga\",\r\n        \"niggah\",\r\n        \"niggahs\",\r\n        \"niggar\",\r\n       
+    \"niggaracci\",\r\n        \"niggard\",\r\n        \"niggarded\",\r\n       
+    \"niggarding\",\r\n        \"niggardliness\",\r\n        \"niggardlinesss\",\r\n       
+    \"niggardly\",\r\n        \"niggards\",\r\n        \"niggars\",\r\n        \"niggas\",\r\n       
+    \"niggaz\",\r\n        \"nigger\",\r\n        \"niggerhead\",\r\n        \"niggerhole\",\r\n       
+    \"niggers\",\r\n        \"niggle\",\r\n        \"niggled\",\r\n        \"niggles\",\r\n       
+    \"nigglings\",\r\n        \"niggor\",\r\n        \"niggress\",\r\n        \"niggresses\",\r\n       
+    \"nigguh\",\r\n        \"nigguhs\",\r\n        \"niggur\",\r\n        \"niggurs\",\r\n       
+    \"niglet\",\r\n        \"nignog\",\r\n        \"nigor\",\r\n        \"nigors\",\r\n       
+    \"nigr\",\r\n        \"nigra\",\r\n        \"nigras\",\r\n        \"nigre\",\r\n       
+    \"nigres\",\r\n        \"nigress\",\r\n        \"nigs\",\r\n        \"nigur\",\r\n       
+    \"niiger\",\r\n        \"niigr\",\r\n        \"nimphomania\",\r\n        \"nimrod\",\r\n       
+    \"ninny\",\r\n        \"nipple\",\r\n        \"nipplering\",\r\n        \"nipples\",\r\n       
+    \"nips\",\r\n        \"nittit\",\r\n        \"nlgger\",\r\n        \"nlggor\",\r\n       
+    \"nob jokey\",\r\n        \"nob\",\r\n        \"nobhead\",\r\n        \"nobjocky\",\r\n       
+    \"nobjokey\",\r\n        \"nofuckingway\",\r\n        \"nog\",\r\n        \"nookey\",\r\n       
+    \"nookie\",\r\n        \"nooky\",\r\n        \"noonan\",\r\n        \"nooner\",\r\n       
+    \"nsfw images\",\r\n        \"nsfw\",\r\n        \"nudger\",\r\n        \"nudie\",\r\n       
+    \"nudies\",\r\n        \"numbnuts\",\r\n        \"nut sack\",\r\n        \"nutbutter\",\r\n       
+    \"nutfucker\",\r\n        \"nutsack\",\r\n        \"nutten\",\r\n        \"nympho\",\r\n       
+    \"nymphomania\",\r\n        \"o c k\",\r\n        \"octopussy\",\r\n        \"omorashi\",\r\n       
+    \"one cup two girls\",\r\n        \"one guy one jar\",\r\n        \"one guy\",\r\n       
+    \"one jar\",\r\n        \"ontherag\",\r\n        \"orafis\",\r\n        \"orga\",\r\n       
+    \"orgasim\",\r\n        \"orgasim;\",\r\n        \"orgasims\",\r\n        \"orgasm\",\r\n       
+    \"orgasmic\",\r\n        \"orgasms\",\r\n        \"orgasum\",\r\n        \"orgies\",\r\n       
+    \"orgy\",\r\n        \"oriface\",\r\n        \"orifiss\",\r\n        \"orospu\",\r\n       
+    \"osama\",\r\n        \"ovum\",\r\n        \"ovums\",\r\n        \"p e n i s\",\r\n       
+    \"p i s\",\r\n        \"p u s s y\",\r\n        \"p.u.s.s.y.\",\r\n        \"p0rn\",\r\n       
+    \"packi\",\r\n        \"packie\",\r\n        \"packy\",\r\n        \"paddy\",\r\n       
+    \"paedophile\",\r\n        \"paki\",\r\n        \"pakie\",\r\n        \"pakis\",\r\n       
+    \"paky\",\r\n        \"palesimian\",\r\n        \"pancake face\",\r\n       
+    \"pancake faces\",\r\n        \"panooch\",\r\n        \"pansies\",\r\n       
+    \"pansy\",\r\n        \"panti\",\r\n        \"pantie\",\r\n        \"panties\",\r\n       
+    \"panty\",\r\n        \"paska\",\r\n        \"payo\",\r\n        \"pcp\",\r\n       
+    \"pearlnecklace\",\r\n        \"pecker\",\r\n        \"peckerhead\",\r\n       
+    \"peckerwood\",\r\n        \"pedo\",\r\n        \"pedobear\",\r\n        \"pedophile\",\r\n       
+    \"pedophilia\",\r\n        \"pedophiliac\",\r\n        \"peeenus\",\r\n       
+    \"peeenusss\",\r\n        \"peehole\",\r\n        \"peenus\",\r\n        \"peepee\",\r\n       
+    \"peepshow\",\r\n        \"peepshpw\",\r\n        \"pegging\",\r\n        \"peinus\",\r\n       
+    \"pen1s\",\r\n        \"penas\",\r\n        \"pendejo\",\r\n        \"pendy\",\r\n       
+    \"penetrate\",\r\n        \"penetration\",\r\n        \"peni5\",\r\n        \"penial\",\r\n       
+    \"penile\",\r\n        \"penis\",\r\n        \"penis-breath\",\r\n        \"penises\",\r\n       
+    \"penisfucker\",\r\n        \"penisland\",\r\n        \"penislick\",\r\n       
+    \"penislicker\",\r\n        \"penispuffer\",\r\n        \"penthouse\",\r\n       
+    \"penus\",\r\n        \"penuus\",\r\n        \"perse\",\r\n        \"perv\",\r\n       
+    \"perversion\",\r\n        \"peyote\",\r\n        \"phalli\",\r\n        \"phallic\",\r\n       
+    \"phone sex\",\r\n        \"phonesex\",\r\n        \"phuc\",\r\n        \"phuck\",\r\n       
+    \"phuk\",\r\n        \"phuked\",\r\n        \"phuker\",\r\n        \"phuking\",\r\n       
+    \"phukked\",\r\n        \"phukker\",\r\n        \"phukking\",\r\n        \"phuks\",\r\n       
+    \"phungky\",\r\n        \"phuq\",\r\n        \"pi55\",\r\n        \"picaninny\",\r\n       
+    \"piccaninny\",\r\n        \"picka\",\r\n        \"pickaninnies\",\r\n       
+    \"pickaninny\",\r\n        \"piece of shit\",\r\n        \"pieceofshit\",\r\n       
+    \"piefke\",\r\n        \"piefkes\",\r\n        \"pierdol\",\r\n        \"pigfucker\",\r\n       
+    \"piker\",\r\n        \"pikey\",\r\n        \"piky\",\r\n        \"pillowbiter\",\r\n       
+    \"pillu\",\r\n        \"pimmel\",\r\n        \"pimp\",\r\n        \"pimped\",\r\n       
+    \"pimper\",\r\n        \"pimpis\",\r\n        \"pimpjuic\",\r\n        \"pimpjuice\",\r\n       
+    \"pimpsimp\",\r\n        \"pindick\",\r\n        \"pinko\",\r\n        \"pis\",\r\n       
+    \"pises\",\r\n        \"pisin\",\r\n        \"pising\",\r\n        \"pisof\",\r\n       
+    \"piss pig\",\r\n        \"piss\",\r\n        \"pissed\",\r\n        \"pisser\",\r\n       
+    \"pissers\",\r\n        \"pisses\",\r\n        \"pissflap\",\r\n        \"pissflaps\",\r\n       
+    \"pisshead\",\r\n        \"pissin\",\r\n        \"pissing\",\r\n        \"pissoff\",\r\n       
+    \"piss-off\",\r\n        \"pisspig\",\r\n        \"pizda\",\r\n        \"playboy\",\r\n       
+    \"playgirl\",\r\n        \"pleasure chest\",\r\n        \"pleasurechest\",\r\n       
+    \"pocha\",\r\n        \"pochas\",\r\n        \"pocho\",\r\n        \"pochos\",\r\n       
+    \"pocketpool\",\r\n        \"pohm\",\r\n        \"pohms\",\r\n        \"polac\",\r\n       
+    \"polack\",\r\n        \"polacks\",\r\n        \"polak\",\r\n        \"pole smoker\",\r\n       
+    \"polesmoker\",\r\n        \"pollock\",\r\n        \"pollocks\",\r\n        \"pommie
+    grant\",\r\n        \"pommie grants\",\r\n        \"pommy\",\r\n        \"ponyplay\",\r\n       
+    \"poof\",\r\n        \"poon\",\r\n        \"poonani\",\r\n        \"poonany\",\r\n       
+    \"poontang\",\r\n        \"poontsee\",\r\n        \"poop chute\",\r\n       
+    \"poopchute\",\r\n        \"pooper\",\r\n        \"pooperscooper\",\r\n       
+    \"pooping\",\r\n        \"poorwhitetrash\",\r\n        \"popimp\",\r\n       
+    \"porch monkey\",\r\n        \"porch monkies\",\r\n        \"porchmonkey\",\r\n       
+    \"porn\",\r\n        \"pornflick\",\r\n        \"pornking\",\r\n        \"porno\",\r\n       
+    \"pornography\",\r\n        \"pornos\",\r\n        \"pornprincess\",\r\n       
+    \"pound town\",\r\n        \"poundtown\",\r\n        \"pplicker\",\r\n       
+    \"pr0n\",\r\n        \"pr1c\",\r\n        \"pr1ck\",\r\n        \"pr1k\",\r\n       
+    \"prairie nigger\",\r\n        \"prairie niggers\",\r\n        \"preteen\",\r\n       
+    \"pric\",\r\n        \"prickhead\",\r\n        \"pricks\",\r\n        \"prig\",\r\n       
+    \"prince albert piercing\",\r\n        \"pron\",\r\n        \"prostitute\",\r\n       
+    \"pthc\",\r\n        \"pu55i\",\r\n        \"pu55y\",\r\n        \"pube\",\r\n       
+    \"pubes\",\r\n        \"pubic\",\r\n        \"pubiclice\",\r\n        \"pubis\",\r\n       
+    \"pudboy\",\r\n        \"pudd\",\r\n        \"puddboy\",\r\n        \"pula\",\r\n       
+    \"punani\",\r\n        \"punanny\",\r\n        \"punany\",\r\n        \"punkass\",\r\n       
+    \"punky\",\r\n        \"punta\",\r\n        \"puntang\",\r\n        \"purinapricness\",\r\n       
+    \"pusies\",\r\n        \"puss\",\r\n        \"pusse\",\r\n        \"pussee\",\r\n       
+    \"pussi\",\r\n        \"pussie\",\r\n        \"pussies\",\r\n        \"pussy\",\r\n       
+    \"pussycat\",\r\n        \"pussydestroyer\",\r\n        \"pussyeater\",\r\n       
+    \"pussyfart\",\r\n        \"pussyfuck\",\r\n        \"pussyfucker\",\r\n       
+    \"pussylicker\",\r\n        \"pussylicking\",\r\n        \"pussylips\",\r\n       
+    \"pussylover\",\r\n        \"pussypalace\",\r\n        \"pussypounder\",\r\n       
+    \"pussys\",\r\n        \"pusy\",\r\n        \"puta\",\r\n        \"puto\",\r\n       
+    \"puuke\",\r\n        \"puuker\",\r\n        \"qahbeh\",\r\n        \"quashie\",\r\n       
+    \"queaf\",\r\n        \"queef\",\r\n        \"queerhole\",\r\n        \"queero\",\r\n       
+    \"queers\",\r\n        \"queerz\",\r\n        \"quickie\",\r\n        \"quicky\",\r\n       
+    \"quiff\",\r\n        \"quim\",\r\n        \"qweers\",\r\n        \"qweerz\",\r\n       
+    \"qweir\",\r\n        \"r5e\",\r\n        \"ra8s\",\r\n        \"raghead\",\r\n       
+    \"ragheads\",\r\n        \"rape\",\r\n        \"raped\",\r\n        \"raper\",\r\n       
+    \"raping\",\r\n        \"rapist\",\r\n        \"rautenberg\",\r\n        \"rearend\",\r\n       
+    \"rearentry\",\r\n        \"recktum\",\r\n        \"rectal\",\r\n        \"rectum\",\r\n       
+    \"rectus\",\r\n        \"redleg\",\r\n        \"redlegs\",\r\n        \"redlight\",\r\n       
+    \"redskin\",\r\n        \"redskins\",\r\n        \"reefer\",\r\n        \"reestie\",\r\n       
+    \"reetard\",\r\n        \"reich\",\r\n        \"renob\",\r\n        \"rentafuck\",\r\n       
+    \"rere\",\r\n        \"retard\",\r\n        \"retarded\",\r\n        \"retards\",\r\n       
+    \"retardz\",\r\n        \"reverse cowgirl\",\r\n        \"reversecowgirl\",\r\n       
+    \"rimjaw\",\r\n        \"rimjob\",\r\n        \"rimming\",\r\n        \"ritard\",\r\n       
+    \"rosebuds\",\r\n        \"rosy palm and her 5 sisters\",\r\n        \"rosy palm\",\r\n       
+    \"rosypalm\",\r\n        \"rosypalmandher5sisters\",\r\n        \"rosypalmandherefivesisters\",\r\n       
+    \"round eyes\",\r\n        \"roundeye\",\r\n        \"rtard\",\r\n        \"r-tard\",\r\n       
+    \"rtards\",\r\n        \"r-tards\",\r\n        \"rumprammer\",\r\n        \"ruski\",\r\n       
+    \"russki\",\r\n        \"russkie\",\r\n        \"rusty trombone\",\r\n       
+    \"rustytrombone\",\r\n        \"s h i t\",\r\n        \"s hit\",\r\n        \"s&m\",\r\n       
+    \"s.h.i.t.\",\r\n        \"s.o.b.\",\r\n        \"s_h_i_t\",\r\n        \"s0b\",\r\n       
+    \"sadis\",\r\n        \"sadism\",\r\n        \"sadist\",\r\n        \"sadom\",\r\n       
+    \"sambo\",\r\n        \"sambos\",\r\n        \"samckdaddy\",\r\n        \"sanchez\",\r\n       
+    \"sand nigger\",\r\n        \"sand niggers\",\r\n        \"sandm\",\r\n       
+    \"sandnigger\",\r\n        \"santorum\",\r\n        \"sausagequeen\",\r\n       
+    \"scag\",\r\n        \"scallywag\",\r\n        \"scank\",\r\n        \"scantily\",\r\n       
+    \"scat\",\r\n        \"schaffer\",\r\n        \"scheiss\",\r\n        \"schizo\",\r\n       
+    \"schlampe\",\r\n        \"schlong\",\r\n        \"schmuck\",\r\n        \"schvartse\",\r\n       
+    \"schvartsen\",\r\n        \"schwartze\",\r\n        \"schwartzen\",\r\n       
+    \"scissoring\",\r\n        \"screwyou\",\r\n        \"scroat\",\r\n        \"scrog\",\r\n       
+    \"scrote\",\r\n        \"scrotum\",\r\n        \"scrud\",\r\n        \"seduce\",\r\n       
+    \"semen\",\r\n        \"seppo\",\r\n        \"seppos\",\r\n        \"septics\",\r\n       
+    \"sex\",\r\n        \"sexcam\",\r\n        \"sexed\",\r\n        \"sexfarm\",\r\n       
+    \"sexhound\",\r\n        \"sexhouse\",\r\n        \"sexi\",\r\n        \"sexing\",\r\n       
+    \"sexkitten\",\r\n        \"sexo\",\r\n        \"sexpot\",\r\n        \"sexslave\",\r\n       
+    \"sextogo\",\r\n        \"sextoy\",\r\n        \"sextoys\",\r\n        \"sexual\",\r\n       
+    \"sexually\",\r\n        \"sexwhore\",\r\n        \"sexx\",\r\n        \"sexxi\",\r\n       
+    \"sexxx\",\r\n        \"sexxxi\",\r\n        \"sexxxy\",\r\n        \"sexxy\",\r\n       
+    \"sexy\",\r\n        \"sexymoma\",\r\n        \"sexyslim\",\r\n        \"sh!+\",\r\n       
+    \"sh!t\",\r\n        \"sh1t\",\r\n        \"s-h-1-t\",\r\n        \"sh1ter\",\r\n       
+    \"sh1ts\",\r\n        \"sh1tter\",\r\n        \"sh1tz\",\r\n        \"shag\",\r\n       
+    \"shagger\",\r\n        \"shaggin\",\r\n        \"shagging\",\r\n        \"shamedame\",\r\n       
+    \"sharmuta\",\r\n        \"sharmute\",\r\n        \"shat\",\r\n        \"shav\",\r\n       
+    \"shaved beaver\",\r\n        \"shaved pussy\",\r\n        \"shavedbeaver\",\r\n       
+    \"shavedpussy\",\r\n        \"shawtypimp\",\r\n        \"sheeney\",\r\n       
+    \"shemale\",\r\n        \"shhit\",\r\n        \"shi+\",\r\n        \"shibari\",\r\n       
+    \"shibary\",\r\n        \"shinola\",\r\n        \"shipal\",\r\n        \"shit
+    ass\",\r\n        \"shit\",\r\n        \"s-h-i-t\",\r\n        \"shitass\",\r\n       
+    \"shit-ass\",\r\n        \"shitbag\",\r\n        \"shit-bag\",\r\n        \"shitbagger\",\r\n       
+    \"shit-bagger\",\r\n        \"shitblimp\",\r\n        \"shitbrain\",\r\n       
+    \"shit-brain\",\r\n        \"shitbreath\",\r\n        \"shit-breath\",\r\n       
+    \"shitcan\",\r\n        \"shitcunt\",\r\n        \"shit-cunt\",\r\n        \"shitdick\",\r\n       
+    \"shit-dick\",\r\n        \"shite\",\r\n        \"shiteater\",\r\n        \"shiteating\",\r\n       
+    \"shit-eating\",\r\n        \"shited\",\r\n        \"shitey\",\r\n        \"shitface\",\r\n       
+    \"shit-face\",\r\n        \"shitfaced\",\r\n        \"shit-faced\",\r\n       
+    \"shitfit\",\r\n        \"shit-fit\",\r\n        \"shitforbrains\",\r\n       
+    \"shitfuck\",\r\n        \"shitfucker\",\r\n        \"shitfull\",\r\n       
+    \"shithapens\",\r\n        \"shithappens\",\r\n        \"shithead\",\r\n       
+    \"shit-head\",\r\n        \"shitheel\",\r\n        \"shit-heel\",\r\n       
+    \"shithole\",\r\n        \"shit-hole\",\r\n        \"shithouse\",\r\n       
+    \"shit-house\",\r\n        \"shiting\",\r\n        \"shitings\",\r\n        \"shitlist\",\r\n       
+    \"shitload\",\r\n        \"shit-load\",\r\n        \"shitola\",\r\n        \"shitoutofluck\",\r\n       
+    \"shitpot\",\r\n        \"shit-pot\",\r\n        \"shits\",\r\n        \"shitspitter\",\r\n       
+    \"shit-spitter\",\r\n        \"shitstain\",\r\n        \"shit-stain\",\r\n       
+    \"shitt\",\r\n        \"shitted\",\r\n        \"shitter\",\r\n        \"shitters\",\r\n       
+    \"shittiest\",\r\n        \"shitting\",\r\n        \"shittings\",\r\n       
+    \"shitty\",\r\n        \"shity\",\r\n        \"shitz\",\r\n        \"shiz\",\r\n       
+    \"shiznit\",\r\n        \"shortfuck\",\r\n        \"shota\",\r\n        \"shylock\",\r\n       
+    \"shylocks\",\r\n        \"shyt\",\r\n        \"shyte\",\r\n        \"shytty\",\r\n       
+    \"shyty\",\r\n        \"simp\",\r\n        \"sissy\",\r\n        \"sixsixsix\",\r\n       
+    \"sixtynine\",\r\n        \"sixtyniner\",\r\n        \"skag\",\r\n        \"skanck\",\r\n       
+    \"skank\",\r\n        \"skankbitch\",\r\n        \"skankee\",\r\n        \"skankey\",\r\n       
+    \"skankfuck\",\r\n        \"skanks\",\r\n        \"skankwhore\",\r\n        \"skanky\",\r\n       
+    \"skankybitch\",\r\n        \"skankywhore\",\r\n        \"skeet\",\r\n       
+    \"skinflute\",\r\n        \"skribz\",\r\n        \"skullfuck\",\r\n        \"skum\",\r\n       
+    \"skumbag\",\r\n        \"skurwysyn\",\r\n        \"skwa\",\r\n        \"skwe\",\r\n       
+    \"slag\",\r\n        \"slanteye\",\r\n        \"slanty\",\r\n        \"slapper\",\r\n       
+    \"sleezeball\",\r\n        \"slideitin\",\r\n        \"slimeball\",\r\n       
+    \"slimebucket\",\r\n        \"slopehead\",\r\n        \"slopeheads\",\r\n       
+    \"sloper\",\r\n        \"slopers\",\r\n        \"slopey\",\r\n        \"slopeys\",\r\n       
+    \"slopies\",\r\n        \"slopy\",\r\n        \"slut\",\r\n        \"slutbag\",\r\n       
+    \"slutbucket\",\r\n        \"slutdumper\",\r\n        \"slutkiss\",\r\n       
+    \"sluts\",\r\n        \"slutt\",\r\n        \"slutting\",\r\n        \"slutty\",\r\n       
+    \"slutwear\",\r\n        \"slutwhore\",\r\n        \"slutz\",\r\n        \"smackthemonkey\",\r\n       
+    \"smeg\",\r\n        \"smegma\",\r\n        \"smut\",\r\n        \"smutty\",\r\n       
+    \"snatchpatch\",\r\n        \"sniggered\",\r\n        \"sniggering\",\r\n       
+    \"sniggers\",\r\n        \"snowback\",\r\n        \"snowballing\",\r\n       
+    \"snownigger\",\r\n        \"snuff\",\r\n        \"s-o-b\",\r\n        \"socksucker\",\r\n       
+    \"sodom\",\r\n        \"sodomise\",\r\n        \"sodomite\",\r\n        \"sodomize\",\r\n       
+    \"sodomy\",\r\n        \"son of a bitch\",\r\n        \"son of a whore\",\r\n       
+    \"sonofabitch\",\r\n        \"son-of-a-bitch\",\r\n        \"son-of-a-whore\",\r\n       
+    \"sonofbitch\",\r\n        \"sooties\",\r\n        \"souse\",\r\n        \"soused\",\r\n       
+    \"soyboy\",\r\n        \"spac\",\r\n        \"spaghettibender\",\r\n        \"spaghettinigger\",\r\n       
+    \"spank\",\r\n        \"spankthemonkey\",\r\n        \"spastic\",\r\n       
+    \"spearchucker\",\r\n        \"spearchuckers\",\r\n        \"sperm\",\r\n       
+    \"spermacide\",\r\n        \"spermbag\",\r\n        \"spermhearder\",\r\n       
+    \"spermherder\",\r\n        \"sphencter\",\r\n        \"spic\",\r\n        \"spick\",\r\n       
+    \"spicks\",\r\n        \"spics\",\r\n        \"spierdalaj\",\r\n        \"spig\",\r\n       
+    \"spigotty\",\r\n        \"spik\",\r\n        \"spiks\",\r\n        \"splittail\",\r\n       
+    \"splooge\",\r\n        \"spludge\",\r\n        \"spooge\",\r\n        \"spread
+    legs\",\r\n        \"spreadeagle\",\r\n        \"spunk\",\r\n        \"spunky\",\r\n       
+    \"sqeh\",\r\n        \"squa\",\r\n        \"squarehead\",\r\n        \"squareheads\",\r\n       
+    \"squaw\",\r\n        \"squinty\",\r\n        \"squirting\",\r\n        \"stagg\",\r\n       
+    \"stfu\",\r\n        \"stiffy\",\r\n        \"stoned\",\r\n        \"stoner\",\r\n       
+    \"strap on\",\r\n        \"strapon\",\r\n        \"strappado\",\r\n        \"strip
+    club\",\r\n        \"stripclub\",\r\n        \"stroking\",\r\n        \"stuinties\",\r\n       
+    \"stupidfuck\",\r\n        \"stupidfucker\",\r\n        \"style doggy\",\r\n       
+    \"suckdick\",\r\n        \"sucked\",\r\n        \"sucker\",\r\n        \"sucking\",\r\n       
+    \"suckme\",\r\n        \"suckmyass\",\r\n        \"suckmydick\",\r\n        \"suckmytit\",\r\n       
+    \"suckoff\",\r\n        \"suicide girl\",\r\n        \"suicide girls\",\r\n       
+    \"suicidegirl\",\r\n        \"suicidegirls\",\r\n        \"suka\",\r\n       
+    \"sultrywoman\",\r\n        \"sultrywomen\",\r\n        \"sumofabiatch\",\r\n       
+    \"swallower\",\r\n        \"swalow\",\r\n        \"swamp guinea\",\r\n       
+    \"swamp guineas\",\r\n        \"swastika\",\r\n        \"syphilis\",\r\n       
+    \"t i t\",\r\n        \"t i ts\",\r\n        \"t1t\",\r\n        \"t1tt1e5\",\r\n       
+    \"t1tties\",\r\n        \"tacohead\",\r\n        \"tacoheads\",\r\n        \"taff\",\r\n       
+    \"take off your\",\r\n        \"tar babies\",\r\n        \"tar baby\",\r\n       
+    \"tarbaby\",\r\n        \"tard\",\r\n        \"taste my\",\r\n        \"tastemy\",\r\n       
+    \"tawdry\",\r\n        \"tea bagging\",\r\n        \"teabagging\",\r\n       
+    \"teat\",\r\n        \"teets\",\r\n        \"teez\",\r\n        \"terd\",\r\n       
+    \"teste\",\r\n        \"testee\",\r\n        \"testes\",\r\n        \"testical\",\r\n       
+    \"testicle\",\r\n        \"testicles\",\r\n        \"testis\",\r\n        \"thicklip\",\r\n       
+    \"thicklips\",\r\n        \"thirdeye\",\r\n        \"thirdleg\",\r\n        \"threesome\",\r\n       
+    \"threeway\",\r\n        \"throating\",\r\n        \"thumbzilla\",\r\n       
+    \"thundercunt\",\r\n        \"tied up\",\r\n        \"tig ol bitties\",\r\n       
+    \"tig old bitties\",\r\n        \"tight white\",\r\n        \"timber nigger\",\r\n       
+    \"timber niggers\",\r\n        \"timbernigger\",\r\n        \"tit\",\r\n       
+    \"titbitnipply\",\r\n        \"titfuck\",\r\n        \"titfucker\",\r\n       
+    \"titfuckin\",\r\n        \"titi\",\r\n        \"titjob\",\r\n        \"titlicker\",\r\n       
+    \"titlover\",\r\n        \"tits\",\r\n        \"titt\",\r\n        \"tittie\",\r\n       
+    \"tittie5\",\r\n        \"tittiefucker\",\r\n        \"titties\",\r\n       
+    \"tittis\",\r\n        \"titty\",\r\n        \"tittyfuck\",\r\n        \"tittyfucker\",\r\n       
+    \"tittys\",\r\n        \"tittywank\",\r\n        \"titwank\",\r\n        \"tity\",\r\n       
+    \"to murder\",\r\n        \"tongethruster\",\r\n        \"tongue in a\",\r\n       
+    \"tongueina\",\r\n        \"tonguethrust\",\r\n        \"tonguetramp\",\r\n       
+    \"toots\",\r\n        \"topless\",\r\n        \"tortur\",\r\n        \"torture\",\r\n       
+    \"tosser\",\r\n        \"towel head\",\r\n        \"towel heads\",\r\n       
+    \"towelhead\",\r\n        \"tr00n\",\r\n        \"tr00ns\",\r\n        \"trailertrash\",\r\n       
+    \"trannie\",\r\n        \"tranny\",\r\n        \"transsexual\",\r\n        \"transvestite\",\r\n       
+    \"tribadism\",\r\n        \"trisexual\",\r\n        \"trois\",\r\n        \"troon\",\r\n       
+    \"troons\",\r\n        \"trots\",\r\n        \"tub girl\",\r\n        \"tubgirl\",\r\n       
+    \"tuckahoe\",\r\n        \"tunneloflove\",\r\n        \"turd burgler\",\r\n       
+    \"turnon\",\r\n        \"tush\",\r\n        \"tushy\",\r\n        \"tw4t\",\r\n       
+    \"twat\",\r\n        \"twathead\",\r\n        \"twatlips\",\r\n        \"twats\",\r\n       
+    \"twatty\",\r\n        \"twatwaffle\",\r\n        \"twink\",\r\n        \"twinkie\",\r\n       
+    \"two girls one cup\",\r\n        \"twobitwhore\",\r\n        \"twunt\",\r\n       
+    \"twunter\",\r\n        \"udge packer\",\r\n        \"ukrop\",\r\n        \"unclefucker\",\r\n       
+    \"unfuckable\",\r\n        \"upskirt\",\r\n        \"uptheass\",\r\n        \"upthebutt\",\r\n       
+    \"urethra play\",\r\n        \"urethraplay\",\r\n        \"urophilia\",\r\n       
+    \"usama\",\r\n        \"ussys\",\r\n        \"uzi\",\r\n        \"v a g i n a\",\r\n       
+    \"v14gra\",\r\n        \"v1gra\",\r\n        \"v4gra\",\r\n        \"va1jina\",\r\n       
+    \"vag\",\r\n        \"vag1na\",\r\n        \"vagiina\",\r\n        \"vaj1na\",\r\n       
+    \"vajina\",\r\n        \"va-j-j\",\r\n        \"valium\",\r\n        \"venus
+    mound\",\r\n        \"vgra\",\r\n        \"vibr\",\r\n        \"vibrater\",\r\n       
+    \"vibrator\",\r\n        \"vigra\",\r\n        \"violet wand\",\r\n        \"virginbreaker\",\r\n       
+    \"vittu\",\r\n        \"vixen\",\r\n        \"vjayjay\",\r\n        \"vorarephilia\",\r\n       
+    \"voyeurweb\",\r\n        \"voyuer\",\r\n        \"vullva\",\r\n        \"vulva\",\r\n       
+    \"w00se\",\r\n        \"w0p\",\r\n        \"wab\",\r\n        \"wang\",\r\n       
+    \"wank\",\r\n        \"wanker\",\r\n        \"wanking\",\r\n        \"wanky\",\r\n       
+    \"waysted\",\r\n        \"wazoo\",\r\n        \"weenie\",\r\n        \"weewee\",\r\n       
+    \"weiner\",\r\n        \"welcher\",\r\n        \"wench\",\r\n        \"wet dream\",\r\n       
+    \"wetb\",\r\n        \"wetback\",\r\n        \"wetbacks\",\r\n        \"wetdream\",\r\n       
+    \"wetspot\",\r\n        \"wh00r\",\r\n        \"wh0re\",\r\n        \"wh0reface\",\r\n       
+    \"whacker\",\r\n        \"whash\",\r\n        \"whigger\",\r\n        \"whiggers\",\r\n       
+    \"whiskeydick\",\r\n        \"whiskydick\",\r\n        \"whit\",\r\n        \"white
+    power\",\r\n        \"white trash\",\r\n        \"whitenigger\",\r\n        \"whitepower\",\r\n       
+    \"whitetrash\",\r\n        \"whitey\",\r\n        \"whiteys\",\r\n        \"whities\",\r\n       
+    \"whoar\",\r\n        \"whop\",\r\n        \"whoralicious\",\r\n        \"whore\",\r\n       
+    \"whorealicious\",\r\n        \"whorebag\",\r\n        \"whored\",\r\n       
+    \"whoreface\",\r\n        \"whorefucker\",\r\n        \"whorehopper\",\r\n       
+    \"whorehouse\",\r\n        \"whores\",\r\n        \"whoring\",\r\n        \"wichser\",\r\n       
+    \"wigga\",\r\n        \"wiggas\",\r\n        \"wigger\",\r\n        \"wiggers\",\r\n       
+    \"willie\",\r\n        \"willies\",\r\n        \"williewanker\",\r\n        \"willy\",\r\n       
+    \"wog\",\r\n        \"wogs\",\r\n        \"woose\",\r\n        \"wop\",\r\n       
+    \"worldsex\",\r\n        \"wrapping men\",\r\n        \"wrinkled starfish\",\r\n       
+    \"wtf\",\r\n        \"wuss\",\r\n        \"wuzzie\",\r\n        \"xkwe\",\r\n       
+    \"xrated\",\r\n        \"x-rated\",\r\n        \"x-rated2g1c\",\r\n        \"xtc\",\r\n       
+    \"xx\",\r\n        \"xxx\",\r\n        \"xxxxxx\",\r\n        \"yank\",\r\n       
+    \"yaoi\",\r\n        \"yarpie\",\r\n        \"yarpies\",\r\n        \"yed\",\r\n       
+    \"yellow showers\",\r\n        \"yellowman\",\r\n        \"yellowshowers\",\r\n       
+    \"yid\",\r\n        \"yids\",\r\n        \"yiffy\",\r\n        \"yobbo\",\r\n       
+    \"yourboobs\",\r\n        \"yourpenis\",\r\n        \"yourtits\",\r\n       
+    \"yury\",\r\n        \"zabourah\",\r\n        \"zigabo\",\r\n        \"zigabos\",\r\n       
+    \"zipperhead\",\r\n        \"zipperheads\",\r\n        \"zoophile\",\r\n       
+    \"zoophilia\"\r\n      ]\r\n    }\r\n  }\r\n]"
   _environments: "[\r\n  {\r\n    \"projectId\": \"fc9aeeaf-b74c-4a35-bb36-2e65a4579b07\",\r\n   
     \"name\": \"production\",\r\n    \"id\": \"22d1e47c-2b77-4141-aba4-a47416a04ea5\",\r\n   
     \"isDefault\": true,\r\n    \"createdAt\": \"2026-11-18T10:41:46Z\",\r\n    \"updatedAt\":

@@ -105,7 +105,8 @@ namespace ProDomino.Authentication
             var isGoogleAuthenticated = !string.IsNullOrEmpty(preLoginGoogleID);
 
             // Define the data we want to retrieve from the module
-            var dataEncrypted = SerializeAndEncryptData(new()
+            // Encrypt on every attempt so retries use the current PlayerId + AccessToken key
+            string EncryptRequest() => SerializeAndEncryptData(new()
             {
                 ["keys"] = new string[]
                 {
@@ -117,7 +118,7 @@ namespace ProDomino.Authentication
 
             // Call the function within the module and provide the parameters we defined in there
             var googleDataJson = await HandleProcess_AuthManagerProxy
-                (uniTask: () => module.LoadProtectedData(dataEncrypted).AsUniTask(), 
+                (uniTask: () => module.LoadProtectedData(EncryptRequest()).AsUniTask(), 
                 taskId: nameof(module.LoadProtectedData));
 
             // Deserialize and decrypt the data

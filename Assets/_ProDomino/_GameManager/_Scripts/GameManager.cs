@@ -315,7 +315,9 @@ namespace ProDomino.GameSystem
                 return;
             }
 
-            var dataEncrypted = authManager.SerializeAndEncryptData(new()
+            // Encrypt on every attempt: the key is derived from the current PlayerId + AccessToken, so a payload
+            // built before a re-sign-in/token refresh fails server-side with "Padding is invalid" on every retry.
+            string EncryptRequest() => authManager.SerializeAndEncryptData(new()
             {
                 ["keys"] = new string[]
                 {
@@ -333,7 +335,7 @@ namespace ProDomino.GameSystem
 
             // Load the protected game and player data from the backend instead of using specific cloud code functions
             var playerDataResponseEncrypted = await HandleProcess_GameManagerProxy
-                (uniTask: () => module.LoadProtectedData(dataEncrypted).AsUniTask(),
+                (uniTask: () => module.LoadProtectedData(EncryptRequest()).AsUniTask(),
                 taskId: nameof(module.LoadProtectedData),
                 showLoading : false);
 

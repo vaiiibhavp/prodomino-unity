@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Cloud Code C# module "Backend". Unity names the deployed module after THIS FILE's name
+        (Backend.csproj -> Backend.ccm), and the game calls module "Backend" — do not rename it.
+        Unity's Deployment window finds this project because it sits next to
+        Properties/PublishProfiles/FolderProfile.pubxml, then runs:
+            dotnet publish Backend.sln -c Release -r linux-x64
+    -->
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <!-- C# 13 is needed for 'ref' locals inside async methods (UpdateLeaderboardScoreByMatchResultModule). -->
+        <LangVersion>13</LangVersion>
+        <Nullable>enable</Nullable>
+        <Configurations>Debug;Release</Configurations>
+        <RootNamespace>Backend</RootNamespace>
+        <!-- net6.0 is out of support on newer SDKs; Cloud Code still runs it. -->
+        <CheckEolTargetFramework>false</CheckEolTargetFramework>
+        <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Com.Unity.Services.CloudCode.Apis" Version="0.0.27" />
+        <PackageReference Include="Com.Unity.Services.CloudCode.Core" Version="0.0.9" />
+        <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="RestSharp" Version="112.1.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\HelperSharedLibrary\HelperSharedLibrary.csproj" />
+        <ProjectReference Include="..\FirebaseSharedLibrary\FirebaseSharedLibrary.csproj" />
+    </ItemGroup>
+
+</Project>
